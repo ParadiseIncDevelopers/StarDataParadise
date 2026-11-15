@@ -146,6 +146,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="StarDataParadise.cpp" />
+    <ClCompile Include="workbench.cpp" />
+    <ClCompile Include="profiles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StarDataParadise.rc" />
@@ -154,6 +156,49 @@
     <Image Include="small.ico" />
     <Image Include="StarDataParadise.ico" />
   </ItemGroup>
+  <PropertyGroup>
+    <QtDebugSuffix Condition="'$(Configuration)'=='Debug'">d</QtDebugSuffix>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>/Zc:__cplusplus /utf-8 /external:W0 /external:I&quot;$(QTDIR)\include&quot; /external:I&quot;$(QTDIR)\include\QtCore&quot; /external:I&quot;$(QTDIR)\include\QtGui&quot; /external:I&quot;$(QTDIR)\include\QtWidgets&quot; /external:I&quot;$(QTDIR)\include\QtNetwork&quot; %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Qt6EntryPoint$(QtDebugSuffix).lib;Qt6Widgets$(QtDebugSuffix).lib;Qt6Network$(QtDebugSuffix).lib;Qt6Gui$(QtDebugSuffix).lib;Qt6Core$(QtDebugSuffix).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>"$(QTDIR)\bin\windeployqt.exe" --no-translations --no-compiler-runtime "$(TargetPath)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <Target Name="RequireQt" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(Platform)'!='x64'" Text="Use the x64 platform with the Qt MSVC x64 SDK." />
+    <Error Condition="!Exists('$(QTDIR)\lib\cmake\Qt6\Qt6Config.cmake')" Text="Set QTDIR to the Qt 6.11.3 MSVC x64 SDK." />
+  </Target>
+  <PropertyGroup>
+    <SdpNativeDir>$(IntDir)sdp-native\</SdpNativeDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SdpNativeDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;_WIN32_WINNT=0x0A00;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SdpNativeDir)lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>StarDataParadiseDLLler.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <Target Name="RequireNativeSdk" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(Platform)'!='x64'" Text="The pinned SDK targets Windows x64." />
+    <Error Condition="!Exists('$(SDP_NATIVE_ARCHIVE)')" Text="Set SDP_NATIVE_ARCHIVE. See BUILD.md." />
+    <VerifyFileHash File="$(SDP_NATIVE_ARCHIVE)" Hash="9a9e7409c3670e38c1a54bca1bcdc2b9cf9e3f68c87286500c745bdbea1cfd4c" />
+    <MakeDir Directories="$(SdpNativeDir)" />
+    <Unzip SourceFiles="$(SDP_NATIVE_ARCHIVE)" DestinationFolder="$(SdpNativeDir)" />
+  </Target>
+  <Target Name="DeployNativeSdk" AfterTargets="Build">
+    <Copy SourceFiles="$(SdpNativeDir)bin\StarDataParadiseDLLler.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
