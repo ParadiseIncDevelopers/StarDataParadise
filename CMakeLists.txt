@@ -23,7 +23,8 @@ add_library(workbench_ui STATIC
     StarDataParadise/admin_center.cpp StarDataParadise/backup_center.cpp
     StarDataParadise/security_center.cpp StarDataParadise/workbench_help.cpp
     StarDataParadise/compare_studio.cpp StarDataParadise/migration_studio.cpp
-    StarDataParadise/migration_plan.cpp StarDataParadise/migration_source.cpp)
+    StarDataParadise/migration_plan.cpp StarDataParadise/migration_source.cpp
+    StarDataParadise/update_status.cpp)
 target_include_directories(workbench_ui PUBLIC StarDataParadise)
 target_compile_definitions(workbench_ui PUBLIC WIN32_LEAN_AND_MEAN NOMINMAX)
 target_compile_options(workbench_ui PRIVATE /utf-8)
@@ -65,6 +66,11 @@ if(BUILD_TESTING)
 
     add_test(NAME disconnected_window COMMAND StarDataParadise --smoke-test)
     set_tests_properties(disconnected_window PROPERTIES TIMEOUT 15 ENVIRONMENT "${workbench_test_environment}")
+    add_executable(workbench_update_status tests/update_status.cpp)
+    target_link_libraries(workbench_update_status PRIVATE workbench_ui)
+    add_dependencies(workbench_update_status StarDataParadise)
+    add_test(NAME workbench_update_status COMMAND workbench_update_status)
+    set_tests_properties(workbench_update_status PROPERTIES TIMEOUT 15 ENVIRONMENT "${workbench_test_environment}")
 
     set(SDP_TEST_SERVER "" CACHE FILEPATH "Server EXE for Workbench TLS integration")
     set(SDP_TEST_OPENSSL "" CACHE FILEPATH "OpenSSL tool for local test certificates")

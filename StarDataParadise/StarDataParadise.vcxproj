@@ -196,6 +196,7 @@
     <ClCompile Include="migration_plan.cpp" />
     <ClCompile Include="migration_source.cpp" />
     <ClCompile Include="migration_studio.cpp" />
+    <ClCompile Include="update_status.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StarDataParadise.rc" />

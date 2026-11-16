@@ -2,6 +2,7 @@
 #include "compare_studio.hpp"
 #include "migration_studio.hpp"
 #include "sql_pane.hpp"
+#include "update_status.hpp"
 #include "workbench_help.hpp"
 #include <QCloseEvent>
 #include <QJsonArray>
@@ -262,6 +263,11 @@ Window::Window(QString settings_file) : settings_file_(std::move(settings_file))
     auto* search = navigate->addAction(tr("Search connected objects…"), this, [this] { search_objects(); });
     search->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
     auto* tools = menuBar()->addMenu(tr("Tools"));
+    auto* updates = tools->addAction(tr("View update status…"), this, [this] {
+        const auto path = QFileDialog::getOpenFileName(this, tr("Open update status"), {}, tr("JSON files (*.json)"));
+        if (!path.isEmpty()) show_update_status(this, path);
+    });
+    updates->setObjectName("viewUpdateStatus");
     tools->addAction(tr("Compare schema and data…"), this, [this] { compare_sessions(); });
     tools->addAction(tr("Migrate from PostgreSQL or MySQL…"), this, [this] {
         const auto active = sessions_.find(tabs_->currentWidget());

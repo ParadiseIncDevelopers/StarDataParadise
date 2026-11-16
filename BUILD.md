@@ -58,6 +58,8 @@ SQL betiği ve yeniden eğitim zamanlaması Native 0.4.1 ve ilgili Server yetene
 
 Users and permissions ekranı uygulanacak GRANT veya REVOKE ifadesini onaydan önce gösterir. Etkin tablo erişimi mevcut oturumun metadata yanıtından okunur. Workspace dışa aktarımı bağlantı profillerini içerir. İçe aktarılan SQL projeleri dosyayı yalnız düzenleyicide açar.
 
+**Tools → View update status…** menüsünden ortak güncelleme aracının oluşturduğu yerel JSON kaydını seç. Workbench bağlantı gerektirmeden bileşeni, önceki ve hedef sürümü, geçerli ve bekleyen adımı, geri dönüş sınırını ve yönetici gereksinimini gösterir. Kayıt salt okunur açılır.
+
 ## Şema karşılaştırması ve dış kaynak aktarımı
 
 Tools menüsünde etkin çalışma sayfası karşılaştırmanın kaynağıdır. Hedef için ikinci bir Server bağlantısı aç. DDL önizlemesinde yeniden adlandırılan nesneleri eşleştir ve silme adımlarını ayrıca onayla. Workbench hedef metadata sınırını transaction içinde yeniden okur. Görünüm, yordam ve Decision tanımlarında Server’ın sunmadığı ayrıntılar elle inceleme listesinde görünür.

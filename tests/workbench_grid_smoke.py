@@ -6,6 +6,7 @@ from pathlib import Path
 import secrets
 import tempfile
 
+from process_memory import run_measured
 from workbench_sql_smoke import instance, run
 
 
@@ -13,6 +14,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ("client", "server", "openssl", "scratch"):
         parser.add_argument("--" + key, required=True, type=lambda value: Path(value).resolve())
+    parser.add_argument("--metrics", type=lambda value: Path(value).resolve())
     args = parser.parse_args()
     args.scratch.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="table-", dir=args.scratch) as directory:
@@ -30,7 +32,12 @@ def main():
                            read_only=False)
             profile_path = root / "profiles.json"
             profile_path.write_text(json.dumps(dict(version=1, profiles=[profile])), encoding="utf-8")
-            print(run([args.client, profile_path], (password,), cwd=root, input=password + "\n").strip())
+            command = [args.client, profile_path]
+            if args.metrics:
+                evidence = run_measured(command, password, args.metrics, cwd=root)
+            else:
+                evidence = run(command, (password,), cwd=root, input=password + "\n")
+            print(evidence.strip())
 
 
 if __name__ == "__main__":

@@ -3,6 +3,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="StarDataParadise/StarDataParadise.vcxproj" />
-  <Project Path="StarDataParadise/StarDataParadiseMigrationSource.vcxproj" />
+  <Project Path="StarDataParadise/StarDataParadise.vcxproj" Id="d07744e7-bced-422a-a1dd-0d7f0d20e1fb" />
+  <Project Path="StarDataParadise/StarDataParadiseMigrationSource.vcxproj" Id="48eb530e-5167-477b-8a38-777294f38727" />
 </Solution>
