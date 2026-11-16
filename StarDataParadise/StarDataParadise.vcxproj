@@ -143,11 +143,59 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="StarDataParadise.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="sql_pane.hpp" />
+    <ClInclude Include="sql_session.hpp" />
+    <ClInclude Include="sql_editor.hpp" />
+    <ClInclude Include="sql_script.hpp" />
+    <ClInclude Include="sql_definition.hpp" />
+    <ClInclude Include="data_grid.hpp" />
+    <ClInclude Include="table_design.hpp" />
+    <ClInclude Include="table_codec.hpp" />
+    <ClInclude Include="table_transfer.hpp" />
+    <ClInclude Include="routine_studio.hpp" />
+    <ClInclude Include="routine_debugger.hpp" />
+    <ClInclude Include="routine_export.hpp" />
+    <ClInclude Include="history_studio.hpp" />
+    <ClInclude Include="decision_studio.hpp" />
+    <ClInclude Include="ml_studio.hpp" />
+    <ClInclude Include="dataset_studio.hpp" />
+    <ClInclude Include="job_center.hpp" />
+    <ClInclude Include="admin_center.hpp" />
+    <ClInclude Include="backup_center.hpp" />
+    <ClInclude Include="security_center.hpp" />
+    <ClInclude Include="workbench_help.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="StarDataParadise.cpp" />
     <ClCompile Include="workbench.cpp" />
     <ClCompile Include="profiles.cpp" />
+    <ClCompile Include="sql_pane.cpp" />
+    <ClCompile Include="sql_session.cpp" />
+    <ClCompile Include="sql_editor.cpp" />
+    <ClCompile Include="sql_script.cpp" />
+    <ClCompile Include="sql_definition.cpp" />
+    <ClCompile Include="data_grid.cpp" />
+    <ClCompile Include="table_design.cpp" />
+    <ClCompile Include="table_designer.cpp" />
+    <ClCompile Include="table_codec.cpp" />
+    <ClCompile Include="table_transfer.cpp" />
+    <ClCompile Include="routine_studio.cpp" />
+    <ClCompile Include="routine_debugger.cpp" />
+    <ClCompile Include="routine_export.cpp" />
+    <ClCompile Include="sdk_examples.cpp" />
+    <ClCompile Include="history_studio.cpp" />
+    <ClCompile Include="decision_studio.cpp" />
+    <ClCompile Include="ml_studio.cpp" />
+    <ClCompile Include="dataset_studio.cpp" />
+    <ClCompile Include="job_center.cpp" />
+    <ClCompile Include="admin_center.cpp" />
+    <ClCompile Include="backup_center.cpp" />
+    <ClCompile Include="security_center.cpp" />
+    <ClCompile Include="workbench_help.cpp" />
+    <ClCompile Include="compare_studio.cpp" />
+    <ClCompile Include="migration_plan.cpp" />
+    <ClCompile Include="migration_source.cpp" />
+    <ClCompile Include="migration_studio.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="StarDataParadise.rc" />
@@ -191,13 +239,22 @@
   <Target Name="RequireNativeSdk" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(Platform)'!='x64'" Text="The pinned SDK targets Windows x64." />
     <Error Condition="!Exists('$(SDP_NATIVE_ARCHIVE)')" Text="Set SDP_NATIVE_ARCHIVE. See BUILD.md." />
-    <VerifyFileHash File="$(SDP_NATIVE_ARCHIVE)" Hash="9a9e7409c3670e38c1a54bca1bcdc2b9cf9e3f68c87286500c745bdbea1cfd4c" />
+    <GetFileHash Files="$(SDP_NATIVE_ARCHIVE)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="SdpNativePackage" />
+    </GetFileHash>
+    <Error Condition="'%(SdpNativePackage.FileHash)'!='8073941b68c6c037ea646d4cc3f2bcc31445462356c9bd0db513b35cc2378041' and '%(SdpNativePackage.FileHash)'!='4ee15b8fa50c94c5ee012245d8ed8e3c16259df64fc154ca15fb286cb6a8ad25'" Text="Native SDK SHA-256 mismatch." />
     <MakeDir Directories="$(SdpNativeDir)" />
     <Unzip SourceFiles="$(SDP_NATIVE_ARCHIVE)" DestinationFolder="$(SdpNativeDir)" />
   </Target>
   <Target Name="DeployNativeSdk" AfterTargets="Build">
     <Copy SourceFiles="$(SdpNativeDir)bin\StarDataParadiseDLLler.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
+  <ItemGroup>
+    <ProjectReference Include="StarDataParadiseMigrationSource.vcxproj">
+      <Project>{48eb530e-5167-477b-8a38-777294f38727}</Project>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

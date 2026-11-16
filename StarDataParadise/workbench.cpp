@@ -1,4 +1,10 @@
 #include "workbench.hpp"
+#include "compare_studio.hpp"
+#include "migration_studio.hpp"
+#include "sql_pane.hpp"
+#include "workbench_help.hpp"
+#include <QCloseEvent>
+#include <QJsonArray>
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -9,16 +15,21 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenuBar>
+#include <QMenu>
+#include <QMessageBox>
 #include <QPointer>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QTreeWidget>
+#include <QTreeWidgetItemIterator>
+#include <QKeySequence>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -169,8 +180,65 @@ Window::Window(QString settings_file) : settings_file_(std::move(settings_file))
     auto* explorer = new QDockWidget(tr("Object explorer"), this);
     objects_ = new QTreeWidget;
     objects_->setHeaderHidden(true);
+    objects_->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(objects_, &QTreeWidget::customContextMenuRequested, this, [this](const QPoint& position) {
+        auto* item = objects_->itemAt(position);
+        if (!item) return;
+        auto* root = item;
+        while (root->parent()) root = root->parent();
+        for (const auto& [page, tab] : sessions_)
+        {
+            if (tab.node != root) continue;
+            const auto object = item->data(0, Qt::UserRole).toJsonObject();
+            const auto kind = object.value("kind").toInt();
+            QMenu actions(this);
+            QPointer<QWidget> owner(page);
+            const auto add = [&](const QString& text, auto use) {
+                actions.addAction(text, this, [this, owner, use] {
+                    if (!owner) return;
+                    const auto found = sessions_.find(owner.data());
+                    if (found == sessions_.end()) return;
+                    tabs_->setCurrentWidget(owner.data());
+                    use(*found->second.pane);
+                });
+            };
+            if (kind == 3)
+            {
+                add(tr("Open data grid…"), [object](SqlPane& pane) { pane.showGrid(object); });
+                add(tr("Design table…"), [object](SqlPane& pane) { pane.designTable(object); });
+                add(tr("Import or export table…"), [object](SqlPane& pane) { pane.transferTable(object); });
+                add(tr("Create dataset…"), [object](SqlPane& pane) { pane.openDatasetStudio(object); });
+            }
+            if (kind == 6)
+            {
+                add(tr("Open PL/SQL Studio…"), [object](SqlPane& pane) { pane.openRoutineStudio(object); });
+                add(tr("Export routine to Java…"), [object](SqlPane& pane) { pane.exportRoutine(object); });
+            }
+            if (kind >= 3)
+                add(tr("History Studio…"), [object](SqlPane& pane) { pane.openHistoryStudio(object); });
+            if (kind == 3 || kind == 8)
+                add(tr("Decision Studio…"), [object](SqlPane& pane) { pane.openDecisionStudio(object); });
+            if (kind == 9)
+                add(tr("ML Studio…"), [object](SqlPane& pane) { pane.openMlStudio(object); });
+            add(tr("Create table…"), [](SqlPane& pane) { pane.designTable(); });
+            add(tr("Schema diagram and dictionary…"), [](SqlPane& pane) { pane.showDictionary(); });
+            actions.exec(objects_->viewport()->mapToGlobal(position));
+            break;
+        }
+    });
     explorer->setWidget(objects_);
     addDockWidget(Qt::LeftDockWidgetArea, explorer);
+    connect(objects_, &QTreeWidget::itemDoubleClicked, this, [this](QTreeWidgetItem* item) {
+        auto* root = item;
+        while (root->parent()) root = root->parent();
+        for (const auto& [page, tab] : sessions_)
+            if (tab.node == root)
+            {
+                tabs_->setCurrentWidget(page);
+                tab.pane->peek(item->data(0, Qt::UserRole).toJsonObject());
+                break;
+            }
+    });
 
     auto* tasks = new QDockWidget(tr("Tasks"), this);
     tasks_ = new QListWidget;
@@ -190,6 +258,24 @@ Window::Window(QString settings_file) : settings_file_(std::move(settings_file))
         if (!path.isEmpty()) export_to(path);
     });
 
+    auto* navigate = menuBar()->addMenu(tr("Navigate"));
+    auto* search = navigate->addAction(tr("Search connected objects…"), this, [this] { search_objects(); });
+    search->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
+    auto* tools = menuBar()->addMenu(tr("Tools"));
+    tools->addAction(tr("Compare schema and data…"), this, [this] { compare_sessions(); });
+    tools->addAction(tr("Migrate from PostgreSQL or MySQL…"), this, [this] {
+        const auto active = sessions_.find(tabs_->currentWidget());
+        if (active == sessions_.end() || !active->second.pane->session().state().connected)
+        {
+            QMessageBox::information(this, tr("Migration Studio"), tr("Open a destination Server connection first."));
+            return;
+        }
+        showMigrationStudio(active->second.pane->session(), workers_, this);
+    });
+    menuBar()->addMenu(tr("Help"))->addAction(tr("Offline SQL and PL/SQL help…"), this, [this] {
+        showOfflineHelp(this);
+    });
+
     if (!settings_file_.isEmpty())
     {
         const auto path = settings_file_;
@@ -205,10 +291,44 @@ Window::Window(QString settings_file) : settings_file_(std::move(settings_file))
     }
 }
 
+void Window::compare_sessions()
+{
+    const auto active = sessions_.find(tabs_->currentWidget());
+    if (active == sessions_.end() || !active->second.pane->session().state().connected)
+    {
+        QMessageBox::information(this, tr("Compare Studio"), tr("Open source and destination Server connections first."));
+        return;
+    }
+    QStringList choices;
+    QVector<SqlSession*> destinations;
+    for (int index = 0; index < tabs_->count(); ++index)
+    {
+        const auto candidate = sessions_.find(tabs_->widget(index));
+        if (candidate == sessions_.end() || candidate == active || !candidate->second.pane->session().state().connected)
+            continue;
+        choices << tr("%1. %2").arg(index + 1).arg(tabs_->tabText(index));
+        destinations.append(&candidate->second.pane->session());
+    }
+    if (choices.isEmpty())
+    {
+        QMessageBox::information(this, tr("Compare Studio"), tr("Open another Server connection as the destination."));
+        return;
+    }
+    bool selected = false;
+    const auto choice = QInputDialog::getItem(this, tr("Compare Studio"),
+        tr("Choose the destination for the active source worksheet."), choices, 0, false, &selected);
+    if (selected)
+        showCompareStudio(active->second.pane->session(), *destinations[choices.indexOf(choice)], this);
+}
+
 Window::~Window()
 {
-    for (auto& [page, tab] : sessions_)
-        workers_.start([session = std::move(tab.session)] { });
+    while (!sessions_.empty())
+    {
+        auto* page = sessions_.begin()->first;
+        sessions_.erase(sessions_.begin());
+        delete page;
+    }
     workers_.waitForDone();
     storage_.waitForDone();
 }
@@ -219,6 +339,67 @@ void Window::note(const QString& text)
     tasks_->addItem(text);
     tasks_->scrollToBottom();
     statusBar()->showMessage(text);
+}
+
+void Window::search_objects()
+{
+    struct Candidate
+    {
+        QString label;
+        QJsonObject metadata;
+        QPointer<QWidget> page;
+    };
+    QList<Candidate> candidates;
+    for (const auto& [page, tab] : sessions_)
+    {
+        for (QTreeWidgetItemIterator node(tab.node); *node; ++node)
+        {
+            auto* item = *node;
+            auto* root = item;
+            while (root->parent()) root = root->parent();
+            if (root != tab.node) break;
+            const auto metadata = item->data(0, Qt::UserRole).toJsonObject();
+            const auto name = metadata.value("qualified_name").toArray();
+            if (name.isEmpty()) continue;
+            QStringList parts;
+            for (const auto& identifier : name) parts.append(identifier.toString());
+            candidates.push_back({parts.join('.') + " · " + tab.node->text(0), metadata, page});
+        }
+    }
+    QDialog dialog(this);
+    dialog.setWindowTitle(tr("Search connected objects"));
+    dialog.resize(630, 420);
+    auto* layout = new QVBoxLayout(&dialog);
+    auto* search = new QLineEdit;
+    search->setPlaceholderText(tr("Object, schema or connection name"));
+    layout->addWidget(search);
+    auto* results = new QListWidget;
+    layout->addWidget(results, 1);
+    const auto update = [&] {
+        results->clear();
+        const auto filter = search->text().trimmed();
+        for (qsizetype index = 0; index < candidates.size() && results->count() < 256; ++index)
+        {
+            const auto& item = candidates.at(index);
+            if (!item.label.contains(filter, Qt::CaseInsensitive)) continue;
+            auto* result = new QListWidgetItem(item.label, results);
+            result->setData(Qt::UserRole, index);
+        }
+        if (results->count()) results->setCurrentRow(0);
+    };
+    connect(search, &QLineEdit::textChanged, &dialog, update);
+    connect(search, &QLineEdit::returnPressed, &dialog, [&] { if (results->currentItem()) dialog.accept(); });
+    connect(results, &QListWidget::itemDoubleClicked, &dialog, &QDialog::accept);
+    update();
+    if (dialog.exec() != QDialog::Accepted || !results->currentItem()) return;
+    const auto index = results->currentItem()->data(Qt::UserRole).toLongLong();
+    if (index < 0 || index >= candidates.size()) return;
+    const auto& candidate = candidates.at(index);
+    if (!candidate.page) return;
+    const auto tab = sessions_.find(candidate.page.data());
+    if (tab == sessions_.end()) return;
+    tabs_->setCurrentWidget(candidate.page.data());
+    tab->second.pane->peek(candidate.metadata);
 }
 
 void Window::edit_profiles(bool local)
@@ -267,54 +448,81 @@ void Window::add_tab(const Profile& profile, std::shared_ptr<Session> session)
     auto* state = new QLabel(tr("Connected to %1").arg(endpoint(profile)));
     state->setObjectName("sessionState");
     state->setTextFormat(Qt::PlainText);
-    content->addWidget(state);
-    auto* preferences = new QLabel(tr("%1 · %2 · Database preference: %3").arg(
-        profile.environment, profile.read_only ? tr("Read-only preference") : tr("Default permissions"),
-        profile.database.isEmpty() ? tr("Default") : profile.database));
-    preferences->setTextFormat(Qt::PlainText);
-    content->addWidget(preferences);
-    auto* capabilities = new QTreeWidget;
-    capabilities->setHeaderLabels({tr("Capability"), tr("State")});
-    for (auto it = session->capabilities.begin(); it != session->capabilities.end(); ++it)
-        new QTreeWidgetItem(capabilities, {it.key(), it.value().toBool() ? tr("Available") : tr("Unavailable")});
-    content->addWidget(capabilities);
-    auto* refresh = new QPushButton(tr("Check connection"));
-    content->addWidget(refresh);
-    connect(refresh, &QPushButton::clicked, this, [this, page] { check_session(tabs_->indexOf(page)); });
+    auto* header = new QHBoxLayout;
+    header->addWidget(state, 1);
+    auto* health = new QPushButton(tr("Check connection"));
+    header->addWidget(health);
+    content->addLayout(header);
+    connect(health, &QPushButton::clicked, this, [this, page] { check_session(tabs_->indexOf(page)); });
+
+    auto* pane = new SqlPane(profile, std::move(session), workers_,
+        settings_file_.isEmpty() ? QString{} : settings_file_ + ".sql-drafts.json", page);
+    content->addWidget(pane, 1);
     auto* node = new QTreeWidgetItem(objects_, {profile.name + " (" + endpoint(profile) + ")"});
-    sessions_.emplace(page, Tab{std::move(session), node, state});
+    sessions_.emplace(page, Tab{pane, node, state});
+    pane->setMetadataHandler([this, page, node, pane](const QJsonArray& payload) {
+        if (!sessions_.contains(page)) return;
+        qDeleteAll(node->takeChildren());
+        QHash<QString, QTreeWidgetItem*> parents;
+        parents.insert(QString{}, node);
+        static const QStringList kinds{tr("Object"), tr("Database"), tr("Schema"), tr("Table"),
+            tr("Index"), tr("View"), tr("Routine"), tr("Sequence"), tr("Decision"), tr("Model")};
+        for (const auto& entry : payload)
+        {
+            const auto object = entry.toObject();
+            QStringList qualified;
+            for (const auto& name : object.value("qualified_name").toArray()) qualified.append(name.toString());
+            if (qualified.isEmpty()) continue;
+            const auto full = qualified.join(QChar(0x1f));
+            const auto name = qualified.takeLast();
+            const auto kind = kinds.value(object.value("kind").toInt(), kinds.front());
+            auto* item = new QTreeWidgetItem(parents.value(qualified.join(QChar(0x1f)), node),
+                {tr("%1 · %2").arg(name, kind)});
+            item->setData(0, Qt::UserRole, object);
+            if (qualified.size() < 2) parents.insert(full, item);
+            for (const auto& value : object.value("columns").toArray())
+            {
+                const auto column = value.toObject();
+                auto* child = new QTreeWidgetItem(item, {tr("%1 · %2")
+                    .arg(column.value("name").toString(), column.value("type").toString())});
+                child->setData(0, Qt::UserRole, column);
+            }
+        }
+        const auto& features = pane->session().capabilities();
+        for (const auto& item : {std::pair{"history_v1", tr("History")}, std::pair{"jobs_v1", tr("Jobs")}})
+            if (features.value(item.first).toBool() && features.contains(item.first))
+                new QTreeWidgetItem(node, {item.second});
+        node->setExpanded(true);
+    });
     tabs_->setCurrentIndex(tabs_->addTab(page, profile.name + " — " + endpoint(profile)));
     note(tr("Connected to %1").arg(endpoint(profile)));
+    pane->session().refreshIdentity([pane](const SqlReply&) { pane->refreshObjects(); });
 }
 
 void Window::check_session(int index)
 {
     auto* page = tabs_->widget(index);
     const auto match = sessions_.find(page);
-    if (match == sessions_.end()) return;
-    if (match->second.checking) return;
+    if (match == sessions_.end() || match->second.checking) return;
     match->second.checking = true;
     match->second.state->setText(tr("Checking connection…"));
     QPointer<QWidget> tab(page);
-    workers_.start([this, tab, session = match->second.session] {
-        const auto result = sdp_health(session->handle, nullptr);
-        QMetaObject::invokeMethod(this, [this, tab, result] {
-            if (!tab) return;
-            const auto match = sessions_.find(tab.data());
-            if (match == sessions_.end()) return;
-            const auto name = tab->property("endpoint").toString();
-            match->second.checking = false;
-            if (result == SDP_OK)
-            {
-                match->second.state->setText(tr("Connected to %1").arg(name));
-                note(tr("Health verified for %1").arg(name));
-            }
-            else
-            {
-                close_session(tabs_->indexOf(tab.data()));
-                note(tr("%1 — %2").arg(name, status(result)));
-            }
-        }, Qt::QueuedConnection);
+    match->second.pane->health([this, tab](const SqlReply& reply) {
+        if (!tab) return;
+        const auto match = sessions_.find(tab.data());
+        if (match == sessions_.end()) return;
+        const auto name = tab->property("endpoint").toString();
+        match->second.checking = false;
+        if (reply.error.code == SDP_OK)
+        {
+            match->second.state->setText(tr("Connected to %1").arg(name));
+            note(tr("Health verified for %1").arg(name));
+        }
+        else
+        {
+            match->second.state->setText(status(reply.error.code));
+            note(tr("%1 — %2").arg(name, status(reply.error.code)));
+        }
     });
 }
 
@@ -322,14 +530,20 @@ void Window::close_session(int index)
 {
     auto* page = tabs_->widget(index);
     const auto match = sessions_.find(page);
-    if (match == sessions_.end()) return;
+    if (match == sessions_.end() || !match->second.pane->allowClose()) return;
+    match->second.pane->saveDraft();
     delete match->second.node;
-    auto session = std::move(match->second.session);
     sessions_.erase(match);
     tabs_->removeTab(index);
-    page->deleteLater();
-    workers_.start([session = std::move(session)] { });
     note(sessions_.empty() ? tr("Disconnected") : tr("Closed %1").arg(page->property("endpoint").toString()));
+    delete page;
+}
+
+void Window::closeEvent(QCloseEvent* event)
+{
+    for (const auto& [page, tab] : sessions_)
+        if (!tab.pane->allowClose()) { event->ignore(); return; }
+    QMainWindow::closeEvent(event);
 }
 
 void Window::loaded(QVector<Profile> profiles)

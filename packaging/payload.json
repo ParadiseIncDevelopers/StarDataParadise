@@ -1,0 +1,186 @@
+{
+  "id": "workbench",
+  "name": "StarDataParadise Workbench (Development)",
+  "version": "0.1.0",
+  "scope": "perUser",
+  "directory": "Workbench",
+  "features": [
+    {
+      "id": "Core",
+      "title": "Workbench",
+      "component": "workbench.core",
+      "dataOwner": "user",
+      "nativeRuntime": true,
+      "files": [
+        [
+          "release",
+          "StarDataParadise.exe",
+          "StarDataParadise.exe"
+        ],
+        [
+          "release",
+          "dxcompiler.dll",
+          "dxcompiler.dll"
+        ],
+        [
+          "release",
+          "dxil.dll",
+          "dxil.dll"
+        ],
+        [
+          "release",
+          "Qt6Core.dll",
+          "Qt6Core.dll"
+        ],
+        [
+          "release",
+          "Qt6Gui.dll",
+          "Qt6Gui.dll"
+        ],
+        [
+          "release",
+          "Qt6Network.dll",
+          "Qt6Network.dll"
+        ],
+        [
+          "release",
+          "Qt6Widgets.dll",
+          "Qt6Widgets.dll"
+        ],
+        [
+          "release",
+          "generic/qtuiotouchplugin.dll",
+          "generic/qtuiotouchplugin.dll"
+        ],
+        [
+          "release",
+          "imageformats/qgif.dll",
+          "imageformats/qgif.dll"
+        ],
+        [
+          "release",
+          "imageformats/qico.dll",
+          "imageformats/qico.dll"
+        ],
+        [
+          "release",
+          "imageformats/qjpeg.dll",
+          "imageformats/qjpeg.dll"
+        ],
+        [
+          "release",
+          "networkinformation/qnetworklistmanager.dll",
+          "networkinformation/qnetworklistmanager.dll"
+        ],
+        [
+          "release",
+          "platforms/qwindows.dll",
+          "platforms/qwindows.dll"
+        ],
+        [
+          "release",
+          "styles/qmodernwindowsstyle.dll",
+          "styles/qmodernwindowsstyle.dll"
+        ],
+        [
+          "release",
+          "tls/qcertonlybackend.dll",
+          "tls/qcertonlybackend.dll"
+        ],
+        [
+          "release",
+          "tls/qschannelbackend.dll",
+          "tls/qschannelbackend.dll"
+        ],
+        [
+          "licenses",
+          "THIRD-PARTY.md",
+          "docs/THIRD-PARTY.md"
+        ]
+      ]
+    },
+    {
+      "id": "Migration",
+      "title": "PostgreSQL and MySQL migration support",
+      "component": "workbench.migration",
+      "dataOwner": "user",
+      "files": [
+        [
+          "release",
+          "StarDataParadiseMigrationSource.exe",
+          "StarDataParadiseMigrationSource.exe"
+        ]
+      ]
+    },
+    {
+      "id": "Docs",
+      "title": "Workbench guides and debugger documentation",
+      "component": "workbench.docs",
+      "dataOwner": "none",
+      "files": [
+        [
+          "repo",
+          "BUILD.md",
+          "docs/Workbench-BUILD.md"
+        ],
+        [
+          "repo",
+          "CONNECTIONS.md",
+          "docs/CONNECTIONS.md"
+        ]
+      ]
+    },
+    {
+      "id": "RoutineExport",
+      "title": "PL/SQL to Java export tools",
+      "component": "workbench.routine-export",
+      "dataOwner": "none",
+      "files": [
+        [
+          "server",
+          "tools/routine_export/build.gradle.in",
+          "tools/routine_export/build.gradle.in"
+        ],
+        [
+          "server",
+          "tools/routine_export/RoutineRuntime.java",
+          "tools/routine_export/RoutineRuntime.java"
+        ],
+        [
+          "server",
+          "tools/routine_export/ConnectedRoutine.java.in",
+          "tools/routine_export/ConnectedRoutine.java.in"
+        ],
+        [
+          "server",
+          "tools/routine_export/emit_java.py",
+          "tools/routine_export/emit_java.py"
+        ],
+        [
+          "server",
+          "tools/routine_export/emit_connected.py",
+          "tools/routine_export/emit_connected.py"
+        ],
+        [
+          "server",
+          "tools/routine_export/snapshot.py",
+          "tools/routine_export/snapshot.py"
+        ]
+      ]
+    },
+    {
+      "id": "Sdk",
+      "title": "Versioned SDK packages and examples",
+      "component": "workbench.sdk",
+      "dataOwner": "none",
+      "sdkArchives": true,
+      "files": [
+        [
+          "sdk",
+          "ABI.md",
+          "docs/NATIVE-ABI.md"
+        ]
+      ]
+    }
+  ]
+}
