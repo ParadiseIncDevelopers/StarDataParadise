@@ -1,4 +1,33 @@
-# Klasik Windows Workbench 0.2.0 önizlemesi
+# Klasik StarDataParadise Workbench
+
+## 8.0.47 kaynak derlemesi · `v0.3.0-preview.1`
+
+`workbench-8.0.47.patch`, Workbench 8.0.47’nin `dc3590dbfbee29c87e201d4ef53607e5deb0e4f9` commit’ine uygulanır. Yama, StarDataParadise metinlerini ve yıldız ikonlarını, klasik SQL editörüyle ilgili marka değişikliklerini ve Windows kaynak derleme düzeltmelerini içerir. SQL editörünün tasarım dosyası 8.0.47 ile aynı. Karşılama ekranındaki tanıtım bandı mevcut tercih üzerinden varsayılan olarak gizli.
+
+PowerShell 7 ile bu deponun kökünden temiz bir çalışma ağacı hazırlayın.
+
+```powershell
+git clone --depth 1 --branch 8.0.47 https://github.com/mysql/mysql-workbench.git out/mysql-workbench-native-src
+$patch = (Resolve-Path 'packaging/classic-workbench/workbench-8.0.47.patch').Path
+git -C out/mysql-workbench-native-src apply --check $patch
+git -C out/mysql-workbench-native-src apply $patch
+```
+
+Windows derlemesi için Visual Studio 18, MSVC v143 x64, C++/CLI, ATL ve Windows SDK kullanıldı. Derleme dizinlerine şu bağımlılıkları hazırlayın.
+
+- `out/workbench8-tools/framework` altında .NET Framework 4.5 ve 4.5.2 başvuru derlemeleri. `out/workbench8-tools/swigwin-4.3.1` altında SWIG. `Build-Native.ps1 -JavaHome` ile JDK 17 dizini seçilebilir.
+- `out/workbench8-deps/include` ve `lib` altında Boost, GLib, Cairo, libxml2, libzip, zlib, SQLite, VSQLite++, GDAL, Connector/C++, OpenSSL, libssh, ATL ve ANTLR C++ başvuru kitaplıkları ile x64 DLL’ler. `bin` altında ANTLR 4.13.2 JAR, `mysql.exe`, `mysqldump.exe`, `ogrinfo.exe` ve `ogr2ogr.exe`. Çalışma zamanı ayrıca `Python` altında Python 3.12 SDK ve standart kitaplıkları, `share` altında GDAL ve PROJ verilerini, `licenses` altında bağımlılık bildirimlerini kullanır.
+
+```powershell
+pwsh -NoProfile -File packaging/classic-workbench/Build-Native.ps1
+pwsh -NoProfile -File packaging/classic-workbench/Stage-Native.ps1
+```
+
+Çalıştırılabilir dosya `out/mysql-workbench-native-src/bin/x64/Release_OSS/StarDataParadise.exe` yolundadır. MSBuild, WinForms uygulamasını, C++ ve C++/CLI modüllerini, Python sarmalayıcılarını ve eklentileri 8.0.47 kaynaklarından derler. Paketleme betiği hazırlanmış üçüncü taraf çalışma zamanını ekler.
+
+26.10.0-StarDataParadise canlı kabulünde TLS kimlik doğrulaması, yanlış CA’nın reddi, BIGINT/DECIMAL/BLOB okuması, `ANALYZE` ve rollback geçti. Klasik SQL editörü örnek satırı gösterdi. 26.10 bağlantısında klasik istemcinin sürüm uyarısı görüntülenebilir.
+
+## 8.0.43 önizlemesi
 
 `v0.2.0-preview.2`, kaynak yamasındaki özgün Windows satır sonlarını korur.
 
