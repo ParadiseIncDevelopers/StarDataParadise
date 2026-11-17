@@ -1,5 +1,7 @@
 # Klasik Windows Workbench 0.2.0 önizlemesi
 
+`v0.2.0-preview.2`, kaynak yamasındaki özgün Windows satır sonlarını korur.
+
 Yerel masaüstü paketi MySQL Workbench 8.0.43 kaynaklarını kullanır. Karşılama, bağlantılar, menüler, pencere başlıkları ve logo StarDataParadise markasını taşır. SQL editörü yerleşimi klasik kaynakla aynıdır.
 
 Kaynak tabanı `mysql/mysql-workbench` deposunun `8.0.43` etiketi ve `cea23ea2126ff92a61fe8528bc311d4ab978f61d` commit’idir. Önce bu commit’i ayrı bir çalışma ağacına alın. Yama yolunu aşağıdaki komutta değiştirin.
