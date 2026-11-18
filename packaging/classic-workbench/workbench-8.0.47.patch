@@ -12,10 +12,18 @@ index b12e68ea9b04799f9fc8425602e99e51fa806a01..9af27695afc75752f1c061759f5d50e8
  
  void PhysicalOverviewBE::set_model(workbench_physical_ModelRef model) {
 diff --git a/backend/wbprivate/sqlide/wb_sql_editor_form.cpp b/backend/wbprivate/sqlide/wb_sql_editor_form.cpp
-index 2cb32d4cb3c564ec11700dc08abaa585f4e163a7..222ab00a3ab35e5853de8d018dac74097571b744 100644
+index 2cb32d4..d3cc914 100644
 --- a/backend/wbprivate/sqlide/wb_sql_editor_form.cpp
 +++ b/backend/wbprivate/sqlide/wb_sql_editor_form.cpp
-@@ -220,7 +220,7 @@ void SqlEditorForm::report_connection_failure(const std::string &error, const db
+@@ -25,6 +25,7 @@
+ #include "wb_sql_editor_form.h"
+ 
+ #include "grtdb/db_helpers.h"
++#include "grtdb/stardataparadise_connection.h"
+ #include "grtsqlparser/sql_facade.h"
+ #include "grtdb/editor_dbobject.h"
+ #include "grtdb/db_object_helpers.h"
+@@ -220,7 +221,7 @@ void SqlEditorForm::report_connection_failure(const std::string &error, const db
  
    if (error.find("exceeded the 'max_user_connections' resource") != std::string::npos) {
      mforms::Utilities::show_error(_("Could not Connect to Database Server"),
@@ -24,7 +32,18 @@ index 2cb32d4cb3c564ec11700dc08abaa585f4e163a7..222ab00a3ab35e5853de8d018dac7409
                                                 "one for management purposes and another for user queries.",
                                                 error.c_str()),
                                    "OK");
-@@ -1105,7 +1105,7 @@ void SqlEditorForm::create_connection(sql::Dbc_connection_handler::Ref &dbc_conn
+@@ -1000,6 +1001,10 @@ void SqlEditorForm::refresh_log_messages(bool ignore_last_message_timestamp) {
+ 
+ void SqlEditorForm::init_connection(sql::Connection *dbc_conn_ref, const db_mgmt_ConnectionRef &connectionProperties,
+                                     sql::Dbc_connection_handler::Ref &dbc_conn, bool user_connection) {
++  std::string version;
++  if (!get_session_variable(dbc_conn_ref, "version", version) || !bec::is_stardataparadise_server(version))
++    throw std::runtime_error("The SQL editor requires a StarDataParadise Server.");
++
+   db_mgmt_RdbmsRef rdbms = db_mgmt_RdbmsRef::cast_from(_connection->driver()->owner());
+   SqlFacade::Ref sql_facade = SqlFacade::instance_for_rdbms(rdbms);
+   Sql_specifics::Ref sql_specifics = sql_facade->sqlSpecifics();
+@@ -1105,7 +1110,7 @@ void SqlEditorForm::create_connection(sql::Dbc_connection_handler::Ref &dbc_conn
  
    //! dbms-specific code
    if (dbc_conn->ref->getMetaData()->getDatabaseMajorVersion() < 5) {
@@ -33,11 +52,96 @@ index 2cb32d4cb3c564ec11700dc08abaa585f4e163a7..222ab00a3ab35e5853de8d018dac7409
    }
  
    // get SSL enabled info
+@@ -1280,6 +1285,12 @@ bool SqlEditorForm::connect(std::shared_ptr<SSHTunnel> tunnel) {
+ //----------------------------------------------------------------------------------------------------------------------
+ 
+ void SqlEditorForm::update_connected_state() {
++  const bool sdpModelSyntax = _work_parser_context && _work_parser_context->sdpModelSyntaxEnabled();
++  for (int i = 0; i < sql_editor_count(); ++i) {
++    if (auto panel = sql_editor_panel(i))
++      panel->editor_be()->set_sdp_model_syntax(sdpModelSyntax);
++  }
++
+   grt::DictRef args(true);
+   args.gset("connected", connected());
+   GRTNotificationCenter::get()->send_grt("GRNSQLEditorReconnected", grtobj(), args);
+@@ -1388,11 +1399,25 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
+       newConnectionInfo += createTableRow("Login User:", _connection->parameterValues().get_string("userName"));
+ 
+       // check the actual user we're logged in as
++      bool sdpModelSyntax = false;
+       if (_usr_dbc_conn && _usr_dbc_conn->ref.get()) {
+         const std::unique_ptr<sql::Statement> statement(_usr_dbc_conn->ref->createStatement());
+-        const std::unique_ptr<sql::ResultSet> rs(statement->executeQuery("SELECT current_user()"));
+-        if (rs->next())
+-          newConnectionInfo += createTableRow("Current User:", rs->getString(1));
++        {
++          const std::unique_ptr<sql::ResultSet> rs(statement->executeQuery("SELECT current_user()"));
++          if (rs->next())
++            newConnectionInfo += createTableRow("Current User:", rs->getString(1));
++        }
++
++        if (bec::is_stardataparadise_server(_connection_details["dbmsProductVersion"])) {
++          try {
++            const std::unique_ptr<sql::ResultSet> rs(statement->executeQuery(
++              "SELECT JSON_CONTAINS(STARDATAPARADISE_CAPABILITIES(), "
++              "'[\"create_model\",\"train_model\",\"predict_model\"]', '$.commands')"));
++            sdpModelSyntax = rs->next() && rs->getInt(1) == 1;
++          } catch (const sql::SQLException &exc) {
++            logDebug("Could not read StarDataParadise model SQL capability: %s\n", exc.what());
++          }
++        }
+       }
+ 
+       newConnectionInfo += createTableRow(
+@@ -1421,6 +1446,7 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
+       parsers::MySQLParserServices::Ref services = parsers::MySQLParserServices::get();
+       _work_parser_context =
+         services->createParserContext(rdbms()->characterSets(), _version, _sql_mode, _lower_case_table_names != 0);
++      _work_parser_context->updateSdpModelSyntax(sdpModelSyntax);
+ 
+       // If we came so far, we probably have a valid connection.
+       _connectionInfo = newConnectionInfo + "</table>";
+@@ -2875,6 +2901,9 @@ void SqlEditorForm::readStaticServerSymbols() {
+       }
+     }
+ 
++    const auto version = _connection_details.find("dbmsProductVersion");
++    if (version != _connection_details.end() && bec::is_stardataparadise_server(version->second))
++      _staticServerSymbols.addNewSymbol<RoutineSymbol>(nullptr, "STARDATAPARADISE_CAPABILITIES", nullptr);
+   }
+ }
+ 
+@@ -3063,8 +3092,9 @@ std::string SqlEditorForm::create_title() {
+     if (!_usr_dbc_conn->active_schema.empty() && count_connection_editors(editor_connection) > 1)
+       caption += strfmt(" (%s)", truncate_text(_usr_dbc_conn->active_schema, 20).c_str());
+ 
+-    if (_connection_details.find("dbmsProductVersion") != _connection_details.end() &&
+-        !bec::is_supported_mysql_version(_connection_details["dbmsProductVersion"]))
++    const auto version = _connection_details.find("dbmsProductVersion");
++    if (version != _connection_details.end() && !bec::is_stardataparadise_server(version->second) &&
++        !bec::is_supported_mysql_version(version->second))
+       caption += " - Warning - not supported";
+   } else
+     caption = editor_connection;
 diff --git a/backend/wbprivate/sqlide/wb_sql_editor_panel.cpp b/backend/wbprivate/sqlide/wb_sql_editor_panel.cpp
-index 0f6759513a88fdb6078cb2eeb99697e4cd9cb4dc..c560fbf1a4fc245cf0d83647379c06d16354fa39 100644
+index 0f67595..a6f1955 100644
 --- a/backend/wbprivate/sqlide/wb_sql_editor_panel.cpp
 +++ b/backend/wbprivate/sqlide/wb_sql_editor_panel.cpp
-@@ -919,7 +919,7 @@ void SqlEditorPanel::check_external_file_changes() {
+@@ -95,9 +95,11 @@ SqlEditorPanel::SqlEditorPanel(SqlEditorForm *owner, bool is_scratch, bool start
+ 
+   parsers::MySQLParserContext::Ref context = services->createParserContext(
+     owner->rdbms()->characterSets(), owner->rdbms_version(), owner->sql_mode(), owner->lower_case_table_names() != 0);
++  auto completionContext = owner->work_parser_context();
++  context->updateSdpModelSyntax(completionContext && completionContext->sdpModelSyntaxEnabled());
+ 
+   parsers::SymbolTable *functionSymbols = parsers::functionSymbolsForVersion(bec::versionToEnum(owner->rdbms_version()));
+-  _editor = MySQLEditor::create(context, owner->work_parser_context(), { functionSymbols, owner->databaseSymbols() }, grtobj);
++  _editor = MySQLEditor::create(context, completionContext, { functionSymbols, owner->databaseSymbols() }, grtobj);
+   _editor->set_sql_mode(owner->sql_mode());
+   _editor->set_current_schema(owner->active_schema());
+   UIForm::scoped_connect(_editor->text_change_signal(), std::bind(&SqlEditorPanel::update_title, this));
+@@ -919,7 +921,7 @@ void SqlEditorPanel::check_external_file_changes() {
            ? strfmt("(from connection to %s) ", _form->connection_descriptor()->name().c_str())
            : "";
        if (mforms::Utilities::show_warning("File Changed",
@@ -131,10 +235,18 @@ index ecf3d24dbb54f6016d2523c9e135f29d3d669892..d6c8f9c632b5b745a9fb700f71456cc8
      std::string _edition;
  
 diff --git a/backend/wbprivate/workbench/wb_context.cpp b/backend/wbprivate/workbench/wb_context.cpp
-index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23b4d3f086 100644
+index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..ba0a4562bb177708c1861b783ee31dd482831b76 100644
 --- a/backend/wbprivate/workbench/wb_context.cpp
 +++ b/backend/wbprivate/workbench/wb_context.cpp
-@@ -353,7 +353,7 @@ WBOptions::WBOptions(const std::string &appBinaryName)
+@@ -61,6 +61,7 @@
+ 
+ #include "grtui/grtdb_connect_dialog.h"
+ #include "grtdb/db_helpers.h"
++#include "grtdb/stardataparadise_connection.h"
+ 
+ #include "interfaces/interfaces.h"
+ #include "grt/validation_manager.h"
+@@ -353,7 +354,7 @@ WBOptions::WBOptions(const std::string &appBinaryName)
          if (strcmp(APP_EDITION_NAME, "Community") == (0)) // Extra parens to silence warning.
            type = "CE";
  
@@ -143,7 +255,7 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
                 APP_MINOR_NUMBER, APP_RELEASE_NUMBER, APP_RELEASE_TYPE, APP_BUILD_NUMBER);
          *retval = 0;
  
-@@ -381,7 +381,7 @@ WBOptions::WBOptions(const std::string &appBinaryName)
+@@ -381,7 +382,7 @@ WBOptions::WBOptions(const std::string &appBinaryName)
                               if (!entry.value.textValue.empty()) {
                                 printf(
                                   "Note: the \"open\" parameter is deprecated and will be removed in a future version"
@@ -152,7 +264,7 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
                                 open_at_startup = entry.value.textValue;
                               }
  
-@@ -725,7 +725,7 @@ std::string WBContext::request_connection_password(const db_mgmt_ConnectionRef &
+@@ -725,7 +726,7 @@ std::string WBContext::request_connection_password(const db_mgmt_ConnectionRef &
    std::string password_tmp;
    std::string user_tmp = conn->parameterValues().get_string("userName");
    void *ret = mforms::Utilities::perform_from_main_thread(
@@ -161,7 +273,7 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
                reset_password, &user_tmp, &password_tmp));
    if (ret)
      return password_tmp;
-@@ -1220,7 +1220,7 @@ void WBContext::init_grt_tree(WBOptions *options, std::shared_ptr<grt::internal:
+@@ -1220,7 +1221,7 @@ void WBContext::init_grt_tree(WBOptions *options, std::shared_ptr<grt::internal:
      version->buildNumber(APP_BUILD_NUMBER);
      version->status(1);
  
@@ -170,7 +282,7 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
      info->version(version);
      info->copyright("Oracle and/or its affiliates");
      info->license(APP_LICENSE_TYPE);
-@@ -1399,7 +1399,7 @@ void WBContext::set_default_options(grt::DictRef options) {
+@@ -1399,7 +1400,7 @@ void WBContext::set_default_options(grt::DictRef options) {
    set_default(options, "workbench.physical:DeleteObjectConfirmation", "ask");
  
    set_default(options, "HomeScreen:HeadingMessage", 1); // By default display Welcome Message
@@ -179,7 +291,7 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
  
    set_default(options, "grtshell:ShellLanguage", "python");
    set_default(options, "@grtshell:ShellLanguage/Items", "python");
-@@ -1656,7 +1656,7 @@ void WBContext::load_app_options(bool update) {
+@@ -1656,7 +1657,7 @@ void WBContext::load_app_options(bool update) {
        xmlDocPtr xmlDocument = grt::GRT::get()->load_xml(options_xml);
        if (!xmlDocument) {
          throw std::runtime_error(
@@ -188,7 +300,7 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
              "The file will skipped and settings are reset to their default values."));
        }
  
-@@ -1673,7 +1673,7 @@ void WBContext::load_app_options(bool update) {
+@@ -1673,7 +1674,7 @@ void WBContext::load_app_options(bool update) {
          // Document format has been introduced in 1.0.1.
          if (doctype != OPTIONS_DOCUMENT_FORMAT) {
          throw std::runtime_error(
@@ -197,7 +309,7 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
              "The file will skipped and settings are reset to their default values."));
        }
  
-@@ -1882,7 +1882,7 @@ void WBContext::load_app_state(std::shared_ptr<grt::internal::Unserializer> unse
+@@ -1882,7 +1883,7 @@ void WBContext::load_app_state(std::shared_ptr<grt::internal::Unserializer> unse
  
        if (doctype != STATE_DOCUMENT_FORMAT) {
          throw std::runtime_error(
@@ -206,7 +318,7 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
              "The file will skipped and the application starts in its default state."));
        }
  
-@@ -2181,7 +2181,7 @@ bool WBContext::open_file_by_extension(const std::string &path, bool interactive
+@@ -2181,7 +2182,7 @@ bool WBContext::open_file_by_extension(const std::string &path, bool interactive
    } else {
      if (interactive) {
        show_error(_("Unrecognized File Type"),
@@ -215,8 +327,19 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
      }
      return false;
    }
-@@ -2912,12 +2912,11 @@ std::shared_ptr<SqlEditorForm> WBContext::add_new_query_window(const db_mgmt_Con
-               base::strfmt("Connection Warning (%s)", targetConnection->name().c_str()),
+@@ -2904,20 +2905,20 @@ std::shared_ptr<SqlEditorForm> WBContext::add_new_query_window(const db_mgmt_Con
+ 
+     if (form->connection_details().find("dbmsProductVersion") != form->connection_details().end()) {
+       // check that we're connecting to a known and supported version of the server
+-      if (!bec::is_supported_mysql_version(form->connection_details()["dbmsProductVersion"])) {
++      const auto &version = form->connection_details().at("dbmsProductVersion");
++      if (!bec::is_stardataparadise_server(version) && !bec::is_supported_mysql_version(version)) {
+         logError("Unsupported server version: %s %s\n", form->connection_details()["dbmsProductName"].c_str(),
+                  form->connection_details()["dbmsProductVersion"].c_str());
+ 
+         if (mforms::Utilities::show_message_and_remember(
+-              base::strfmt("Connection Warning (%s)", targetConnection->name().c_str()),
++              base::strfmt("Connection Warning (%s)", target->name().c_str()),
                base::strfmt(
                  "Incompatible/nonstandard server version or connection protocol detected (%s).\n\n"
 -                "A connection to this database can be established but some MySQL Workbench features may not work "
@@ -233,6 +356,17 @@ index 1f165000d1d8d7ac5f00e739193f7938c3f2649e..edef65aba85be5a6ddfb898257c78b23
                  bec::sanitize_server_version_number(form->connection_details()["dbmsProductVersion"]).c_str()),
                "Continue Anyway", "Cancel", "", "wb.supported_server_check.suppress_warning",
                "Don't show this message again") != mforms::ResultOk) {
+@@ -2927,7 +2928,9 @@ std::shared_ptr<SqlEditorForm> WBContext::add_new_query_window(const db_mgmt_Con
+       }
+     }
+ 
+-    save_connections(); // lastConnected time changed (and potentially the serverVersion).
++    bec::set_stardataparadise_connection_verified(target, true);
++    save_connections();
++    WBContextUI::get()->refresh_home_connections();
+   } catch (grt::user_cancelled &e) {
+     if (target.is_valid())
+       logInfo("Connection to %s cancelled by user: %s\n", target->name().c_str(), e.what());
 diff --git a/backend/wbprivate/workbench/wb_context_ui.cpp b/backend/wbprivate/workbench/wb_context_ui.cpp
 index 70c9ece8408ae8361335be3369a5b9046caaabfa..e4fc8cbf7b2316904570cbda926a2085d8ed8853 100644
 --- a/backend/wbprivate/workbench/wb_context_ui.cpp
@@ -254,10 +388,18 @@ index 70c9ece8408ae8361335be3369a5b9046caaabfa..e4fc8cbf7b2316904570cbda926a2085
  
  #endif // ___others
 diff --git a/backend/wbprivate/workbench/wb_context_ui_home.cpp b/backend/wbprivate/workbench/wb_context_ui_home.cpp
-index 674010831286007a7cf66fcb2eda5f5a802c7290..8f2811d6193b82ca6adb30b7231c97b9d1c1bb23 100644
+index 674010831286007a7cf66fcb2eda5f5a802c7290..ca941ccb6444273a48308d627d53d90f3c0158d9 100644
 --- a/backend/wbprivate/workbench/wb_context_ui_home.cpp
 +++ b/backend/wbprivate/workbench/wb_context_ui_home.cpp
-@@ -412,7 +412,7 @@ void WBContextUI::show_home_screen() {
+@@ -41,6 +41,7 @@
+ #include "grts/structs.h"
+ 
+ #include "grt/editor_base.h"
++#include "grtdb/stardataparadise_connection.h"
+ 
+ #include "workbench/wb_context_ui.h"
+ #include "workbench/wb_command_ui.h"
+@@ -412,7 +413,7 @@ void WBContextUI::show_home_screen() {
      _connectionsSection->showWelcomeHeading(
        bec::GRTManager::get()->get_app_option_int("HomeScreen:HeadingMessage", 1) == 1);
      _connectionsSection->showMigrationBanner(
@@ -266,7 +408,7 @@ index 674010831286007a7cf66fcb2eda5f5a802c7290..8f2811d6193b82ca6adb30b7231c97b9
      _connectionsSection->getConnectionInfoCallback = std::bind(
        [=](const std::string &connectionId) -> mforms::anyMap {
          return connectionToMap(getConnectionById(connectionId));
-@@ -587,10 +587,10 @@ void WBContextUI::show_home_screen() {
+@@ -587,10 +588,10 @@ void WBContextUI::show_home_screen() {
      int rc = mforms::Utilities::show_warning(
        "Connections using old authentication protocol found",
        "While loading the stored connections some were found to use the old authentication protocol. "
@@ -279,25 +421,299 @@ index 674010831286007a7cf66fcb2eda5f5a802c7290..8f2811d6193b82ca6adb30b7231c97b9
        "The following connections are affected:\n" +
          tmp,
        "Change", "Ignore", "More Info");
+@@ -1259,6 +1260,9 @@ void WBContextUI::refresh_home_connections(bool clear_state) {
+       invalid_connections.push_back(*inst);
+       invalid_connection_ids.insert(std::pair<std::string, std::string>((*inst)->id(), ""));
+     } else {
++      if (!bec::is_verified_stardataparadise_connection(*inst))
++        continue;
++
+       grt::DictRef dict((*inst)->parameterValues());
+       if (dict.has_key("useLegacyAuth")) {
+         if ((size_t)dict.get_int("useLegacyAuth", 0) == 0)
+diff --git a/backend/wbprivate/workbench/wb_module.cpp b/backend/wbprivate/workbench/wb_module.cpp
+index eb623f535069c570a464504ea6ef82fe0d2373b3..aed22a69c36c7b4637a507050aad0efdb5bb7a9a 100644
+--- a/backend/wbprivate/workbench/wb_module.cpp
++++ b/backend/wbprivate/workbench/wb_module.cpp
+@@ -23,6 +23,11 @@
+  */
+ 
+ #include <sstream>
++#ifdef _MSC_VER
++#include <winsvc.h>
++#include <iterator>
++#include <type_traits>
++#endif
+ 
+ #include "base/config_file.h"
+ #include "base/log.h"
+@@ -1597,23 +1602,70 @@ db_mgmt_ConnectionRef WorkbenchImpl::create_connection(const std::string &host,
+ //--------------------------------------------------------------------------------------------------
+ 
+ /**
+- * Returns a list of Dicts with data for each locally installed MySQL server.
++ * Returns local server candidates for discovery.
+  */
+ grt::DictListRef WorkbenchImpl::getLocalServerList() {
+-  logDebug("Reading locally installed MySQL servers\n");
++  logDebug("Reading locally installed database server candidates\n");
+ 
+   grt::DictListRef entries;
+ #ifdef _MSC_VER
++  using ServiceHandle = std::unique_ptr<std::remove_pointer_t<SC_HANDLE>, decltype(&CloseServiceHandle)>;
+   try {
+-    int session = wmiOpenSession("", "", "");
+-    entries =
+-      wmiQuery(session, "select * from Win32_Service where (Name like \"%mysql%\" or DisplayName like \"%mysql%\")");
+-    wmiCloseSession(session);
++    ServiceHandle manager(OpenSCManagerW(nullptr, nullptr, SC_MANAGER_ENUMERATE_SERVICE), CloseServiceHandle);
++    if (!manager)
++      throw std::runtime_error("Could not open the local Service Control Manager");
++
++    grt::DictListRef servicesFound(grt::Initialized);
++    std::vector<BYTE> buffer(64 * 1024);
++    DWORD resume = 0;
++    BOOL complete;
++    do {
++      DWORD needed = 0, count = 0;
++      complete = EnumServicesStatusExW(manager.get(), SC_ENUM_PROCESS_INFO, SERVICE_WIN32, SERVICE_STATE_ALL,
++                                       buffer.data(), static_cast<DWORD>(buffer.size()), &needed, &count,
++                                       &resume, nullptr);
++      if (!complete && GetLastError() != ERROR_MORE_DATA)
++        throw std::runtime_error("Could not enumerate local Windows services");
++
++      if (!complete && count == 0) {
++        if (needed <= buffer.size())
++          throw std::runtime_error("Local service enumeration made no progress");
++        buffer.resize(needed);
++        continue;
++      }
++
++      const auto services = reinterpret_cast<const ENUM_SERVICE_STATUS_PROCESSW *>(buffer.data());
++      constexpr wchar_t prefix[] = L"StarDataParadise";
++      for (DWORD i = 0; i < count; ++i) {
++        const auto &service = services[i];
++        if (_wcsnicmp(service.lpServiceName, prefix, std::size(prefix) - 1) != 0 &&
++            _wcsnicmp(service.lpDisplayName, prefix, std::size(prefix) - 1) != 0)
++          continue;
++
++        ServiceHandle handle(OpenServiceW(manager.get(), service.lpServiceName, SERVICE_QUERY_CONFIG),
++                             CloseServiceHandle);
++        if (!handle)
++          continue;
++        DWORD configSize = 0;
++        if (QueryServiceConfigW(handle.get(), nullptr, 0, &configSize) || GetLastError() != ERROR_INSUFFICIENT_BUFFER)
++          continue;
++        std::vector<BYTE> configBuffer(configSize);
++        auto config = reinterpret_cast<QUERY_SERVICE_CONFIGW *>(configBuffer.data());
++        if (!QueryServiceConfigW(handle.get(), config, configSize, &configSize))
++          continue;
++        DictRef entry(grt::Initialized);
++        entry.gset("Name", base::wstring_to_string(service.lpServiceName));
++        entry.gset("DisplayName", base::wstring_to_string(service.lpDisplayName));
++        entry.gset("PathName", base::wstring_to_string(config->lpBinaryPathName));
++        servicesFound.insert(entry);
++      }
++    } while (!complete);
++    entries = servicesFound;
+   } catch (std::exception const &e) {
+     // If for some reason (e.g. insufficient rights) the retrieval fails then we return an empty list.
+-    logError("Unable to locate installed MySQL Servers : %s.\n", e.what());
++    logError("Unable to locate installed StarDataParadise Servers: %s.\n", e.what());
+   } catch (...) {
+-    logError("Unable to locate installed MySQL Servers.\n");
++    logError("Unable to locate installed StarDataParadise Servers.\n");
+   }
+ 
+ #else
+@@ -1660,7 +1712,7 @@ grt::DictListRef WorkbenchImpl::getLocalServerList() {
+ 
+ #endif
+ 
+-  logDebug("Found %li installed MySQL servers\n", entries.is_valid() ? (long)entries.count() : -1);
++  logDebug("Found %li local database server candidates\n", entries.is_valid() ? (long)entries.count() : -1);
+ 
+   return entries;
+ }
+diff --git a/backend/wbpublic/grtdb/stardataparadise_connection.h b/backend/wbpublic/grtdb/stardataparadise_connection.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..875ac1cec461867ad1d8d7f499bfc777cabfd928
+--- /dev/null
++++ b/backend/wbpublic/grtdb/stardataparadise_connection.h
+@@ -0,0 +1,35 @@
++#pragma once
++
++#include "grtdb/db_helpers.h"
++
++namespace bec {
++
++  inline bool is_stardataparadise_server(const std::string &version) {
++    static const std::string suffix = "-StarDataParadise";
++    return version.size() > suffix.size() &&
++           version.compare(version.size() - suffix.size(), suffix.size(), suffix) == 0;
++  }
++
++  inline std::string stardataparadise_endpoint(const db_mgmt_ConnectionRef &connection) {
++    const auto params = connection->parameterValues();
++    // Keep the target host and port even for drivers whose password identifier describes the SSH tunnel.
++    return *connection->driver()->name() + "\n" + get_host_identifier_for_connection(connection) + "\n" +
++           params.get_string("hostName") + "\n" + std::to_string(params.get_int("port", 3306)) + "\n" +
++           params.get_string("socket") + "\n" + params.get_string("sshHost");
++  }
++
++  inline bool is_verified_stardataparadise_connection(const db_mgmt_ConnectionRef &connection) {
++    return connection.is_valid() && connection->driver().is_valid() &&
++           connection->modules().get_string("StarDataParadise:verifiedEndpoint") ==
++             stardataparadise_endpoint(connection);
++  }
++
++  inline void set_stardataparadise_connection_verified(const db_mgmt_ConnectionRef &connection, bool verified) {
++    auto modules = connection->modules();
++    if (verified)
++      modules.gset("StarDataParadise:verifiedEndpoint", stardataparadise_endpoint(connection));
++    else if (modules.has_key("StarDataParadise:verifiedEndpoint"))
++      modules.remove("StarDataParadise:verifiedEndpoint");
++  }
++
++}
 diff --git a/backend/wbpublic/grtui/grtdb_connect_panel.cpp b/backend/wbpublic/grtui/grtdb_connect_panel.cpp
-index 7a381a6201b5822c49c4ba66d129bb5cab2d7d35..5e9948b7b983d11cb26969ace2352ba195d9fa16 100644
+index 7a381a6201b5822c49c4ba66d129bb5cab2d7d35..871bf9175d4ca726e04a96041b698dd985e85349 100644
 --- a/backend/wbpublic/grtui/grtdb_connect_panel.cpp
 +++ b/backend/wbpublic/grtui/grtdb_connect_panel.cpp
-@@ -630,11 +630,9 @@ bool DbConnectPanel::test_connection() {
-           if (mforms::Utilities::show_warning(
-                 "Connection Warning",
-                 base::strfmt("Incompatible/nonstandard server version or connection protocol detected (%s).\n\n"
+@@ -26,6 +26,7 @@
+ #include "grtdb_connection_editor.h"
+ #include "mforms/fs_object_selector.h"
+ #include "grtdb/db_helpers.h"
++#include "grtdb/stardataparadise_connection.h"
+ 
+ #include "base/string_utilities.h"
+ #include "base/log.h"
+@@ -612,7 +613,10 @@ bool DbConnectPanel::test_connection() {
+     message.append("User: " + connectionProperties->parameterValues().get_string("userName") + "\n");
+ 
+     {
+-      sql::ConnectionWrapper _dbc_conn = dbc_drv_man->getConnection(connectionProperties);
++      auto testConnection = db_mgmt_ConnectionRef::cast_from(grt::CopyContext().copy(connectionProperties));
++      testConnection->parameterValues().gset("OPT_CONNECT_TIMEOUT", 5);
++      testConnection->parameterValues().gset("OPT_READ_TIMEOUT", 5);
++      sql::ConnectionWrapper _dbc_conn = dbc_drv_man->getConnection(testConnection);
+ 
+       if (_dbc_conn.get() && !_dbc_conn->isClosed()) {
+         // check that we're connecting to a known and supported version of the server
+@@ -623,21 +627,9 @@ bool DbConnectPanel::test_connection() {
+           if (result->next())
+             version = result->getString(1);
+         }
+-        if (!bec::is_supported_mysql_version(version)) {
+-          logError("Unsupported server version: %s %s\n", _dbc_conn->getMetaData()->getDatabaseProductName().c_str(),
+-                   version.c_str());
+-          // TODO: we have the same message in wb_context.cpp. Unite them.
+-          if (mforms::Utilities::show_warning(
+-                "Connection Warning",
+-                base::strfmt("Incompatible/nonstandard server version or connection protocol detected (%s).\n\n"
 -                             "A connection to this database can be established but some MySQL Workbench features may "
 -                             "not work properly since the database is not fully compatible with the supported versions "
 -                             "of MySQL.\n\n"
 -                             "MySQL Workbench is developed and tested for MySQL Server versions 5.6, 5.7 and 8.0\n"
 -                             "Please note: there may be some incompatibilities with version 8.4.",
-+                             "A connection can be established. Some StarDataParadise Workbench features require "
-+                             "compatibility with Classic Protocol server versions 5.6, 5.7 or 8.0.\n\n"
-+                             "Version 8.4 may have feature incompatibilities.",
-                              bec::sanitize_server_version_number(version).c_str()),
-                 "Continue Anyway", "Cancel") != mforms::ResultOk)
-             return false;
+-                             bec::sanitize_server_version_number(version).c_str()),
+-                "Continue Anyway", "Cancel") != mforms::ResultOk)
+-            return false;
++        if (!bec::is_stardataparadise_server(version)) {
++          bec::set_stardataparadise_connection_verified(connectionProperties, false);
++          throw std::runtime_error("This connection requires a StarDataParadise Server.");
+         }
+ 
+         // check ssl
+@@ -652,6 +644,7 @@ bool DbConnectPanel::test_connection() {
+           else
+             message.append("SSL: enabled with " + ssl_cipher + "\n");
+         }
++        bec::set_stardataparadise_connection_verified(connectionProperties, true);
+ 
+       } else {
+         message = "Connection Failed";
+@@ -665,14 +658,11 @@ bool DbConnectPanel::test_connection() {
+ 
+   bool ret_val = false;
+   if (message != "Operation Cancelled") {
+-    std::string title;
+     if (failed) {
+-      title = base::strfmt("Failed to Connect to %s",
+-                           bec::get_description_for_connection(get_be()->get_connection()).c_str());
+-      mforms::Utilities::show_error(title, message, "OK");
++      mforms::Utilities::show_error("StarDataParadise connection failed", message, "OK");
+     } else {
+-      message.append("\nA successful MySQL connection was made with\nthe parameters defined for this connection.");
+-      mforms::Utilities::show_message("Successfully made the MySQL connection", message, "OK");
++      message.append("\nConnected to StarDataParadise Server.");
++      mforms::Utilities::show_message("StarDataParadise connection verified", message, "OK");
+       ret_val = true;
+     }
+   }
+diff --git a/backend/wbpublic/sqlide/sql_editor_be.cpp b/backend/wbpublic/sqlide/sql_editor_be.cpp
+index a78dd2a..fad9b0e 100644
+--- a/backend/wbpublic/sqlide/sql_editor_be.cpp
++++ b/backend/wbpublic/sqlide/sql_editor_be.cpp
+@@ -631,6 +631,13 @@ void MySQLEditor::set_sql_mode(const std::string &value) {
+   d->parserContext->updateSqlMode(value);
+ }
+ 
++void MySQLEditor::set_sdp_model_syntax(bool enabled) {
++  d->parserContext->updateSdpModelSyntax(enabled);
++  if (d->autocompletionContext)
++    d->autocompletionContext->updateSdpModelSyntax(enabled);
++  start_sql_processing();
++}
++
+ //----------------------------------------------------------------------------------------------------------------------
+ 
+ /**
+@@ -1195,37 +1202,22 @@ void MySQLEditor::show_auto_completion(bool auto_choose_single) {
+ 
+   ssize_t lineStart, lineEnd;
+   d->codeEditor->get_range_of_line(caretLine, lineStart, lineEnd);
+-  size_t caretOffset = caretPosition - lineStart; // This is a byte offset.
+ 
+   size_t min, max;
++  size_t caretOffset = 0;
+   std::string statement;
+-  bool fixedCaretPos = false;
+   if (get_current_statement_range(min, max, true)) {
+-    // If the caret is in the whitespaces before the query we would get a wrong line number
+-    // (because the statement splitter doesn't include these whitespaces in the determined ranges).
+-    // We set the caret pos to the first position in the query, which has the same effect for
+-    // code completion (we don't generate error line numbers).
+-    uint32_t codeStartLine = (uint32_t)d->codeEditor->line_from_position(min);
+-    if (codeStartLine > caretLine) {
++    if (caretPosition < min) {
+       caretLine = 0;
+-      caretOffset = 0;
+-      fixedCaretPos = true;
+-    } else
+-      caretLine -= codeStartLine;
++    } else {
++      caretLine -= d->codeEditor->line_from_position(min);
++      const auto prefix = d->codeEditor->get_text_in_range(std::max(min, static_cast<size_t>(lineStart)), caretPosition);
++      caretOffset = g_utf8_pointer_to_offset(prefix.c_str(), prefix.c_str() + prefix.size());
++    }
+ 
+     statement = d->codeEditor->get_text_in_range(min, max);
+   } else {
+-    // No query, means we have nothing typed yet in the current query (except whitespaces/comments).
+     caretLine = 0;
+-    caretOffset = 0;
+-    fixedCaretPos = true;
+-  }
+-
+-  // Convert current caret position into a position of the single statement.
+-  // The byte-based offset in the line must be converted to a character offset.
+-  if (!fixedCaretPos) {
+-    std::string line_text = d->codeEditor->get_text_in_range(lineStart, lineEnd);
+-    caretOffset = g_utf8_pointer_to_offset(line_text.c_str(), line_text.c_str() + caretOffset);
+   }
+ 
+   d->codeCompletionCandidates = d->services->getCodeCompletionCandidates(
 diff --git a/backend/wbpublic/sqlide/sqlide_generics_private.h b/backend/wbpublic/sqlide/sqlide_generics_private.h
 index 520fa3a306170fbfe24fdd19084b361fda112a78..940dba5494d06a5dbb2ad2f4e366a5fe1ac74609 100644
 --- a/backend/wbpublic/sqlide/sqlide_generics_private.h
@@ -329,6 +745,29 @@ index 13be7c99fdd9288024ee2331de5e08c5d3e290d5..d99339e9d851656253ea844e9d3beb78
  namespace Scintilla {
  
  const int UTF8MaxBytes = 4;
+diff --git a/frontend/common/new_connection_wizard.cpp b/frontend/common/new_connection_wizard.cpp
+index d02299f83d92e80ba7bbd5f8955e6b55f068d9d5..e8a1e34d615ec5c2ae99cdd5e05cc47c792a4816 100644
+--- a/frontend/common/new_connection_wizard.cpp
++++ b/frontend/common/new_connection_wizard.cpp
+@@ -27,6 +27,7 @@
+ #include "cppdbc.h"
+ #include "grtpp_util.h"
+ #include "grt/common.h"
++#include "grtdb/stardataparadise_connection.h"
+ #include "mforms/utilities.h"
+ #include "base/string_utilities.h"
+ 
+@@ -154,6 +155,10 @@ db_mgmt_ConnectionRef NewConnectionWizard::run() {
+     }
+ 
+     if (name_ok) {
++      _panel.get_be()->save_changes();
++      if (!bec::is_verified_stardataparadise_connection(_connection) && !_panel.test_connection())
++        continue;
++
+       _connection->name(_conn_name->get_string_value().c_str());
+       _mgmt->storedConns().insert(_connection);
+ 
 diff --git a/frontend/common/new_server_instance_wizard.cpp b/frontend/common/new_server_instance_wizard.cpp
 index 2dd1cbe502afd65f6e3568e0f6492cfb7e643074..cce2493c62ebc5410c3fae0fb461825793edb23f 100644
 --- a/frontend/common/new_server_instance_wizard.cpp
@@ -9119,7 +9558,7 @@ index f03f045919158b7720dfe50d71dd5524b8874fc4..b6ba856605296da7b3880913349c7ecd
 +  return reinterpret_cast<const char *>(encoded.get());
  }
 diff --git a/library/forms/home_screen_connections.cpp b/library/forms/home_screen_connections.cpp
-index 33365a4db1fd601fd83d93cfb07585905d50155e..22d28cf41ef0daa846c517f3e606aa80926bb293 100644
+index 33365a4db1fd601fd83d93cfb07585905d50155e..90559e51da8d4aecb46039f1aa3d474338ce07a5 100644
 --- a/library/forms/home_screen_connections.cpp
 +++ b/library/forms/home_screen_connections.cpp
 @@ -604,12 +604,12 @@ ConnectionsWelcomeScreen::ConnectionsWelcomeScreen(HomeScreen *owner) : _owner(o
@@ -9153,7 +9592,7 @@ index 33365a4db1fd601fd83d93cfb07585905d50155e..22d28cf41ef0daa846c517f3e606aa80
    if (connections.size() == 0) {
 -    std::string line1 = "MySQL Workbench could not detect any MySQL server running.";
 -    std::string line2 = "This means that MySQL is not installed or is not running.";
-+    std::string line1 = "StarDataParadise could not detect a running local server.";
++    std::string line1 = "No saved StarDataParadise connections.";
 +    std::string line2 = "Use the plus button to add a server connection.";
  
      double x = get_width() / 2 - (extents.width / 2 + extents.x_bearing);
@@ -9228,6 +9667,66 @@ index a37696d4dcc66ad5dac495830ddfae6bb922adeb..6749aebe2bcc4102c95b88765eb37048
  
    std::wstring titleText = base::string_to_wstring(title);
    config.pszMainInstruction = titleText.c_str();
+diff --git a/library/parsers/code-completion/mysql-code-completion.cpp b/library/parsers/code-completion/mysql-code-completion.cpp
+index 8b9b68c..a0feeec 100644
+--- a/library/parsers/code-completion/mysql-code-completion.cpp
++++ b/library/parsers/code-completion/mysql-code-completion.cpp
+@@ -64,6 +64,7 @@ struct TableReference {
+ // Context structure for code completion results and token info.
+ struct AutoCompletionContext {
+   CandidatesCollection completionCandidates;
++  size_t caretIndex = 0;
+ 
+   // A hierarchical view of all table references in the code, updated by visiting all relevant FROM clauses after
+   // the candidate collection.
+@@ -77,7 +78,7 @@ struct AutoCompletionContext {
+   //--------------------------------------------------------------------------------------------------------------------
+ 
+   void collectCandidates(MySQLParser *parser, Scanner &scanner, size_t caretOffset, size_t caretLine) {
+-    CodeCompletionCore c3(parser);
++    CodeCompletionCore c3(parser, parser->sdpModelSyntax);
+ 
+     c3.ignoredTokens = {
+       MySQLLexer::EOF,
+@@ -147,7 +148,7 @@ struct AutoCompletionContext {
+       MySQLParser::RuleServerRef, MySQLParser::RuleUser,
+ 
+       MySQLParser::RuleUserVariable, MySQLParser::RuleSystemVariable, MySQLParser::RuleLabelRef,
+-      MySQLParser::RuleSetSystemVariable,
++      MySQLParser::RuleSetSystemVariable, MySQLParser::RuleInternalVariableName,
+ 
+       // For better handling, but will be ignored.
+       MySQLParser::RuleParameterName, MySQLParser::RuleProcedureName, MySQLParser::RuleIdentifier,
+@@ -194,7 +195,7 @@ struct AutoCompletionContext {
+     // whitespace creating the impression we are still at the identifier (and we should show candidates for this
+     // identifier position).
+     // Other tokens (like operators) don't need a separator and hence we can take the caret index as is for them.
+-    size_t caretIndex = scanner.tokenIndex();
++    caretIndex = scanner.tokenIndex();
+     if (caretIndex > 0 && noSeparatorRequiredFor.count(scanner.lookBack()) == 0)
+       --caretIndex;
+ 
+@@ -1163,6 +1164,20 @@ std::vector<std::pair<int, std::string>> getCodeCompletionList(size_t caretLine,
+         break;
+       }
+ 
++      case MySQLParser::RuleInternalVariableName: {
++        scanner.seek(context.caretIndex);
++        const auto scope = scanner.lookBack();
++        if (scope == MySQLLexer::SET_SYMBOL || scope == MySQLLexer::SESSION_SYMBOL || scope == MySQLLexer::LOCAL_SYMBOL) {
++          for (auto symbol : symbolTable.getSymbolsOfType<SystemVariableSymbol>()) {
++            if (symbol->name == "@@sdp_compatibility_mode") {
++              systemVarEntries.insert({ AC_SYSTEM_VAR_IMAGE, "sdp_compatibility_mode" });
++              break;
++            }
++          }
++        }
++        break;
++      }
++
+       case MySQLParser::RuleCharsetName: {
+         logDebug3("Adding charsets\n");
+ 
 diff --git a/library/sql.parser/source/linux/myx_sql_parser.cpp b/library/sql.parser/source/linux/myx_sql_parser.cpp
 index 50e55c96d52d40794a6778c9b954790486243726..85f7db39987de57176f2d6883a133ddffeba486a 100644
 --- a/library/sql.parser/source/linux/myx_sql_parser.cpp
@@ -9366,34 +9865,85 @@ index de6f45161de49067316a0ad899717bf5a8afda07..9f6be991b3e7096667434ac55fe20ab9
                    os << "$" << n;
                  os << ");";
 diff --git a/modules/wb.utils/wb_utils_grt.py b/modules/wb.utils/wb_utils_grt.py
-index 0dbb151119f0705aa8f6f09dab3b20de72a97496..6d8f74138cd7f35a02b985cf9894a76928431528 100644
+index 0dbb151119f0705aa8f6f09dab3b20de72a97496..06535fc8a0e3d3aac63d9a0bf99200e4dc197894 100644
 --- a/modules/wb.utils/wb_utils_grt.py
 +++ b/modules/wb.utils/wb_utils_grt.py
-@@ -339,7 +339,7 @@ def copyJDBCConnectionString(conn):
+@@ -28,6 +28,8 @@ import threading
+ import zipfile
+ import tempfile
+ import shlex
++import socket
++import time
+ from workbench.utils import get_exe_path
+ 
+ # import the wb module
+@@ -339,21 +341,55 @@ def copyJDBCConnectionString(conn):
      mforms.Utilities.set_clipboard_text(connstr+params)
  
  
 -@ModuleInfo.plugin("wb.tools.createMissingLocalConnections", caption="Rescan for Local MySQL Instances", input= [], pluginMenu="Home/Connections", accessibilityName="Rescan MySQL Instances")
++def local_classic_demo_available():
++    deadline = time.monotonic() + 0.5
++    try:
++        with socket.create_connection(("127.0.0.1", 3197), timeout=0.5) as client:
++            def receive(size):
++                data = bytearray()
++                while len(data) < size:
++                    remaining = deadline - time.monotonic()
++                    if remaining <= 0:
++                        return b""
++                    client.settimeout(remaining)
++                    chunk = client.recv(size - len(data))
++                    if not chunk:
++                        return b""
++                    data.extend(chunk)
++                return bytes(data)
++
++            header = receive(4)
++            if len(header) != 4 or header[3] != 0:
++                return False
++            size = int.from_bytes(header[:3], "little")
++            if not 2 <= size <= 512:
++                return False
++            greeting = receive(size)
++            version, separator, _ = greeting[1:].partition(b"\0")
++            return greeting[:1] == b"\x0a" and bool(separator) and version.endswith(b"-StarDataParadise")
++    except OSError:
++        return False
++
++
 +@ModuleInfo.plugin("wb.tools.createMissingLocalConnections", caption="Rescan for Local Servers", input= [], pluginMenu="Home/Connections", accessibilityName="Rescan Local Servers")
  @ModuleInfo.export(grt.INT)
  def createMissingLocalConnections():
- 
-@@ -348,11 +348,11 @@ def createMissingLocalConnections():
+-
+     found_instances = grt.modules.Workbench.createInstancesFromLocalServers()
+-    
      grt.modules.Workbench.refreshHomeConnections()
-     
-     if found_instances < 0:
+-    
+-    if found_instances < 0:
 -        mforms.Utilities.show_error("Rescan for Local MySQL Servers", "Rescan for local MySQL servers failed", "OK", "", "")
-+        mforms.Utilities.show_error("Rescan for Local Servers", "Rescan for local servers failed", "OK", "", "")
-     elif found_instances == 0:
+-    elif found_instances == 0:
 -        mforms.Utilities.show_message('Rescan for Local MySQL Servers', 'No servers were found.', 'OK', '', '')
-+        mforms.Utilities.show_message('Rescan for Local Servers', 'No servers were found.', 'OK', '', '')
++
++    title = "Rescan for Local Servers"
++    if found_instances > 0:
++        message = "Found %s registered StarDataParadise server(s)." % found_instances
++    elif found_instances < 0:
++        message = "Local service discovery was unavailable."
      else:
 -        mforms.Utilities.show_message('Rescan for Local MySQL Servers', 'Found %s servers.' % found_instances, 'OK', '', '')
-+        mforms.Utilities.show_message('Rescan for Local Servers', 'Found %s servers.' % found_instances, 'OK', '', '')
-     
+-    
++        message = "No registered StarDataParadise services were found."
++
++    if local_classic_demo_available():
++        message += "\n\nStarDataParadise is available at localhost:3197. Use Standard (TCP/IP) to add it."
++    elif found_instances <= 0:
++        message += "\n\nStart StarDataParadise Server or enter its Classic TCP endpoint manually."
++    mforms.Utilities.show_message(title, message, "OK", "", "")
      return 1
  
-@@ -735,11 +735,11 @@ class CheckForUpdateThread(threading.Thread):
+ @ModuleInfo.plugin("wb.tools.connectionFromClipboard", caption="Add Connection(s) from Clipboard", input= [], pluginMenu="Home/Connections", accessibilityName="Add Connections From Clipboard")
+@@ -735,11 +771,11 @@ class CheckForUpdateThread(threading.Thread):
                  newest_version = tuple(int(i) for i in self.json['fullversion'].split("."))
  
                  if newest_version > current_version:
@@ -9407,7 +9957,7 @@ index 0dbb151119f0705aa8f6f09dab3b20de72a97496..6d8f74138cd7f35a02b985cf9894a769
          
              except Exception as error:
                  mforms.Utilities.show_error("Check for updates failed", str(error), "OK", "", "")
-@@ -924,7 +924,7 @@ class SSLWizard_GenerationTask:
+@@ -924,7 +960,7 @@ class SSLWizard_GenerationTask:
  
  class SSLWizard_IntroPage(WizardPage):
      def __init__(self, owner):
@@ -9558,3 +10108,327 @@ index 55d52a37817c700a43b20ce5d5fe42c2ba3043ba..52ba35635a74a0935a8f4e181c61b4dd
                      <value type="string" key="name">web_mysql_home</value>
                      <value type="string" key="command">builtin:web_mysql_home</value>
                      <value type="string" key="itemType">action</value>
+diff --git a/testing/test-suite/tests/backend/wbpublic/sqlide/sql_editor_be_autocomplete_specs.cpp b/testing/test-suite/tests/backend/wbpublic/sqlide/sql_editor_be_autocomplete_specs.cpp
+index 4f5a1be..a066439 100644
+--- a/testing/test-suite/tests/backend/wbpublic/sqlide/sql_editor_be_autocomplete_specs.cpp
++++ b/testing/test-suite/tests/backend/wbpublic/sqlide/sql_editor_be_autocomplete_specs.cpp
+@@ -197,6 +197,83 @@ $describe("SQL code completion tests") {
+     data->autocompleteContext.reset();
+   });
+ 
++  $it("Suggests standard SQL and available server extensions in context", []() {
++    SymbolTable symbols;
++    auto hasCandidate = [&symbols](const std::string &sql, const std::string &name) {
++      ANTLRInputStream input(sql);
++      MySQLLexer lexer(&input);
++      lexer.serverVersion = 261000;
++      CommonTokenStream tokens(&lexer);
++      MySQLParser parser(&tokens);
++      parser.serverVersion = lexer.serverVersion;
++      parser.removeErrorListeners();
++      tokens.fill();
++
++      const auto candidates = getCodeCompletionList(0, sql.size(), "", true, &parser, symbols);
++      return std::any_of(candidates.begin(), candidates.end(), [&name](const auto &candidate) {
++        return candidate.second == name;
++      });
++    };
++
++    $expect(hasCandidate("CRE", "CREATE")).toBeTrue();
++    $expect(hasCandidate("SEL", "SELECT")).toBeTrue();
++    $expect(hasCandidate("UPD", "UPDATE")).toBeTrue();
++    $expect(hasCandidate("SE", "SET")).toBeTrue();
++    $expect(hasCandidate("UPDATE t SE", "SET")).toBeTrue();
++
++    $expect(hasCandidate("SELECT star", "STARDATAPARADISE_CAPABILITIES()")).toBeFalse();
++    $expect(hasCandidate("SET SESSION sdp", "sdp_compatibility_mode")).toBeFalse();
++
++    symbols.addNewSymbol<RoutineSymbol>(nullptr, "STARDATAPARADISE_CAPABILITIES", nullptr);
++    symbols.addNewSymbol<SystemVariableSymbol>(nullptr, "@@sdp_compatibility_mode");
++
++    $expect(hasCandidate("SELECT star", "STARDATAPARADISE_CAPABILITIES()")).toBeTrue();
++    $expect(hasCandidate("SELECT db.star", "STARDATAPARADISE_CAPABILITIES()")).toBeFalse();
++    $expect(hasCandidate("SET sdp", "sdp_compatibility_mode")).toBeTrue();
++    $expect(hasCandidate("SET SESSION ", "sdp_compatibility_mode")).toBeTrue();
++    $expect(hasCandidate("SET SESSION sdp", "sdp_compatibility_mode")).toBeTrue();
++    $expect(hasCandidate("SET GLOBAL sdp", "sdp_compatibility_mode")).toBeFalse();
++    $expect(hasCandidate("UPDATE t SET sdp", "sdp_compatibility_mode")).toBeFalse();
++  });
++
++  $it("Completes and validates model statements only with the server capability", [this]() {
++    auto services = parsers::MySQLParserServices::get();
++    auto context = services->createParserContext(data->tester->getRdbms()->characterSets(),
++                                                  bec::intToVersion(261000), "", false);
++    auto hasCandidate = [&](const std::string &sql, const std::string &name) {
++      const auto candidates = services->getCodeCompletionCandidates(context, {sql.size(), 0}, sql, "", true,
++                                                                     data->mainSymbols);
++      return std::any_of(candidates.begin(), candidates.end(), [&name](const auto &candidate) {
++        return candidate.second == name;
++      });
++    };
++    auto validSyntax = [&](const std::string &sql) {
++      return services->checkSqlSyntax(context, sql.c_str(), sql.size(), MySQLParseUnit::PuGeneric) == 0;
++    };
++
++    $expect(hasCandidate("CREATE MO", "MODEL USING")).toBeFalse();
++    $expect(hasCandidate("TRA", "TRAIN MODEL USING")).toBeFalse();
++    $expect(hasCandidate("PRED", "PREDICT MODEL USING")).toBeFalse();
++    $expect(validSyntax("CREATE MODEL USING '{}';")).toBeFalse();
++
++    context->updateSdpModelSyntax(true);
++    $expect(hasCandidate("CREATE MO", "MODEL USING")).toBeTrue();
++    $expect(hasCandidate("TRA", "TRAIN MODEL USING")).toBeTrue();
++    $expect(hasCandidate("PRED", "PREDICT MODEL USING")).toBeTrue();
++    $expect(hasCandidate("PREDICT MODEL U", "USING")).toBeTrue();
++    $expect(hasCandidate("SELECT MO", "MODEL USING")).toBeFalse();
++    $expect(validSyntax("CREATE MODEL USING '{}';")).toBeTrue();
++    $expect(validSyntax("TRAIN /* train */ MODEL USING '{}';")).toBeTrue();
++    $expect(validSyntax("predict model using '{}'")).toBeTrue();
++    $expect(validSyntax("TRAIN MODEL USING 1;")).toBeFalse();
++    $expect(validSyntax("CREATE TABLE model (train INT, predict INT);")).toBeTrue();
++    $expect(validSyntax("SELECT model.train, predict(train) FROM model;")).toBeTrue();
++
++    context->updateSdpModelSyntax(false);
++    $expect(hasCandidate("TRAIN ", "MODEL USING")).toBeFalse();
++    $expect(validSyntax("PREDICT MODEL USING '{}';")).toBeFalse();
++  });
++
+   $it("Testing proper symbol retrieval in symbol tables", [this]() {
+     auto tables = data->mainSymbols.getSymbolsOfType<TableSymbol>();
+     $expect(tables.size()).toBe(0U, "Test 10.1");
+diff --git a/modules/db.mysql/res/mysql_rdbms_info.xml b/modules/db.mysql/res/mysql_rdbms_info.xml
+index 45c3199530562526f8d300b18a12b8d7640ae293..c3a9a6a91632aa7f8e526e8e77b9482ae41c5839 100644
+--- a/modules/db.mysql/res/mysql_rdbms_info.xml
++++ b/modules/db.mysql/res/mysql_rdbms_info.xml
+@@ -685,7 +685,7 @@
+                     <value type="object" struct-name="db.mgmt.DriverParameter" id="com.mysql.rdbms.mysql.driver.native.param2">
+                         <value type="string" key="caption">Port:</value>
+                         <value type="string" key="accessibilityName">Port</value>
+-                        <value type="string" key="defaultValue">3306</value>
++                        <value type="string" key="defaultValue">3197</value>
+                         <value type="string" key="description">and TCP/IP port.</value>
+                         <value type="int" key="layoutAdvanced">0</value>
+                         <value type="int" key="layoutRow">1</value>
+diff --git a/backend/wbpublic/grtsqlparser/mysql_parser_services.h b/backend/wbpublic/grtsqlparser/mysql_parser_services.h
+index bee56e9..bc197df 100644
+--- a/backend/wbpublic/grtsqlparser/mysql_parser_services.h
++++ b/backend/wbpublic/grtsqlparser/mysql_parser_services.h
+@@ -62,6 +62,8 @@ namespace parsers {
+ 
+     // Identifier determination depends on e.g the sql mode, hence we need extra handling.
+     virtual bool isIdentifier(size_t type) const = 0;
++    virtual void updateSdpModelSyntax(bool enabled) = 0;
++    virtual bool sdpModelSyntaxEnabled() const = 0;
+   };
+ 
+   /**
+diff --git a/backend/wbpublic/sqlide/sql_editor_be.h b/backend/wbpublic/sqlide/sql_editor_be.h
+index 4ae6f95..98d1ee7 100644
+--- a/backend/wbpublic/sqlide/sql_editor_be.h
++++ b/backend/wbpublic/sqlide/sql_editor_be.h
+@@ -139,6 +139,7 @@ public:
+ 
+   std::string sql_mode();
+   void set_sql_mode(const std::string &value);
++  void set_sdp_model_syntax(bool enabled);
+   void setServerVersion(GrtVersionRef version);
+ 
+   void restrict_content_to(ContentType type);
+diff --git a/library/parsers/code-completion/CodeCompletionCore.cpp b/library/parsers/code-completion/CodeCompletionCore.cpp
+index 61c2021..682c857 100644
+--- a/library/parsers/code-completion/CodeCompletionCore.cpp
++++ b/library/parsers/code-completion/CodeCompletionCore.cpp
+@@ -32,12 +32,14 @@ using namespace antlr4::misc;
+ 
+ //----------------------------------------------------------------------------------------------------------------------
+ 
+-std::unordered_map<std::type_index, CodeCompletionCore::FollowSetsPerState> CodeCompletionCore::_followSetsByATN;
++thread_local std::map<std::pair<std::type_index, size_t>, CodeCompletionCore::FollowSetsPerState>
++  CodeCompletionCore::_followSetsByATN;
+ 
+ //----------------------------------------------------------------------------------------------------------------------
+ 
+-CodeCompletionCore::CodeCompletionCore(Parser *parser)
+-: _parser(parser), _atn(parser->getATN()), _vocabulary(parser->getVocabulary()), _ruleNames(parser->getRuleNames()) {
++CodeCompletionCore::CodeCompletionCore(Parser *parser, size_t predicateConfiguration)
++: _parser(parser), _predicateConfiguration(predicateConfiguration), _atn(parser->getATN()),
++  _vocabulary(parser->getVocabulary()), _ruleNames(parser->getRuleNames()) {
+ }
+ 
+ //----------------------------------------------------------------------------------------------------------------------
+@@ -291,7 +293,7 @@ CodeCompletionCore::RuleEndStatus CodeCompletionCore::processRule(ATNState *star
+   // 3) We get this lookup for free with any 2nd or further visit of the same rule, which often happens
+   //    in non trivial grammars, especially with (recursive) expressions and of course when invoking code completion
+   //    multiple times.
+-  FollowSetsPerState &setsPerState = _followSetsByATN[typeid(_parser)];
++  FollowSetsPerState &setsPerState = _followSetsByATN[{typeid(*_parser), _predicateConfiguration}];
+   if (setsPerState.count(startState->stateNumber) == 0) {
+     ATNState *stop = _atn.ruleToStopState[startState->ruleIndex];
+     auto followSets = determineFollowSets(startState, stop);
+diff --git a/library/parsers/code-completion/CodeCompletionCore.h b/library/parsers/code-completion/CodeCompletionCore.h
+index ac35169..a550d9b 100644
+--- a/library/parsers/code-completion/CodeCompletionCore.h
++++ b/library/parsers/code-completion/CodeCompletionCore.h
+@@ -22,6 +22,7 @@
+  * 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+  */
+ 
++#include <map>
+ #include <unordered_set>
+ #include <string>
+ #include <vector>
+@@ -60,7 +61,7 @@ namespace antlr4 {
+     std::unordered_set<size_t> ignoredTokens;  // Tokens which should not appear in the candidates set.
+     std::unordered_set<size_t> preferredRules; // Rules which replace any candidate token they contain.
+                                                // This allows to return descriptive rules (e.g. className, instead of ID/identifier).
+-    CodeCompletionCore(antlr4::Parser *parser);
++    CodeCompletionCore(antlr4::Parser *parser, size_t predicateConfiguration);
+ 
+     CandidatesCollection collectCandidates(size_t caretTokenIndex, ParserRuleContext *context);
+ 
+@@ -69,6 +70,7 @@ namespace antlr4 {
+     using RuleEndStatus = std::unordered_set<size_t>;
+ 
+     antlr4::Parser *_parser;
++    size_t _predicateConfiguration;
+     antlr4::atn::ATN const& _atn;
+ 
+     antlr4::dfa::Vocabulary const& _vocabulary;
+@@ -97,14 +99,14 @@ namespace antlr4 {
+ 
+     // A list of follow sets (for a given state number) + all of them combined for quick hit tests.
+     // This data is static in nature (because the used ATN states are part of a static struct: the ATN).
+-    // Hence it can be shared between all C3 instances, however it dependes on the actual parser class (type).
++    // C3 instances with the same parser type and predicate configuration can share these follow sets.
+     using FollowSetsHolder = struct {
+       FollowSetsList sets;
+       antlr4::misc::IntervalSet combined;
+     };
+ 
+     using FollowSetsPerState = std::unordered_map<size_t, FollowSetsHolder>;
+-    static std::unordered_map<std::type_index, FollowSetsPerState> _followSetsByATN;
++    static thread_local std::map<std::pair<std::type_index, size_t>, FollowSetsPerState> _followSetsByATN;
+ 
+     struct PipelineEntry {
+       antlr4::atn::ATNState *state;
+diff --git a/library/parsers/grammars/MySQLLexer.g4 b/library/parsers/grammars/MySQLLexer.g4
+index cbd2a76..7887b71 100644
+--- a/library/parsers/grammars/MySQLLexer.g4
++++ b/library/parsers/grammars/MySQLLexer.g4
+@@ -1095,6 +1095,11 @@ INVALID_INPUT:
+ // with normal identifiers, which also can start with an underscore.
+ UNDERSCORE_CHARSET: UNDERLINE_SYMBOL [a-z0-9]+ { setType(checkCharset(getText())); };
+ 
++// StarDataParadise treats these as identifiers outside model statements.
++MODEL_SYMBOL: M O D E L {sdpModelSyntax}?;
++TRAIN_SYMBOL: T R A I N {sdpModelSyntax}?;
++PREDICT_SYMBOL: P R E D I C T {sdpModelSyntax}?;
++
+ // Identifiers might start with a digit, even though it is discouraged, and may not consist entirely of digits only.
+ // All keywords above are automatically excluded.
+ IDENTIFIER:
+diff --git a/library/parsers/grammars/MySQLParser.g4 b/library/parsers/grammars/MySQLParser.g4
+index bfbfe95..bebaf44 100644
+--- a/library/parsers/grammars/MySQLParser.g4
++++ b/library/parsers/grammars/MySQLParser.g4
+@@ -86,7 +86,13 @@ options {
+ 
+ query:
+     EOF
+-    | (simpleStatement | beginWork) (SEMICOLON_SYMBOL EOF? | EOF)
++    | (simpleStatement | beginWork | {sdpModelSyntax}? sdpModelStatement) (SEMICOLON_SYMBOL EOF? | EOF)
++;
++
++sdpModelStatement:
++    CREATE_SYMBOL MODEL_SYMBOL USING_SYMBOL SINGLE_QUOTED_TEXT
++    | TRAIN_SYMBOL MODEL_SYMBOL USING_SYMBOL SINGLE_QUOTED_TEXT
++    | PREDICT_SYMBOL MODEL_SYMBOL USING_SYMBOL SINGLE_QUOTED_TEXT
+ ;
+ 
+ simpleStatement:
+@@ -3823,7 +3829,7 @@ windowName:
+ 
+ // Identifiers excluding keywords (except if they are quoted). IDENT_sys in sql_yacc.yy.
+ pureIdentifier:
+-    (IDENTIFIER | BACK_TICK_QUOTED_ID)
++    (IDENTIFIER | BACK_TICK_QUOTED_ID | MODEL_SYMBOL | TRAIN_SYMBOL | PREDICT_SYMBOL)
+     | {isSqlModeActive(AnsiQuotes)}? DOUBLE_QUOTED_TEXT
+ ;
+ 
+diff --git a/library/parsers/mysql/MySQLRecognizerCommon.h b/library/parsers/mysql/MySQLRecognizerCommon.h
+index cf7e424..9e41570 100644
+--- a/library/parsers/mysql/MySQLRecognizerCommon.h
++++ b/library/parsers/mysql/MySQLRecognizerCommon.h
+@@ -61,6 +61,7 @@ namespace parsers {
+     // For parameterizing the parsing process.
+     long serverVersion;
+     SqlMode sqlMode; // A collection of flags indicating which of relevant SQL modes are active.
++    bool sdpModelSyntax = false;
+ 
+     // Returns true if the given mode (one of the enums above) is set.
+     bool isSqlModeActive(size_t mode);
+diff --git a/modules/db.mysql.parser/src/mysql_parser_module.cpp b/modules/db.mysql.parser/src/mysql_parser_module.cpp
+index 82cd96d..b1640ae 100644
+--- a/modules/db.mysql.parser/src/mysql_parser_module.cpp
++++ b/modules/db.mysql.parser/src/mysql_parser_module.cpp
+@@ -42,6 +42,8 @@
+ 
+ #include "mysql_parser_module.h"
+ 
++#include <atomic>
++
+ using namespace grt;
+ using namespace parsers;
+ 
+@@ -111,6 +113,7 @@ struct MySQLParserContextImpl : public MySQLParserContext {
+   std::string mode;
+ 
+   bool caseSensitive;
++  std::atomic<bool> sdpModelSyntax{false};
+   std::vector<ParserErrorInfo> errors;
+ 
+   MySQLParserContextImpl(GrtCharacterSetsRef charsets, GrtVersionRef version_, bool caseSensitive)
+@@ -161,6 +164,14 @@ struct MySQLParserContextImpl : public MySQLParserContext {
+     parser.sqlMode = lexer.sqlMode;
+   }
+ 
++  void updateSdpModelSyntax(bool enabled) override {
++    sdpModelSyntax.store(enabled);
++  }
++
++  bool sdpModelSyntaxEnabled() const override {
++    return sdpModelSyntax.load();
++  }
++
+   virtual GrtVersionRef serverVersion() const override {
+     return version;
+   }
+@@ -217,6 +228,7 @@ struct MySQLParserContextImpl : public MySQLParserContext {
+     errors.clear();
+     
+     input.load(text);
++    lexer.sdpModelSyntax = sdpModelSyntax.load();
+     lexer.setInputStream(&input);
+     tokens.setTokenSource(&lexer);
+ 
+@@ -228,9 +240,12 @@ struct MySQLParserContextImpl : public MySQLParserContext {
+     parsers::SymbolTable &symbolTable) {
+ 
+     parser.reset();
++    parser.setErrorHandler(std::make_shared<DefaultErrorStrategy>());
++    parser.getInterpreter<ParserATNSimulator>()->setPredictionMode(PredictionMode::LL);
+     errors.clear();
+ 
+     input.load(sql);
++    parser.sdpModelSyntax = lexer.sdpModelSyntax = sdpModelSyntax.load();
+     lexer.setInputStream(&input);
+     tokens.setTokenSource(&lexer);
+     return getCodeCompletionList(caret.second, caret.first, defaultSchema, uppercaseKeywords, &parser, symbolTable);
+@@ -252,6 +267,7 @@ private:
+ 
+   ParseTree *startParsing(bool fast, MySQLParseUnit unit) {
+     errors.clear();
++    parser.sdpModelSyntax = lexer.sdpModelSyntax = sdpModelSyntax.load();
+     lexer.reset();
+     lexer.setInputStream(&input); // Not just reset(), which only rewinds the current position.
+     tokens.setTokenSource(&lexer);

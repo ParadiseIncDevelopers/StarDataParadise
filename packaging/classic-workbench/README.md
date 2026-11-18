@@ -1,6 +1,6 @@
 # Klasik StarDataParadise Workbench
 
-## 8.0.47 kaynak derlemesi · `v0.3.0-preview.1`
+## 8.0.47 kaynak derlemesi · `v0.3.0-preview.2`
 
 `workbench-8.0.47.patch`, Workbench 8.0.47’nin `dc3590dbfbee29c87e201d4ef53607e5deb0e4f9` commit’ine uygulanır. Yama, StarDataParadise metinlerini ve yıldız ikonlarını, klasik SQL editörüyle ilgili marka değişikliklerini ve Windows kaynak derleme düzeltmelerini içerir. SQL editörünün tasarım dosyası 8.0.47 ile aynı. Karşılama ekranındaki tanıtım bandı mevcut tercih üzerinden varsayılan olarak gizli.
 
@@ -25,7 +25,15 @@ pwsh -NoProfile -File packaging/classic-workbench/Stage-Native.ps1
 
 Çalıştırılabilir dosya `out/mysql-workbench-native-src/bin/x64/Release_OSS/StarDataParadise.exe` yolundadır. MSBuild, WinForms uygulamasını, C++ ve C++/CLI modüllerini, Python sarmalayıcılarını ve eklentileri 8.0.47 kaynaklarından derler. Paketleme betiği hazırlanmış üçüncü taraf çalışma zamanını ekler.
 
-26.10.0-StarDataParadise canlı kabulünde TLS kimlik doğrulaması, yanlış CA’nın reddi, BIGINT/DECIMAL/BLOB okuması, `ANALYZE` ve rollback geçti. Klasik SQL editörü örnek satırı gösterdi. 26.10 bağlantısında klasik istemcinin sürüm uyarısı görüntülenebilir.
+26.10.0-StarDataParadise canlı kabulünde TLS kimlik doğrulaması, yanlış CA’nın reddi, BIGINT/DECIMAL/BLOB okuması, `ANALYZE` ve rollback geçti. Klasik SQL editörü örnek satırı gösterdi.
+
+Ana ekran, sunucu sürümüyle doğrulanmış StarDataParadise bağlantılarını gösterir. Eski bir bağlantıyı ana ekrana almak için bağlantı yöneticisinde **Test Connection** ile doğrulayın. SQL editörü her oturumda sunucu kimliğini kontrol eder. Windows yerel hizmet taraması `StarDataParadise` ile başlayan hizmetleri arar.
+
+Yerel örnek veritabanı için **Standard (TCP/IP)** bağlantısını `localhost:3197` adresinde açın. **Rescan for Local Servers** bu uç noktayı bulur. Aynı port StarDataParadiseDrive 2.0.2 ve sonraki sürümlerin yerel SDK bağlantılarını da kabul eder. Doğrulanmış StarDataParadise sunucuları eski Classic sürüm uyarısı göstermeden editörü açar.
+
+**Query 1** editöründe `Ctrl+Space` ile SQL önerilerini açın. Boş bir ifadede `CREATE`, `SELECT`, `UPDATE` ve `SET` gibi komutları görebilirsiniz. StarDataParadise bağlantısında `SELECT STAR` ile `STARDATAPARADISE_CAPABILITIES()` ve `SET SESSION sdp` ile `sdp_compatibility_mode` önerilir.
+
+Bağlı Classic Server model komutlarını destekliyorsa `CREATE MO`, `TRA` ve `PRED` sırasıyla `CREATE MODEL USING`, `TRAIN MODEL USING` ve `PREDICT MODEL USING` ifadelerini tamamlar. `USING` sözcüğünden sonra model isteğini tek tırnak içinde JSON nesnesi olarak girin.
 
 ## 8.0.43 önizlemesi
 
