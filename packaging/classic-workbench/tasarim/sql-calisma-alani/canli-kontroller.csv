@@ -1,0 +1,111 @@
+﻿role,name,evidence
+button,Refresh,01-sql-editor.txt
+tab item,(selectable) Administration,01-sql-editor.txt
+tab item,(selectable) Schemas,01-sql-editor.txt
+tab item,(selectable) Object Info,01-sql-editor.txt
+tab item,(selectable) Session,01-sql-editor.txt
+combo box,"(settable, string) Limit Rows Value: Limit to 1000 rows",01-sql-editor.txt
+button,Aç,01-sql-editor.txt
+button,Open File,01-sql-editor.txt
+button,Save File,01-sql-editor.txt
+button,Execute,01-sql-editor.txt
+button,Execute Current Statement,01-sql-editor.txt
+button,Explain Current Statement,01-sql-editor.txt
+button,(disabled) Cancel,01-sql-editor.txt
+button,Continue On Error,01-sql-editor.txt
+button,(disabled) Commit,01-sql-editor.txt
+button,(disabled) Rollback,01-sql-editor.txt
+button,Auto Commit,01-sql-editor.txt
+button,Add Snippet,01-sql-editor.txt
+button,Beautify,01-sql-editor.txt
+button,Search,01-sql-editor.txt
+button,Toggle Invisible,01-sql-editor.txt
+button,Toggle Word Wrap,01-sql-editor.txt
+button,Sütunun solu,01-sql-editor.txt
+button,Sayfanın sağı,01-sql-editor.txt
+button,Sütunun sağı,01-sql-editor.txt
+tab item,(selectable) Query 1,01-sql-editor.txt
+combo box,"(settable, string) Quick Jump Value: Jump to",01-sql-editor.txt
+button,(disabled) Back,01-sql-editor.txt
+button,(disabled) Forward,01-sql-editor.txt
+button,Toggle Auto Context Help,01-sql-editor.txt
+button,Manual Context Help,01-sql-editor.txt
+tab item,(selectable) Context Help,01-sql-editor.txt
+tab item,(selectable) Snippets,01-sql-editor.txt
+combo box,"(settable, string) Value: Action Output",01-sql-editor.txt
+button,New File,01-sql-editor.txt
+button,Show Inspector,01-sql-editor.txt
+button,New Schema,01-sql-editor.txt
+button,New Table,01-sql-editor.txt
+button,New View,01-sql-editor.txt
+button,New Routine,01-sql-editor.txt
+button,New Function,01-sql-editor.txt
+button,Reconnect to DBMS,01-sql-editor.txt
+button,Show Preferences,01-sql-editor.txt
+button,Toggle Schema Sidebar,01-sql-editor.txt
+button,Toggle Output Area,01-sql-editor.txt
+button,Toggle Secondary Sidebar,01-sql-editor.txt
+tab item,(selectable),01-sql-editor.txt
+tab item,(selectable) test,01-sql-editor.txt
+button,Simge Durumuna Küçült,01-sql-editor.txt
+button,Geri yükle,01-sql-editor.txt
+button,Kapat,01-sql-editor.txt
+tab item,(selectable) Administration - Performance Schema Setup,15-schema-context.txt
+tab item,(selectable) Info,17-table-context.txt
+tab item,(selectable) Tables,17-table-context.txt
+tab item,(selectable) Columns,17-table-context.txt
+tab item,(selectable) Indexes,17-table-context.txt
+tab item,(selectable) Triggers,17-table-context.txt
+tab item,(selectable) Views,17-table-context.txt
+tab item,(selectable) Stored Procedures,17-table-context.txt
+tab item,(selectable) Functions,17-table-context.txt
+tab item,(selectable) Grants,17-table-context.txt
+tab item,(selectable) Events,17-table-context.txt
+tab item,(selectable) new_db_for_ai,17-table-context.txt
+checkbox,Case Sensitive Identifiers,21-preferences.txt
+checkbox,Spaces Instead of Tabs,21-preferences.txt
+tab item,(selectable) General Editors,21-preferences.txt
+tab item,(selectable) SQL Editor,21-preferences.txt
+tab item,(selectable) Query Editor,21-preferences.txt
+tab item,(selectable) Object Editors,21-preferences.txt
+tab item,(selectable) SQL Execution,21-preferences.txt
+tab item,(selectable) Modeling,21-preferences.txt
+tab item,(selectable) Defaults,21-preferences.txt
+tab item,(selectable) MySQL,21-preferences.txt
+tab item,(selectable) Diagram,21-preferences.txt
+tab item,(selectable) Appearance,21-preferences.txt
+tab item,(selectable) Fonts & Colors,21-preferences.txt
+tab item,(selectable) SSH,21-preferences.txt
+tab item,(selectable) Others,21-preferences.txt
+button,Cancel,21-preferences.txt
+button,OK,21-preferences.txt
+button,Reset Record Sort,25-result-controls.txt
+button,Export Record,25-result-controls.txt
+button,Wrap Vertical,25-result-controls.txt
+button,Side Toggle,25-result-controls.txt
+tab item,(selectable) Result Grid,25-result-controls.txt
+tab item,(selectable) Form Editor,25-result-controls.txt
+tab item,(selectable) Field Types,25-result-controls.txt
+tab item,(selectable) Query Stats,25-result-controls.txt
+tab item,(selectable) Execution Plan,25-result-controls.txt
+tab item,(selectable) Result 1,25-result-controls.txt
+tab item,(selectable) new_db_for_ai.ai_exam_demo,25-result-controls.txt
+tab item,(selectable) ai_exam_demo - Table,25-result-controls.txt
+tab item,(selectable) Search,25-result-controls.txt
+tab item,(selectable) SQL File 3*,25-result-controls.txt
+button,Satır yukarı,25-result-controls.txt
+button,Bir sayfa yukarı,25-result-controls.txt
+button,Satır aşağı,25-result-controls.txt
+combo box,"(settable, string) Value: History Output",25-result-controls.txt
+button,Execute.,25-result-controls.txt
+button,(disabled) Revert,26-snippets.txt
+button,(disabled) Apply,26-snippets.txt
+combo box,"(settable, string) Tabular Explain Switcher Value: Tabular Explain",26-snippets.txt
+tab item,(selectable) Tabular Explain,26-snippets.txt
+tab item,(selectable) Explain,26-snippets.txt
+button,Tümü,26-snippets.txt
+button,Az,26-snippets.txt
+combo box,"(settable, string) Select Category Value: My Snippets",26-snippets.txt
+button,(disabled) Replace Text,26-snippets.txt
+button,(disabled) Insert Text,26-snippets.txt
+button,(disabled) Copy To Clipboard,26-snippets.txt

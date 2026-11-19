@@ -1,8 +1,10 @@
 # Klasik StarDataParadise Workbench
 
+Tam Classic kaynak ağacı [classic-workbench/](../../classic-workbench/) altında master dalında yayımlanır. Bu klasör upstream kaynakları, StarDataParadise değişikliklerini, ikonları ve lisans bildirimlerini birlikte içerir. Yerel geliştirme ağacı `out/mysql-workbench-native-src` master dalında commit edilmiştir. Aşağıdaki yama akışı da aynı 8.0.47 tabanından kaynak hazırlamak için kullanılabilir.
+
 Bağlantılar, Modeller ve Veri Taşıma ekranlarının renk, tipografi, ikon ve kompakt yerleşim ölçüleri [ana sayfa tasarım kurallarında](tasarim/ANA_SAYFA.md) yer alır.
 
-## 8.0.47 kaynak derlemesi · `v0.3.0-preview.3`
+## 8.0.47 kaynak derlemesi · `v0.3.0-preview.4`
 
 `workbench-8.0.47.patch`, Workbench 8.0.47’nin `dc3590dbfbee29c87e201d4ef53607e5deb0e4f9` commit’ine uygulanır. Yama, StarDataParadise metinlerini ve yıldız ikonlarını, klasik SQL editörüyle ilgili marka değişikliklerini ve Windows kaynak derleme düzeltmelerini içerir. SQL editörünün tasarım dosyası 8.0.47 ile aynı. Karşılama ekranındaki tanıtım bandı mevcut tercih üzerinden varsayılan olarak gizli.
 

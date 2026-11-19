@@ -1,0 +1,224 @@
+﻿source,control,label,tooltip,callback,line
+plugins/wb.admin/frontend/wb_admin_configuration_startup.py,self.refresh_button,Refresh Status,,lambda: self.refresh(True),58
+plugins/wb.admin/frontend/wb_admin_configuration_startup.py,self.copy_to_clipboard_button,Copy to Clipboard,,self.copy_to_clipboard,64
+plugins/wb.admin/frontend/wb_admin_configuration_startup.py,self.clear_messages_button,Clear Messages,,self.clear_messages,70
+plugins/wb.admin/frontend/wb_admin_configuration_startup.py,self.start_stop_btn,Start Server,,self.start_stop_clicked,122
+plugins/wb.admin/frontend/wb_admin_configuration_startup.py,self.offline_mode_btn,Bring Offline,,self.offline_mode_clicked,127
+plugins/wb.admin/frontend/wb_admin_configuration_startup.py,auto_start_checkbox,Automatically Start Database Server on Startup,,,149
+plugins/wb.admin/frontend/wb_admin_configuration_startup.py,self.short_status_msg,unknown,,,230
+plugins/wb.admin/frontend/wb_admin_configuration_startup.py,self.long_status_msg,"The database server is stopped. To start the Server, use the ""Start Server"" button",,,213
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,version_selector,,,"lambda: verify_selected_version(version_selector, True)",118
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,ok,Ok,,,125
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,accept_btn,Apply...,,self.config_apply_changes_clicked,204
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,discard_btn,Discard,,self.config_discard_changes_clicked,209
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,self.search_btn,Find,,lookup_option_wrapper,253
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,self.section_ctrl,,,self.clear_and_load,426
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,te,,"For numeric values, you may specify a K, M or G size suffix, if appropriate.",lambda: self.control_action(name),490
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,btn,...,Browse a file in your server...,"lambda: self.open_file_chooser(OpenFile, te, name)",502
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,dropbox,,,lambda: self.control_action(name),793
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,enabled,,,lambda: self.enabled_checkbox_click(name),804
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,btn_dwn,,Download this file to your local computer,lambda: download_file_from_server_cb(te),713
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,btn_upl,,Upload a file from your local computer to the server,lambda: upload_file_to_server_cb(te),723
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,cat,,,"lambda: handle_cat_opt(cat, grp, ctrl_def['name'])",873
+plugins/wb.admin/frontend/wb_admin_config_file_ui.py,grp,,,"lambda: handle_cat_opt(cat, grp, ctrl_def['name'])",874
+plugins/wb.admin/frontend/wb_admin_connections.py,self.tree,,,self.event_selected,62
+plugins/wb.admin/frontend/wb_admin_connections.py,self.ok,Close,,self.close_form,88
+plugins/wb.admin/frontend/wb_admin_connections.py,self.connection_list,,,"weakcb(self, 'connection_selected')",385
+plugins/wb.admin/frontend/wb_admin_connections.py,refresh_button,Refresh,,"weakcb(self, 'refresh')",418
+plugins/wb.admin/frontend/wb_admin_connections.py,self.kill_button,Kill Connection(s),,"weakcb(self, 'kill_connection')",423
+plugins/wb.admin/frontend/wb_admin_connections.py,self.killq_button,Kill Query(s),,"weakcb(self, 'kill_query')",429
+plugins/wb.admin/frontend/wb_admin_connections.py,self.refresh_selector,,,"weakcb(self, 'update_refresh_rate')",456
+plugins/wb.admin/frontend/wb_admin_connections.py,self.hide_sleep_connections,Hide sleeping connections,Remove connections in the Sleeping state from the connection list.,self.refresh,464
+plugins/wb.admin/frontend/wb_admin_connections.py,self.explain,Explain for Connection,,self.owner.explain_selected,222
+plugins/wb.admin/frontend/wb_admin_connections.py,self.hide_background_threads,Hide background threads,Remove background threads (internal server threads) from the connection list.,self.refresh,475
+plugins/wb.admin/frontend/wb_admin_connections.py,self.truncate_info,Don't load full thread info,"Toggle whether to load the entire query information for all connections or just the first 255 characters.
+Enabling this can have a large impact in busy servers or server executing large INSERTs.",self.refresh,483
+plugins/wb.admin/frontend/wb_admin_connections.py,self.show_extras,Show Details,,self.toggle_extras,552
+plugins/wb.admin/frontend/wb_admin_connections.py,self._menu,View Thread Stack,,,676
+plugins/wb.admin/frontend/wb_admin_connections.py,self.mdl_enable_button,Enable Instrumentation,,self.enable_mdl_instrumentation,959
+plugins/wb.admin/frontend/wb_admin_export.py,self.schema_list,,,self.schema_selected,481
+plugins/wb.admin/frontend/wb_admin_export.py,self.file_btn,...,,lambda: self.open_file_chooser(mforms.SaveFile),505
+plugins/wb.admin/frontend/wb_admin_export.py,self.fileradio,Export to Self-Contained File,,self.set_save_option,559
+plugins/wb.admin/frontend/wb_admin_export.py,self.folderradio,Export to Dump Project Folder,,self.set_save_option,569
+plugins/wb.admin/frontend/wb_admin_export.py,self.folder_btn,...,,self.open_folder_chooser,579
+plugins/wb.admin/frontend/wb_admin_export.py,self.select_all_views_btn,Select Views,,self.select_all_views,667
+plugins/wb.admin/frontend/wb_admin_export.py,self.select_all_btn,Select Tables,,self.select_all_tables,672
+plugins/wb.admin/frontend/wb_admin_export.py,self.unselect_all_btn,Unselect All,,self.unselect_all_tables,677
+plugins/wb.admin/frontend/wb_admin_export.py,self.export_button,Import Again,,self.start,736
+plugins/wb.admin/frontend/wb_admin_export.py,self.restore_defaults_button,Restore Defaults,,self.restore_default_options,2053
+plugins/wb.admin/frontend/wb_admin_export.py,self.stop_button,Stop,,self.stop,2226
+plugins/wb.admin/frontend/wb_admin_export.py,self.advanced_options_btn,Advanced Options...,,self.show_options,2317
+plugins/wb.admin/frontend/wb_admin_export.py,self.folder_load_btn,Load Folder Contents,,self.refresh_table_list,591
+plugins/wb.admin/frontend/wb_admin_export.py,self.refresh_button,Refresh,,self.refresh_table_list,658
+plugins/wb.admin/frontend/wb_admin_export.py,b,New...,,self.new_target_schema,707
+plugins/wb.admin/frontend/wb_admin_export.py,self.single_transaction_check,Create Dump in a Single Transaction (self-contained file only),,self.single_transaction_clicked,745
+plugins/wb.admin/frontend/wb_admin_export.py,self.include_schema_check,Include Create Schema,,,748
+plugins/wb.admin/frontend/wb_admin_export.py,self.dump_triggers_check,Dump Triggers,,,749
+plugins/wb.admin/frontend/wb_admin_export.py,self.dump_routines_check,Dump Stored Procedures and Functions,,,751
+plugins/wb.admin/frontend/wb_admin_export.py,self.dump_events_check,Dump Events,,,752
+plugins/wb.admin/frontend/wb_admin_export.py,opt.checkbox,,,callback_function,2159
+plugins/wb.admin/frontend/wb_admin_grt.py,self.legacy,This server version is < 5.7,,,602
+plugins/wb.admin/frontend/wb_admin_grt.py,self.ok,OK,,,613
+plugins/wb.admin/frontend/wb_admin_grt.py,self.cancel,Cancel,,,616
+plugins/wb.admin/frontend/wb_admin_logs.py,try_again_button,Try again,,self.try_again,229
+plugins/wb.admin/frontend/wb_admin_logs.py,self._menu,Copy Details,,,331
+plugins/wb.admin/frontend/wb_admin_logs.py,self.bof_button,Oldest,,self.go_bof,338
+plugins/wb.admin/frontend/wb_admin_logs.py,self.back_button,< Previous Page,,self.go_back,343
+plugins/wb.admin/frontend/wb_admin_logs.py,self.next_button,Next Page >,,self.go_next,348
+plugins/wb.admin/frontend/wb_admin_logs.py,self.eof_button,Most Recent,,self.go_eof,353
+plugins/wb.admin/frontend/wb_admin_logs.py,self.refresh_button,Refresh,,self.refresh,358
+plugins/wb.admin/frontend/wb_admin_logs.py,filter,,,self.filter_handler,481
+plugins/wb.admin/frontend/wb_admin_monitor.py,self.status_label,"Stopped
+",,,323
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,checkbox,,,"lambda: self.update_data_collection(name, checkbox)",484
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.ok,OK,,,714
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.cancel,Cancel,,,717
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.enabled,Enabled,,,798
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.timed,Timed,,,807
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.users,,,self.selected_user_changed,897
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.user_del_button,Remove,,self.remove_user,909
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,user_add_button,Add,,self.add_user,915
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.objects,,,self.selected_object_changed,940
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.db_del_button,Remove,,self.remove_object,958
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,db_add_button,Add,,self.add_object,964
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,selector,,,"lambda: self.update_timer(self._timer_names[offset], selector)",1142
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self._enable_all,Instrument All,,self.enable_all,1300
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self._disable_all,Instrument None,,self.enable_none,1305
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self._refresh_button,Refresh,,self.refresh_data,1310
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.advanced_button,Show Advanced,,self.switch_advanced,1387
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.reset_button,Clear Event Tables,"Resets/truncates all performance_schema event tables, deleting all performance schema data collected so far.",self.on_reset_button_clicked,1508
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.apply_button,Apply,Apply changes to the performance_schema configurations to the MySQL server.,self.on_apply_button_clicked,1514
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.cancel_button,Revert,Revert to the configuration currently saved in the MySQL server.,self.on_revert_button_clicked,1520
+plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py,self.reset_to_factory_button,Full Reset to Factory Defaults,"Reset all performance_schema settings (instruments, threads, actors, objects etc) to factory defaults.",self.on_reset_to_factory_button_clicked,1530
+plugins/wb.admin/frontend/wb_admin_perfschema_reports.py,btn,Copy Query,,self.do_copy_query,157
+plugins/wb.admin/frontend/wb_admin_perfschema_reports.py,self._refresh,Refresh,,self.do_refresh,172
+plugins/wb.admin/frontend/wb_admin_perfschema_reports.py,self.tree,,,self._report_selected,497
+plugins/wb.admin/frontend/wb_admin_perfschema_reports.py,self._hmenu,Set Display Unit,,,385
+plugins/wb.admin/frontend/wb_admin_security.py,self.schema1,All Schema (%),,self.schema_radio_changed,250
+plugins/wb.admin/frontend/wb_admin_security.py,self.schema2,Schemas matching pattern:,,self.schema_radio_changed,256
+plugins/wb.admin/frontend/wb_admin_security.py,self.schema3,Selected schema:,,self.schema_radio_changed,265
+plugins/wb.admin/frontend/wb_admin_security.py,self.ok,OK,,,285
+plugins/wb.admin/frontend/wb_admin_security.py,self.cancel,Cancel,,,289
+plugins/wb.admin/frontend/wb_admin_security.py,self.privs_list,,,self.schema_priv_selected,348
+plugins/wb.admin/frontend/wb_admin_security.py,self.add_entry_button,Add Entry...,,self.add_entry,359
+plugins/wb.admin/frontend/wb_admin_security.py,self.del_entry_button,Delete Entry,,self.del_entry,365
+plugins/wb.admin/frontend/wb_admin_security.py,self.revoke_all_button,Revoke All Privileges,"Immediately remove all privileges from the account, from every object at all levels.
+The account itself will be left untouched and logins will still be possible.",self.revoke_all,370
+plugins/wb.admin/frontend/wb_admin_security.py,self.grant_all,"Select ""ALL""",,self.grant_all_schema_privs,415
+plugins/wb.admin/frontend/wb_admin_security.py,self.revoke_all,Unselect All,,self.revoke_all_schema_privs,421
+plugins/wb.admin/frontend/wb_admin_security.py,self.query_box,,,self.text_changed,856
+plugins/wb.admin/frontend/wb_admin_security.py,self.normalized_checkbox,This is a normalized rule,,self.normalized_clicked,861
+plugins/wb.admin/frontend/wb_admin_security.py,self.ok_button,OK,,self.ok_button_pressed,871
+plugins/wb.admin/frontend/wb_admin_security.py,self.cancel_button,Cancel,,self.cancel_button_pressed,878
+plugins/wb.admin/frontend/wb_admin_security.py,self.state,,,self.change_state,936
+plugins/wb.admin/frontend/wb_admin_security.py,self.white_list_add_button,Add,,self.add_button_click,952
+plugins/wb.admin/frontend/wb_admin_security.py,self.white_list_add_from_file_button,Add From File,,self.add_from_file_button_click,956
+plugins/wb.admin/frontend/wb_admin_security.py,self.white_list_save_to_file_button,Save To File,,self.save_to_file_button_click,960
+plugins/wb.admin/frontend/wb_admin_security.py,self.white_list_delete_button,Delete,,self.delete_button_click,964
+plugins/wb.admin/frontend/wb_admin_security.py,self.white_list_clear_button,Reset,,self.reset_button_click,968
+plugins/wb.admin/frontend/wb_admin_security.py,self.add_button,Add Account,,self.add_account,1160
+plugins/wb.admin/frontend/wb_admin_security.py,self.del_button,Delete,,self.del_account,1165
+plugins/wb.admin/frontend/wb_admin_security.py,self.refresh_button,Refresh,,self.owner.page_active,1170
+plugins/wb.admin/frontend/wb_admin_security.py,self.save_button,Apply,,self.commit,1175
+plugins/wb.admin/frontend/wb_admin_security.py,self.revert_button,Revert,,self.revert,1180
+plugins/wb.admin/frontend/wb_admin_security.py,self.username,,,self.set_dirty,1226
+plugins/wb.admin/frontend/wb_admin_security.py,self.password,,,self.password_validator.callback,1236
+plugins/wb.admin/frontend/wb_admin_security.py,self.confirm,,,self.set_dirty,1239
+plugins/wb.admin/frontend/wb_admin_security.py,self.hostlimithost,,,self.hostlimithost_changed,1243
+plugins/wb.admin/frontend/wb_admin_security.py,self.upgrade_account_button,Upgrade,"Upgrade the authentication type of the account, from the obsolete format to the newer, safer one. You must set the password for the account before clicking this button.",self.upgrade_account,1322
+plugins/wb.admin/frontend/wb_admin_security.py,self.max_questions,,,self.set_dirty,1345
+plugins/wb.admin/frontend/wb_admin_security.py,self.max_updates,,,self.set_dirty,1352
+plugins/wb.admin/frontend/wb_admin_security.py,self.max_connections,,,self.set_dirty,1359
+plugins/wb.admin/frontend/wb_admin_security.py,self.max_uconnections,,,self.set_dirty,1366
+plugins/wb.admin/frontend/wb_admin_security.py,self.user_list,,,self.user_selected,1442
+plugins/wb.admin/frontend/wb_admin_security.py,self.account_label,Select an account to edit or click [Add Account] to create a new one,,,1625
+plugins/wb.admin/frontend/wb_admin_security.py,cb,,,self.schema_priv_checked,441
+plugins/wb.admin/frontend/wb_admin_security.py,self.auth_type_sel,,,self.auth_type_changed,1258
+plugins/wb.admin/frontend/wb_admin_security.py,self.expire_button,Expire Password,Force user to change password after next login. The user will be unable to issue any command other than SET PASSWORD.,self.expire,1294
+plugins/wb.admin/frontend/wb_admin_security.py,self.auth_string_param,,,self.set_dirty,1306
+plugins/wb.admin/frontend/wb_admin_server_status.py,refresh,Refresh,Refresh server status information,self.owner.refresh_status,162
+plugins/wb.admin/frontend/wb_admin_server_status.py,self.label,Off,,,75
+plugins/wb.admin/frontend/wb_admin_server_status.py,self.gtid_mode_selector,,,self._gtid_mode_changed,545
+plugins/wb.admin/frontend/wb_admin_utils.py,self._button,,,button_action,393
+plugins/wb.admin/frontend/wb_admin_utils.py,self._alt_button,,,button_action,402
+plugins/wb.admin/frontend/wb_admin_variables.py,self.searchEntry,,,self.filterOutput,67
+plugins/wb.admin/frontend/wb_admin_variables.py,self.tree,,,"weakcb(self, 'refresh')",71
+plugins/wb.admin/frontend/wb_admin_variables.py,self.cat_menu,Delete Category,,,74
+plugins/wb.admin/frontend/wb_admin_variables.py,self.values,,,"weakcb(self, 'value_selection_changed')",90
+plugins/wb.admin/frontend/wb_admin_variables.py,copy_all_button,Copy Global Status and Variables to Clipboard,,self.copy_status_to_clipboard,98
+plugins/wb.admin/frontend/wb_admin_variables.py,copy_shown_button,Copy Selected to Clipboard,,self.copy_selected_to_clipboard,102
+plugins/wb.admin/frontend/wb_admin_variables.py,button,Refresh,,"weakcb(self, 'refresh')",115
+plugins/wb.admin/frontend/wb_admin_variables.py,self.menu,Add to Custom Category...,,,614
+plugins/wb.admin/frontend/wb_admin_variables.py,self.add_btn,Add,,self.group_add,628
+plugins/wb.admin/frontend/wb_admin_variables.py,self.cancel,Cancel,,self.cancel_click,635
+plugins/wb.admin/frontend/wb_admin_variables.py,self.ok,OK,,self.ok_click,638
+plugins/wb.admin/frontend/wb_admin_variables.py,self.delete,Delete,,self.group_delete,642
+plugins/wb.admin/frontend/wb_admin_variables.py,reset_persist,Reset persist values,,"weakcb(self, 'reset_persist_cb')",108
+plugins/wb.sqlide/run_script.py,self.charset,,,self.update_preview,209
+plugins/wb.sqlide/run_script.py,self.ok,Close,,self.close,223
+plugins/wb.sqlide/run_script.py,self.cancel,Cancel,,,226
+plugins/wb.sqlide/sqlide_catalogman_ext.py,item,,,"lambda: show_schema_manager(sender, schemas_selected)",67
+plugins/wb.sqlide/sqlide_catalogman_ext.py,copy,Copy to Clipboard,,self.copy_to_clipboard,118
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.ok,OK,,self.close,123
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.tree,,,self.on_activate,203
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.refresh_btn,Refresh,,self.refresh,213
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.analyze_local,Don't write to BINLOG (local),,,500
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.optimize_local,Don't write to BINLOG (local),,,538
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.check_fast_opt,Fast,,,557
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.check_changed_opt,Changed,,,560
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.checksum_quick,Quick (if supported),,,584
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.summary_view.tree,,,self.table_selection_changed,646
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.goback_btn,< Summary List,,self.switch_back,649
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.inspect_btn,Inspect Table,,self.summary_view.inspect_table,655
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.maintenance_btn,Maintenance >,,self.switch_maintenance,660
+plugins/wb.sqlide/sqlide_catalogman_ext.py,btn,,,callable,228
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.optimize_ft_only,Optimize FULLTEXT only,,self.optimize_ft_only_toggled,516
+plugins/wb.sqlide/sqlide_catalogman_ext.py,self.menu,Refresh,,,301
+plugins/wb.sqlide/sqlide_import_spatial.py,item,,,"lambda sender=sender: showImporter(sender, schemas_selected)",66
+plugins/wb.sqlide/sqlide_import_spatial.py,self.shapefile_browse_btn,Browse...,,self.shapefile_browse,285
+plugins/wb.sqlide/sqlide_import_spatial.py,self.skipfailures_chb,Skip failures,,,527
+plugins/wb.sqlide/sqlide_import_spatial.py,self.append_chb,Append to existing data,,"lambda checkbox1=self.append_chb, checkbox2=self.overwrite_chb: self.one_check_only(checkbox1, checkbox2)",537
+plugins/wb.sqlide/sqlide_import_spatial.py,self.overwrite_chb,Overwrite existing data,,"lambda checkbox2=self.append_chb, checkbox1=self.overwrite_chb: self.one_check_only(checkbox1, checkbox2)",546
+plugins/wb.sqlide/sqlide_import_spatial.py,self.spatial_index_chb,Create spatial index,,,558
+plugins/wb.sqlide/sqlide_import_spatial.py,self.warning_srs,"Projection file not found, assuming WGS84 Spatial Reference System",,,394
+plugins/wb.sqlide/sqlide_power_export_wizard.py,self.limit_entry,,,lambda entry=self.limit_entry: self.entry_changed(entry),116
+plugins/wb.sqlide/sqlide_power_export_wizard.py,self.offset_entry,,,lambda entry=self.offset_entry: self.entry_changed(entry),124
+plugins/wb.sqlide/sqlide_power_export_wizard.py,sellall_cb,Select / Deselect all entries,,lambda cb=sellall_cb: self.sell_all(cb),130
+plugins/wb.sqlide/sqlide_power_export_wizard.py,self.next_button,Finish,,,223
+plugins/wb.sqlide/sqlide_power_export_wizard.py,self.exportfile_path,,,lambda entry=self.exportfile_path: self.entry_changed(entry),329
+plugins/wb.sqlide/sqlide_power_export_wizard.py,browse_btn,Browse...,,self.browse,337
+plugins/wb.sqlide/sqlide_power_export_wizard.py,self.export_local_cb,Export to local machine,,,362
+plugins/wb.sqlide/sqlide_power_export_wizard.py,self.source_table_sel,,,lambda selector=self.source_table_sel: self.source_table_changed(to_unicode(selector.get_string_value())),575
+plugins/wb.sqlide/sqlide_power_export_wizard.py,item,,,"lambda sender=sender: showPowerExport(sender, user_selection)",74
+plugins/wb.sqlide/sqlide_power_export_wizard.py,fradio,,,lambda f=format: self.output_type_changed(f),347
+plugins/wb.sqlide/sqlide_power_export_wizard.py,self.advanced_button,Simple >>,,,641
+plugins/wb.sqlide/sqlide_power_export_wizard.py,opt_val,,,"lambda selector=opt_val, output=opts: set_selector_entry(selector, output)",503
+plugins/wb.sqlide/sqlide_power_import_export_be.py,item,,,"lambda sender=sender: showPowerExport(sender, user_selection)",77
+plugins/wb.sqlide/sqlide_power_import_wizard.py,item,,,"lambda sender=sender: showPowerImport(sender, user_selection)",75
+plugins/wb.sqlide/sqlide_power_import_wizard.py,self.next_button,Finish,,,83
+plugins/wb.sqlide/sqlide_power_import_wizard.py,chk,,,"lambda checkbox=chk, output=row: operator.setitem(output, 'active', True if checkbox.get_active() else False)",480
+plugins/wb.sqlide/sqlide_power_import_wizard.py,self.existing_table_radio,Use existing table:,,self.radio_click,632
+plugins/wb.sqlide/sqlide_power_import_wizard.py,self.new_table_radio,Create new table: ,,self.radio_click,646
+plugins/wb.sqlide/sqlide_power_import_wizard.py,self.truncate_table_cb,Truncate table before import,,lambda sender=self.truncate_table_cb: set_trunc(sender),665
+plugins/wb.sqlide/sqlide_power_import_wizard.py,self.drop_table_cb,Drop table if exists,,lambda sender=self.drop_table_cb: set_drop(sender),675
+plugins/wb.sqlide/sqlide_power_import_wizard.py,self.importfile_browse_btn,Browse...,,self.importfile_browse,760
+plugins/wb.sqlide/sqlide_power_import_wizard.py,advanced_opts_btn,,,lambda: self.optpanel.show(False) if self.optpanel.is_shown() else self.optpanel.show(True),198
+plugins/wb.sqlide/sqlide_power_import_wizard.py,self.encoding_sel,,,self.encoding_changed,263
+plugins/wb.sqlide/sqlide_power_import_wizard.py,sel,,,"lambda output=row: operator.setitem(output, 'dest_col', sel.get_string_value())",426
+plugins/wb.sqlide/sqlide_power_import_wizard.py,opt_val,,,"lambda selector=opt_val, output=opts: set_selector_entry(selector, output)",234
+plugins/wb.sqlide/sqlide_resultset_ext.py,menu,UPPERCASE Text,,,38
+plugins/wb.sqlide/sqlide_schematree_ext.py,ok,Execute,,,337
+plugins/wb.sqlide/sqlide_schematree_ext.py,cancel,Cancel,,,339
+plugins/wb.sqlide/sqlide_schematree_ext.py,item,Edit Templates...,,"lambda: do_create_index(sender, selection)",220
+plugins/wb.sqlide/sqlide_tableman_ext.py,item,,,"lambda sender=sender, tables_selected=tables_selected: show_table_inspector(sender, tables_selected, 'indexes' if show_index_page else None)",71
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.analyze_btn,Analyze Table,,self.analyze_table,223
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.move_up,â²,,self.move_row_up,430
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.move_down,â¼,,self.move_row_down,434
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.ok,Create,,,477
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.cancel,Cancel,,,480
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.index_list,,,self.index_selected,584
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.drop_index,Drop Index,,self.do_drop_index,592
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.create_index,Create Index for Selected Columns...,,self.do_create_index,669
+plugins/wb.sqlide/sqlide_tableman_ext.py,self.refresh_btn,Refresh,,self.refresh,1143
+plugins/migration/frontend/migration_sql_preview.py,self.object_selector,,,self.show_sql,30
+plugins/migration/frontend/migration_sql_preview.py,save,Betiği kaydet…,,self.save_script,33

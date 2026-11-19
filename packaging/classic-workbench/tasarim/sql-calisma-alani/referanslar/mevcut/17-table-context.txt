@@ -1,0 +1,353 @@
+Window: "StarDataParadise", App: StarDataParadise.exe.
+	0 window (pencere) StarDataParadise Secondary Actions: Raise ID: MainForm
+		1 tab (sek.) ID: contentTabControl
+			163 pane (bölme) test ID: 6030926
+				164 window (pencere) SQL Editor Secondary Actions: Raise ID: SqlIdeForm
+					165 pane (bölme) ID: 2165098
+						166 pane (bölme) ID: mainSplitContainer
+							3899 pane (bölme) ID: 2624208
+								3900 pane (bölme) ID: sideArea
+									3901 pane (bölme) SQL IDE Sidebar Splitter ID: SQL IDE Sidebar Splitter
+										3902 pane (bölme) ID: 3476200
+											3903 pane (bölme) ID: 4918086
+												3904 pane (bölme) ID: 7211432
+													3905 tab (sek.) SQL IDE Sidebar Tabview ID: SQL IDE Sidebar Tabview
+														97293 pane (bölme) Schemas ID: 4786294
+															97294 pane (bölme) Schema Page ID: Schema Page
+																97295 pane (bölme) ID: 2427204
+																	97296 pane (bölme) Schema Search Box ID: Schema Search Box
+																		97297 pane (bölme) ID: 3803086
+																		97298 text field (düzenle) (settable, string) Schema Filter Entry Value: Filter objects ID: Schema Filter Entry
+																	97299 tree (ağaç) Schema Tree ID: Schema Tree
+																		104830 tree item (ağaç öğesi) (selectable) new_db_for_ai
+																			104831 data item (öğe) (settable, string) Schema Value: System.Drawing.Bitmap new_db_for_ai
+																			104832 tree item (ağaç öğesi) (selectable) Tables
+																				104833 data item (öğe) (settable, string) Schema Value: System.Drawing.Bitmap Tables
+																				104834 tree item (ağaç öğesi) (selectable) ai_exam_demo
+																					104835 data item (öğe) (settable, string) Schema Value: System.Drawing.Bitmap ai_exam_demo
+																			104836 tree item (ağaç öğesi) (selectable) Views
+																				104837 data item (öğe) (settable, string) Schema Value: System.Drawing.Bitmap Views
+																			104838 tree item (ağaç öğesi) (selectable) Stored Procedures
+																				104839 data item (öğe) (settable, string) Schema Value: System.Drawing.Bitmap Stored Procedures
+																			104840 tree item (ağaç öğesi) (selectable) Functions
+																				104841 data item (öğe) (settable, string) Schema Value: System.Drawing.Bitmap Functions
+																		104842 tree item (ağaç öğesi) (selectable) sdp_models
+																			104843 data item (öğe) (settable, string) Schema Value: System.Drawing.Bitmap sdp_models
+																		104844 tree item (ağaç öğesi) (selectable) sys
+																			104845 data item (öğe) (settable, string) Schema Value: System.Drawing.Bitmap sys
+																97316 tree item (ağaç öğesi) (selectable) SCHEMAS ID: 2033994
+																	104846 button (düğme) Refresh
+														104847 tab item (sekme öğesi) (selectable) Administration
+														104848 tab item (sekme öğesi) (selectable) Schemas
+										3923 pane (bölme) ID: 8520886
+											3924 pane (bölme) ID: 8980978
+												3925 tab (sek.) Info View ID: Info View
+													10834 pane (bölme) Object Info ID: 2754524
+														10835 pane (bölme) <html><body style='padding:15px; font-family:Tahoma; font-size: 9pt; color: #000000;'><b>Schema:</b> <font color='#148814'><b>new_db_for_ai</b></font><br><br></body></html> ID: 8062376
+													104849 tab item (sekme öğesi) (selectable) Object Info
+													104850 tab item (sekme öğesi) (selectable) Session
+							198 pane (bölme) ID: 10750834
+								199 pane (bölme) ID: contentSplitContainer
+									200 pane (bölme) ID: 2427052
+										201 pane (bölme) ID: mainContentSplitContainer
+											202 pane (bölme) ID: 3540930
+												203 tab (sek.) ID: mainContentTabControl
+													102973 pane (bölme) new_db_for_ai ID: 1642690
+														102974 window (pencere) Secondary Actions: Raise ID: 2820762
+															102975 pane (bölme) Schema Inspector ID: Schema Inspector
+																102976 tab (sek.) ID: 18
+																	102977 pane (bölme) Info ID: 1970076
+																		102978 pane (bölme) ID: 2363548
+																			102979 pane (bölme) ID: 1051980
+																				102980 pane (bölme) test Panel ID: test Panel
+																					102981 pane (bölme) test Icon ID: test Icon
+																					102982 text (metin) test ID: test
+																					102983 text (metin) new_db_for_ai ID: new_db_for_ai
+																			102984 pane (bölme) new_db_for_ai ID: 3345828
+																				102985 pane (bölme) new_db_for_ai ID: 1379674
+																					102986 text (metin) Schema Details ID: 920920
+																					102987 text (metin) Default collation: ID: 462190
+																					102988 text (metin) utf8mb4_0900_ai_ci ID: 2297210
+																					102989 text (metin) Default characterset: ID: 265600
+																					102990 text (metin) utf8mb4 ID: 658842
+																					102991 text (metin) Table count: ID: 855452
+																					102992 text (metin) 1 ID: 265630
+																					102993 text (metin) Database size (rough estimate): ID: 265632
+																					102994 text (metin) 16.0 KiB ID: 265634
+																	104851 tab item (sekme öğesi) (selectable) Info
+																	104852 tab item (sekme öğesi) (selectable) Tables
+																	104853 tab item (sekme öğesi) (selectable) Columns
+																	104854 tab item (sekme öğesi) (selectable) Indexes
+																	104855 tab item (sekme öğesi) (selectable) Triggers
+																	104856 tab item (sekme öğesi) (selectable) Views
+																	104857 tab item (sekme öğesi) (selectable) Stored Procedures
+																	104858 tab item (sekme öğesi) (selectable) Functions
+																	104859 tab item (sekme öğesi) (selectable) Grants
+																	104860 tab item (sekme öğesi) (selectable) Events
+													104861 tab item (sekme öğesi) (selectable) Query 1
+													104862 tab item (sekme öğesi) (selectable) Administration - Performance Schema Setup
+													104863 tab item (sekme öğesi) (selectable) new_db_for_ai
+									3967 pane (bölme) ID: 10488658
+										3968 pane (bölme) ID: outputHeader
+											3969 pane (bölme) ID: outputPageContent
+												3970 pane (bölme) ID: actionPanel
+													3971 table (tablo) DataGridView ID: 7930968
+														104864 custom Üst Satır
+															104865 header (üstbilgi) Description: DataGridViewColumnHeaderCell(DataGridViewHeaderCell)
+															104866 header (üstbilgi) (settable, string) # Description: DataGridViewColumnHeaderCell(DataGridViewHeaderCell) Value: #
+															104867 header (üstbilgi) (settable, string) Time Description: DataGridViewColumnHeaderCell(DataGridViewHeaderCell) Value: Time
+															104868 header (üstbilgi) (settable, string) Action Description: DataGridViewColumnHeaderCell(DataGridViewHeaderCell) Value: Action
+															104869 header (üstbilgi) (settable, string) Message Description: DataGridViewColumnHeaderCell(DataGridViewHeaderCell) Value: Message
+															104870 header (üstbilgi) (settable, string) Duration / Fetch Description: DataGridViewColumnHeaderCell(DataGridViewHeaderCell) Value: Duration / Fetch
+											3979 toolbar (araç çubuğu) outputPageToolStrip ID: outputPageToolStrip
+												3980 combo box (birleşik giriş kutusu) (settable, string) Value: Action Output ID: 3804318
+													104871 text (metin) (settable, string) Value: Action Output
+													104872 button (düğme) Aç
+												104873 text (metin)
+					283 pane (bölme) ID: 5246180
+						284 toolbar (araç çubuğu) SQL IDE Toolbar ID: SQL IDE Toolbar
+							104874 thumb (kaydırma kutusu) Tutma
+							104875 button (düğme) New File
+							104876 button (düğme) Open File
+							104877 separator (ayırıcı)
+							104878 button (düğme) Show Inspector
+							104879 separator (ayırıcı)
+							104880 button (düğme) New Schema
+							104881 button (düğme) New Table
+							104882 button (düğme) New View
+							104883 button (düğme) New Routine
+							104884 button (düğme) New Function
+							104885 separator (ayırıcı)
+							104886 button (düğme) Search
+							104887 separator (ayırıcı)
+							104888 button (düğme) Reconnect to DBMS
+							104889 separator (ayırıcı)
+							104890 button (düğme) Show Preferences
+							104891 separator (ayırıcı)
+							104892 button (düğme) Toggle Schema Sidebar
+							104893 button (düğme) Toggle Output Area
+							104894 button (düğme) Toggle Secondary Sidebar
+							104895 menu item (menü öğesi) ToolBar Seçenekleri
+						307 menu bar (menü çubuğu) ID: MenuStrip
+							104896 menu item (menü öğesi) File
+								104897 menu item (menü öğesi) New Document
+								104898 menu item (menü öğesi) New Query Tab
+								104899 menu item (menü öğesi) Open Model
+								104900 menu item (menü öğesi) Open SQL Script
+								104901 menu item (menü öğesi) Open Recent
+									104902 menu item (menü öğesi) Open Recent File 1
+									104903 menu item (menü öğesi) Open Recent File 2
+								104904 separator (ayırıcı) Separator
+								104905 menu item (menü öğesi) Run SQL Script
+								104906 separator (ayırıcı) Separator
+								104907 menu item (menü öğesi) Close Connection Tab
+								104908 menu item (menü öğesi) Close Tab
+								104909 separator (ayırıcı) Separator
+								104910 menu item (menü öğesi) Save Script
+								104911 menu item (menü öğesi) Save Script As
+								104912 menu item (menü öğesi) (disabled) Revert to Saved
+								104913 separator (ayırıcı) Separator
+								104914 menu item (menü öğesi) Exit Application
+							104915 menu item (menü öğesi) Edit
+								104916 menu item (menü öğesi) (disabled) Undo
+								104917 menu item (menü öğesi) (disabled) Redo
+								104918 separator (ayırıcı) Separator
+								104919 menu item (menü öğesi) (disabled) Cut
+								104920 menu item (menü öğesi) (disabled) Copy
+								104921 menu item (menü öğesi) (disabled) Paste
+								104922 menu item (menü öğesi) (disabled) Delete
+								104923 separator (ayırıcı) Separator
+								104924 menu item (menü öğesi) (disabled) Select All
+								104925 separator (ayırıcı) Separator
+								104926 menu item (menü öğesi) Select Next Placeholder
+								104927 menu item (menü öğesi) Find
+									104928 menu item (menü öğesi) Find
+									104929 menu item (menü öğesi) (disabled) Find And Replace
+								104930 menu item (menü öğesi) Format
+									104931 menu item (menü öğesi) (disabled) Beautify Query
+									104932 separator (ayırıcı) Separator
+									104933 menu item (menü öğesi) (disabled) Upcase Keywords
+									104934 menu item (menü öğesi) (disabled) Lowcase Keywords
+									104935 menu item (menü öğesi) (disabled) Toggle Comment on Selection
+								104936 separator (ayırıcı) Separator
+								104937 menu item (menü öğesi) Auto Complete
+								104938 separator (ayırıcı) Separator
+								104939 menu item (menü öğesi) Preferences
+							104940 menu item (menü öğesi) View
+								104941 menu item (menü öğesi) Home
+								104942 menu item (menü öğesi) Panels
+									104943 menu item (menü öğesi) Toggle Sidebar
+									104944 menu item (menü öğesi) Toggle Secondary Sidebar
+									104945 menu item (menü öğesi) Toggle Output Area
+								104946 separator (ayırıcı) Separator
+								104947 menu item (menü öğesi) Select Next Main Tab
+								104948 menu item (menü öğesi) Select Previous Main Tab
+							104949 menu item (menü öğesi) Query
+								104950 menu item (menü öğesi) (disabled) Execute All or Selection
+								104951 menu item (menü öğesi) (disabled) Execute to Text
+								104952 menu item (menü öğesi) (disabled) Execute Current Statement
+								104953 menu item (menü öğesi) (disabled) Execute Current Statement to Text Output
+								104954 separator (ayırıcı) Separator
+								104955 menu item (menü öğesi) (disabled) Explain Current Statement
+								104956 separator (ayırıcı) Separator
+								104957 menu item (menü öğesi) (disabled) Stop
+								104958 menu item (menü öğesi) Stop Script Execution on Errors
+								104959 separator (ayırıcı) Separator
+								104960 menu item (menü öğesi) Limit Rows
+									104961 menu item (menü öğesi) Do Not Limit
+									104962 separator (ayırıcı)
+									104963 menu item (menü öğesi) Limit to 10 Rows
+									104964 menu item (menü öğesi) Limit to 50 Rows
+									104965 menu item (menü öğesi) Limit to 100 Rows
+									104966 menu item (menü öğesi) Limit to 200 Rows
+									104967 menu item (menü öğesi) Limit to 300 Rows
+									104968 menu item (menü öğesi) Limit to 400 Rows
+									104969 menu item (menü öğesi) Limit to 500 Rows
+									104970 menu item (menü öğesi) Limit to 1000 Rows
+									104971 menu item (menü öğesi) Limit to 2000 Rows
+									104972 menu item (menü öğesi) Limit to 5000 Rows
+									104973 menu item (menü öğesi) Limit to 10000 Rows
+									104974 menu item (menü öğesi) Limit to 50000 Rows
+								104975 menu item (menü öğesi) Collect Performance Schema Statistics
+								104976 separator (ayırıcı) Separator
+								104977 menu item (menü öğesi) Reconnect to Server
+								104978 menu item (menü öğesi) New Tab to Current Server
+								104979 separator (ayırıcı) Separator
+								104980 menu item (menü öğesi) Auto Commit Transactions
+								104981 menu item (menü öğesi) (disabled) Commit Transaction
+								104982 menu item (menü öğesi) (disabled) Rollback Transaction
+								104983 separator (ayırıcı) Separator
+								104984 menu item (menü öğesi) (disabled) Commit Result Edits
+								104985 menu item (menü öğesi) (disabled) Discard Result Edits
+								104986 separator (ayırıcı) Separator
+								104987 menu item (menü öğesi) (disabled) Export Results
+							104988 menu item (menü öğesi) Database
+								104989 menu item (menü öğesi) Connect to Database
+								104990 separator (ayırıcı) Separator
+								104991 menu item (menü öğesi) Manage Connections
+								104992 separator (ayırıcı) Separator
+								104993 menu item (menü öğesi) Reverse Engineer
+								104994 separator (ayırıcı) Separator
+								104995 menu item (menü öğesi) Schema Transfer Wizard
+								104996 menu item (menü öğesi) Migration Wizard
+								104997 menu item (menü öğesi) Edit Type Mappings for Generic Migration
+								104998 separator (ayırıcı) Separator
+								104999 menu item (menü öğesi) Search Table Data
+							105000 menu item (menü öğesi) Server
+								105001 menu item (menü öğesi) Server Status
+								105002 menu item (menü öğesi) Client Connections
+								105003 menu item (menü öğesi) Users and Privileges
+								105004 menu item (menü öğesi) Status and System Variables
+								105005 menu item (menü öğesi) Data Export
+								105006 menu item (menü öğesi) Data Import
+								105007 separator (ayırıcı) Separator
+								105008 menu item (menü öğesi) Startup or Shutdown
+								105009 menu item (menü öğesi) Server Logs
+								105010 menu item (menü öğesi) Options File
+								105011 separator (ayırıcı) Separator
+								105012 menu item (menü öğesi) Dashboard
+								105013 menu item (menü öğesi) Performance Reports
+								105014 menu item (menü öğesi) Performance Schema Setup
+								105015 separator (ayırıcı) Separator
+								105016 menu item (menü öğesi) Audit Log Inspector
+								105017 menu item (menü öğesi) Firewall
+								105018 menu item (menü öğesi) Enterprise Backup
+								105019 menu item (menü öğesi) Backup Recovery
+								105020 separator (ayırıcı) Separator
+								105021 menu item (menü öğesi) Management Access Settings
+								105022 menu item (menü öğesi) Reset Saved Passwords for Connection
+							105023 menu item (menü öğesi) Tools
+								105024 menu item (menü öğesi) Browse Audit Log File
+								105025 separator (ayırıcı) Separator
+								105026 menu item (menü öğesi) Configuration
+									105027 menu item (menü öğesi) Backup Connections
+									105028 menu item (menü öğesi) Restore Connections
+								105029 menu item (menü öğesi) SQL Utilities
+									105030 menu item (menü öğesi) Copy Server Connection as PHP
+									105031 menu item (menü öğesi) (disabled) Copy Select Iteration as PHP Code
+								105032 menu item (menü öğesi) MySQL Utilities Shell
+							105033 menu item (menü öğesi) Scripting
+								105034 menu item (menü öğesi) Scripting Shell
+								105035 menu item (menü öğesi) New Script
+								105036 menu item (menü öğesi) Open Script
+								105037 menu item (menü öğesi) (disabled) Run Script File
+								105038 separator (ayırıcı) Separator
+								105039 menu item (menü öğesi) Run Workbench Script File
+								105040 menu item (menü öğesi) Install Plugin or Module
+								105041 menu item (menü öğesi) Plugin Manager
+							105042 menu item (menü öğesi) Help
+								105043 menu item (menü öğesi) Help Index
+								105044 separator (ayırıcı) Separator
+								105045 menu item (menü öğesi) Show License Info
+								105046 menu item (menü öğesi) StarDataParadise Documentation
+								105047 menu item (menü öğesi) StarDataParadise Blog
+								105048 menu item (menü öğesi) StarDataParadise Forums
+								105049 menu item (menü öğesi) Upstream Website
+								105050 separator (ayırıcı) Separator
+								105051 menu item (menü öğesi) Oracle Support
+								105052 separator (ayırıcı) Separator
+								105053 menu item (menü öğesi) Report a Bug
+								105054 menu item (menü öğesi) Locate Log Files
+								105055 menu item (menü öğesi) Show Log File
+								105056 separator (ayırıcı) Separator
+								105057 menu item (menü öğesi) Check for Updates
+								105058 separator (ayırıcı) Separator
+								105059 menu item (menü öğesi) About Workbench
+			105060 tab item (sekme öğesi) (selectable)
+			105061 tab item (sekme öğesi) (selectable) test
+		52 title bar (başlık çubuğu) (settable, string) Value: StarDataParadise
+			53 menu bar (menü çubuğu) Sistem ID: MenuBar
+				33873 menu item (menü öğesi) Sistem
+			55 button (düğme) Simge Durumuna Küçült
+			56 button (düğme) Geri yükle
+			57 button (düğme) Kapat
+		105062 menu (menü) DropDown ID: ContextMenuStrip
+			105063 menu item (menü öğesi) Select Data
+			105064 menu item (menü öğesi) Table Inspector
+			105065 separator (ayırıcı) Separator
+			105066 menu item (menü öğesi) Copy to Clipboard
+				105067 menu item (menü öğesi) Short Name
+				105068 menu item (menü öğesi) Long Name
+				105069 menu item (menü öğesi) Select All Statement
+				105070 menu item (menü öğesi) Insert Statement
+				105071 menu item (menü öğesi) Update Statement
+				105072 menu item (menü öğesi) Delete Statement
+				105073 menu item (menü öğesi) Create Statement
+				105074 separator (ayırıcı)
+				105075 menu item (menü öğesi) (disabled) Join Selected Tables
+				105076 menu item (menü öğesi) Delete With References
+				105077 menu item (menü öğesi) Select Row References
+			105078 menu item (menü öğesi) Table Data Export Wizard
+			105079 menu item (menü öğesi) Table Data Import Wizard
+			105080 separator (ayırıcı)
+			105081 menu item (menü öğesi) Send to Editor
+				105082 menu item (menü öğesi) Short Name
+				105083 menu item (menü öğesi) Long Name
+				105084 menu item (menü öğesi) Select All Statement
+				105085 menu item (menü öğesi) Insert Statement
+				105086 menu item (menü öğesi) Update Statement
+				105087 menu item (menü öğesi) Delete Statement
+				105088 menu item (menü öğesi) Create Statement
+				105089 separator (ayırıcı)
+				105090 menu item (menü öğesi) (disabled) Join Selected Tables
+				105091 menu item (menü öğesi) Delete With References
+				105092 menu item (menü öğesi) Select Row References
+			105093 separator (ayırıcı)
+			105094 menu item (menü öğesi) Create Table...
+			105095 menu item (menü öğesi) Create Table Like...
+				105096 menu item (menü öğesi) timestamps
+				105097 menu item (menü öğesi) user
+				105098 menu item (menü öğesi) category
+				105099 separator (ayırıcı)
+				105100 menu item (menü öğesi) Edit Templates
+			105101 menu item (menü öğesi) Alter Table...
+			105102 menu item (menü öğesi) Table Maintenance...
+			105103 separator (ayırıcı)
+			105104 menu item (menü öğesi) Drop Table...
+			105105 menu item (menü öğesi) Truncate Table...
+			105106 separator (ayırıcı) Top Plugins Separator
+			105107 menu item (menü öğesi) Search Table Data...
+			105108 separator (ayırıcı) Separator
+			105109 menu item (menü öğesi) Refresh
+
+The focused UI element is 97299 tree (ağaç) Schema Tree ID: Schema Tree.

@@ -1,0 +1,17 @@
+{
+  "menu_records": 130,
+  "session_toolbar": 14,
+  "editor_toolbar": 12,
+  "python_controls": 220,
+  "python_files": 31,
+  "runtime_controls": 110,
+  "contexts": [
+    "*global",
+    "*model",
+    "*query",
+    "dbquery",
+    "home",
+    "model",
+    "overview.physical"
+  ]
+}

@@ -7,9 +7,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $workspace = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $source = Join-Path $workspace 'out/mysql-workbench-native-src'
-$revision = git -C $source rev-parse HEAD
-if ($LASTEXITCODE -ne 0 -or $revision -ne 'dc3590dbfbee29c87e201d4ef53607e5deb0e4f9') {
-    throw 'Expected the pinned Workbench 8.0.47 checkout with the StarDataParadise patch applied.'
+git -C $source merge-base --is-ancestor 'dc3590dbfbee29c87e201d4ef53607e5deb0e4f9' HEAD
+if ($LASTEXITCODE -ne 0) {
+    throw 'Expected a Workbench 8.0.47 checkout based on the pinned upstream commit.'
 }
 
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
