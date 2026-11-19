@@ -1,6 +1,8 @@
 # Klasik StarDataParadise Workbench
 
-## 8.0.47 kaynak derlemesi · `v0.3.0-preview.2`
+Bağlantılar, Modeller ve Veri Taşıma ekranlarının renk, tipografi, ikon ve kompakt yerleşim ölçüleri [ana sayfa tasarım kurallarında](tasarim/ANA_SAYFA.md) yer alır.
+
+## 8.0.47 kaynak derlemesi · `v0.3.0-preview.3`
 
 `workbench-8.0.47.patch`, Workbench 8.0.47’nin `dc3590dbfbee29c87e201d4ef53607e5deb0e4f9` commit’ine uygulanır. Yama, StarDataParadise metinlerini ve yıldız ikonlarını, klasik SQL editörüyle ilgili marka değişikliklerini ve Windows kaynak derleme düzeltmelerini içerir. SQL editörünün tasarım dosyası 8.0.47 ile aynı. Karşılama ekranındaki tanıtım bandı mevcut tercih üzerinden varsayılan olarak gizli.
 
@@ -28,6 +30,14 @@ pwsh -NoProfile -File packaging/classic-workbench/Stage-Native.ps1
 26.10.0-StarDataParadise canlı kabulünde TLS kimlik doğrulaması, yanlış CA’nın reddi, BIGINT/DECIMAL/BLOB okuması, `ANALYZE` ve rollback geçti. Klasik SQL editörü örnek satırı gösterdi.
 
 Ana ekran, sunucu sürümüyle doğrulanmış StarDataParadise bağlantılarını gösterir. Eski bir bağlantıyı ana ekrana almak için bağlantı yöneticisinde **Test Connection** ile doğrulayın. SQL editörü her oturumda sunucu kimliğini kontrol eder. Windows yerel hizmet taraması `StarDataParadise` ile başlayan hizmetleri arar.
+
+Classic ana sayfası [tasarım kurallarındaki](tasarim/ANA_SAYFA.md) kompakt **Bağlantılar / Modeller / Veri Taşıma** düzenini kullanır. Bağlantı araması profil, kullanıcı ve sunucu alanlarını süzer; seçili profil **Bağlan**, çift tıklama veya Enter ile gerçek SQL oturumunu açar. **Profili düzenle** ve **Bağlantıyı sına** mevcut bağlantı işlemlerini kullanır. Piksel avatarı profil kimliğiyle saklanır; yeniden adlandırma avatarı değiştirmez. **Görünüm** menüsündeki karşılama ve ana sayfa tema tercihleri yeniden başlatmada korunur.
+
+**Modeller**, kayıtlı `.mwb` dosyalarını ve yeni model oluşturmayı açar. EER diyagramındaki yatay araç çubuğunda **Tablo** ve **İlişki ekle** gerçek model araçlarıdır. **Veri Taşıma**, kaynak ve hedef seçimi, tablo eşleştirme, SQL önizleme ve veri aktarımı için mevcut migration motorunu çalıştırır. Önizleme hedefe yazmaz; SQL uygulama ve veri aktarımı ayrı kullanıcı adımlarıdır. Diğer veritabanı türlerinden taşımada kaynağa uygun x64 ODBC sürücüsü gerekir.
+
+Derleme, canlı kabul sonuçları ve native görünümün kapsamı [uygulama kaydında](tasarim/UYGULAMA.md); gerçek model ve aktarım testlerini tekrar çalıştırma adımları [test kılavuzundadır](tests/README.md).
+
+**Yeni bağlantı**, kompakt Genel / TLS / SSL / Gelişmiş formunu kullanır. **Profilleri yönet**, piksel avatarlarını, tek sekme sırasını ve gerçek TLS/SSH ayarlarını gösterir. **Veri Taşıma** yan yana kaynak/hedef seçimiyle başlar; ayrı salt okunur SQL önizlemesi ve **Betiği kaydet…** adımından sonra uygulama seçeneklerine geçer. Bu ekranların ayrıntıları ve kabul sonuçları [bağlantı/taşıma uygulama kaydındadır](tasarim/baglanti-ve-tasima/UYGULAMA.md).
 
 Yerel örnek veritabanı için **Standard (TCP/IP)** bağlantısını `localhost:3197` adresinde açın. **Rescan for Local Servers** bu uç noktayı bulur. Aynı port StarDataParadiseDrive 2.0.2 ve sonraki sürümlerin yerel SDK bağlantılarını da kabul eder. Doğrulanmış StarDataParadise sunucuları eski Classic sürüm uyarısı göstermeden editörü açar.
 

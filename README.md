@@ -7,6 +7,10 @@ StarDataParadise için Windows x64 masaüstü SQL istemcisi. Bağlantı profille
 | Qt Workbench | TLS üzerinden StarDataParadise wire v1, örnek port `7443` | [Bağlantı kılavuzu](CONNECTIONS.md) ve [derleme](BUILD.md) |
 | Classic Workbench 8.0.47 kaynak önizlemesi | MySQL Classic TCP, ortak yerel dinleyici için örnek `localhost:3197` | [Kaynak yaması, Windows derlemesi ve paketleme](packaging/classic-workbench/README.md) |
 
+## Güncel kaynak sürümü
+
+`v0.3.0-preview.3` Classic 8.0.47 ana sayfasını, kompakt bağlantı ve profil ekranlarını, SQL önizlemesini ve binary veri aktarımı düzeltmesini içerir. [Uygulama ve kabul kaydı](packaging/classic-workbench/tasarim/baglanti-ve-tasima/UYGULAMA.md)
+
 ## İlk bağlantı
 
 ### Qt Workbench
