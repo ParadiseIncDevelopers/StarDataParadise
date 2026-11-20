@@ -20,6 +20,7 @@ if (!$msbuild) { throw 'Visual Studio x64 MSBuild is required.' }
 $java = (Resolve-Path -LiteralPath (Join-Path $JavaHome 'bin/java.exe')).Path
 $logDirectory = New-Item -Path (Join-Path $workspace 'out/mysql-migration') -ItemType Directory -Force
 $log = Join-Path $logDirectory.FullName 'workbench-8.0.47-native-build.log'
+& (Join-Path $PSScriptRoot 'Build-Workspace.ps1') -NativeSource $source -JavaHome $JavaHome -SyncOnly
 $drive = @('W', 'V', 'U') | Where-Object { !(Test-Path "${_}:\") } | Select-Object -First 1
 if (!$drive) { throw 'No free drive letter for the upstream Workbench build batch files.' }
 $alias = "${drive}:"
@@ -33,9 +34,10 @@ try {
     $swig = (Resolve-Path -LiteralPath "$out\workbench8-tools\swigwin-4.3.1\swig.exe").Path
     $env:PATH = "$(Split-Path -Parent $swig);$(Split-Path -Parent $java);$originalPath"
     $framework = "$out\workbench8-tools\framework"
-    $project = "$out\mysql-workbench-native-src\MySQLWorkbench.sln"
+    $project = "$out\mysql-workbench-native-src\StarDataParadiseClassic.sln"
     $arguments = @($project, "/t:$Target", '/p:Configuration=Release_OSS', '/p:Platform=x64',
         '/p:PlatformToolset=v143', "/p:TargetFrameworkRootPath=$framework", "/m:$Jobs",
+        "/p:SdpSwigExecutable=$swig",
         '/nr:false', '/nologo', '/v:m', "/flp:logfile=$log;verbosity=normal")
 
     Push-Location (Split-Path -Parent $project)

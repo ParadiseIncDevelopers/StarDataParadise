@@ -41,7 +41,7 @@
 #include "mforms/menu.h"
 #include "mforms/filechooser.h"
 
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #include "SymbolTable.h"
 

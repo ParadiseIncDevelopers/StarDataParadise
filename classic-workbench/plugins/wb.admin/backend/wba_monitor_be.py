@@ -213,8 +213,8 @@ class WinRemoteStats(object):
         dirpath = dirpath.strip(" \r\t\n")
 
         if dirpath is not None and dirpath != "%USERPROFILE%":
-            script_path = App.get().get_resource_path("mysql_system_status_rmt.vbs")
-            filename = "\"" + dirpath + "\\mysql_system_status_rmt.vbs\""
+            script_path = App.get().get_resource_path("sdp_system_status_rmt.vbs")
+            filename = "\"" + dirpath + "\\sdp_system_status_rmt.vbs\""
             log_debug('Script local path is "%s". Will be uploaded to "%s"\n' % (script_path, filename) )
             if script_path is not None and script_path != "":
                 #print "Uploading file to ", filename

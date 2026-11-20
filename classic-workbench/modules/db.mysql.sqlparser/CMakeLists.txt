@@ -81,3 +81,6 @@ endif()
 
 
 install(TARGETS db.mysql.sqlparser.grt DESTINATION ${WB_PYTHON_MODULES_DIR})
+
+# StarDataParadise artifact names; logical CMake targets remain compatible.
+set_target_properties(db.mysql.sqlparser.grt PROPERTIES OUTPUT_NAME "db.sdp.sqlparser.grt")

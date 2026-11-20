@@ -87,7 +87,7 @@ def get_path_to_mysqldump():
         # if path is not specified, use bundled one
         return mforms.App.get().get_executable_path("mysqldump")
     elif sys.platform == "win32":
-        return mforms.App.get().get_executable_path("mysqldump.exe")
+        return mforms.App.get().get_executable_path("sdpdump.exe")
     else:
         # if path is not specified, use bundled one
         path = mforms.App.get().get_executable_path("mysqldump")
@@ -1256,7 +1256,7 @@ class WbAdminImportTab(WbAdminSchemaListTab):
             # if path is not specified, use bundled one
             return mforms.App.get().get_executable_path("mysql")
         elif sys.platform.lower() == "win32":
-            return mforms.App.get().get_executable_path("mysql.exe")
+            return mforms.App.get().get_executable_path("sdp.exe")
         else:
             # if path is not specified, use bundled one
             path = mforms.App.get().get_executable_path("mysql")

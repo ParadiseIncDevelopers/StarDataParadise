@@ -369,7 +369,7 @@ Connection errors (tcpwrap): %(Connection_errors_tcpwrap)s"""),
 
 GLOBAL_DASHBOARD_WIDGETS_MYSQL_PRE_80 = \
 [
- (None, DBImage, (mforms.App.get().get_resource_path("dashboard_header_mysql_light.png"),), None, (None, None),
+ (None, DBImage, (mforms.App.get().get_resource_path("dashboard_header_sdp_light.png"),), None, (None, None),
   (0, 0, 0), (380, 5),
   ""),
  (None, DBText, ("Primary MySQL Server activity\nand performance statistics.",), None, (None, None),
@@ -465,7 +465,7 @@ Drop View: %(Com_drop_view)s"""),
 
 GLOBAL_DASHBOARD_WIDGETS_MYSQL_POST_80 = \
 [
- (None, DBImage, (mforms.App.get().get_resource_path("dashboard_header_mysql_light.png"),), None, (None, None),
+ (None, DBImage, (mforms.App.get().get_resource_path("dashboard_header_sdp_light.png"),), None, (None, None),
   (0, 0, 0), (380, 5),
   ""),
  (None, DBText, ("Primary MySQL Server activity\nand performance statistics.",), None, (None, None),

@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #include "workbench/wb_context.h"
 #include "workbench/wb_context_ui.h"

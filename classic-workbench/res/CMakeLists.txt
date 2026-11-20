@@ -1,6 +1,6 @@
 add_subdirectory(grt)
 add_subdirectory(grtdata)
-add_subdirectory(mysql.profiles)
+add_subdirectory(sdp.profiles)
 add_subdirectory(scripts)
 add_subdirectory(sqlidedata)
 add_subdirectory(wbdata)

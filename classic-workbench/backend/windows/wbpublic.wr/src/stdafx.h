@@ -68,7 +68,7 @@ typedef int ssize_t;
 
 #include "grts/structs.model.h"
 #include "grts/structs.db.query.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grts/structs.workbench.physical.h"
 
 #pragma make_public(std::exception)

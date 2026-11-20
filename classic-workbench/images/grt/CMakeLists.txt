@@ -144,8 +144,8 @@ set(IMAGE_FILES
     structs/workbench.physical.ViewFigure.16x16.png
     structs/workbench.physical.db2.Model.48x48.png
     structs/workbench.physical.mssql.Model.48x48.png
-    structs/workbench.physical.mysql.Model.16x16.png
-    structs/workbench.physical.mysql.Model.48x48.png
+    structs/workbench.physical.sdp.Model.16x16.png
+    structs/workbench.physical.sdp.Model.48x48.png
     structs/workbench.physical.oracle.Model.48x48.png
     structs/workbench.physical.sqlite.Model.48x48.png
     structs/workbench.physical.sybase.Model.48x48.png

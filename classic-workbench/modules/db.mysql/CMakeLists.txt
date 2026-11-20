@@ -1,13 +1,13 @@
 set(PY_FILES 
-    db_mysql_re_grt.py
-    db_mysql_fe_grt.py
-    db_mysql_migration_grt.py
+    db_sdp_re_grt.py
+    db_sdp_fe_grt.py
+    db_sdp_migration_grt.py
 )
 install(FILES ${PY_FILES} DESTINATION ${WB_PYTHON_MODULES_DIR})
 
 set(MODULE_DATA_FILES
-    res/mysql_engines.xml
-    res/mysql_rdbms_info.xml
+    res/sdp_engines.xml
+    res/sdp_rdbms_info.xml
 )
 install(FILES ${MODULE_DATA_FILES} DESTINATION ${WB_PYTHON_MODULES_DATA_DIR})
 
@@ -58,3 +58,6 @@ if(COMMAND cotire)
 endif()
 
 install(TARGETS db.mysql.grt DESTINATION ${WB_PYTHON_MODULES_DIR})  #TODO: Is this where it should go?
+
+# StarDataParadise artifact names; logical CMake targets remain compatible.
+set_target_properties(db.mysql.grt PROPERTIES OUTPUT_NAME "db.sdp.grt")

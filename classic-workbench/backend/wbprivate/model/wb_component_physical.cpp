@@ -40,7 +40,7 @@
 
 #include "grts/structs.workbench.physical.h"
 #include "grts/structs.db.mgmt.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #include "grtdb/db_helpers.h"
 #include "grtdb/db_object_helpers.h"

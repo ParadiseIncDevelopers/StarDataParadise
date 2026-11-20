@@ -71,7 +71,7 @@ AddOnDownloadWindow::DownloadItem::DownloadItem(AddOnDownloadWindow *owner, cons
   : mforms::Box(true), _owner(owner), _rbox(false), _progress_box(true), _url(url) {
   set_spacing(20);
   _rbox.set_spacing(4);
-  _icon.set_image(bec::IconManager::get_instance()->get_icon_path("MySQLPlugin-48.png"));
+  _icon.set_image(bec::IconManager::get_instance()->get_icon_path("sdpPlugin-48.png"));
   add(&_icon, false, false);
   add(&_rbox, true, true);
   _rbox.add(&_caption, false, true);

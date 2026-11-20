@@ -120,7 +120,7 @@ SyntheticMySQLModel::SyntheticMySQLModel()
   grt::ValueRef root = grt::GRT::get()->root();
   grt::DictRef::cast_from(root).set("grouplist", grouplist);
 
-  rdbms = db_mgmt_RdbmsRef::cast_from(grt::GRT::get()->unserialize("data/res/mysql_rdbms_info.xml"));
+  rdbms = db_mgmt_RdbmsRef::cast_from(grt::GRT::get()->unserialize("data/res/sdp_rdbms_info.xml"));
   model->rdbms(rdbms);
 
   catalog->name("test_catalog");

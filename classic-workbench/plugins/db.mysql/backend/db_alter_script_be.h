@@ -26,7 +26,7 @@
 #pragma once
 
 #include "grt/grt_manager.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grt/grt_string_list_model.h"
 #include "diff_tree.h"
 #include "db_mysql_sql_script_sync.h"

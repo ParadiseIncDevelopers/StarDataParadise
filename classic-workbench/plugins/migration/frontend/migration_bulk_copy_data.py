@@ -61,7 +61,7 @@ class ImportScriptWindows(ImportScript):
         output.append(r'SET MYPATH=%%~dp0')
         
         output.append(r'IF EXIST %%%%MYPATH%%%%%s del /F %%%%MYPATH%%%%%s' % (self.error_log_name, self.error_log_name))
-        output.append(r"SET command=mysql.exe -h127.0.0.1 -P%s -u%s -p -s -N information_schema -e \"SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = 'datadir'\" 2^>^> %%%%MYPATH%%%%%s" % (connection_args['target_port'], connection_args['target_user'], self.error_log_name))
+        output.append(r"SET command=sdp.exe -h127.0.0.1 -P%s -u%s -p -s -N information_schema -e \"SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = 'datadir'\" 2^>^> %%%%MYPATH%%%%%s" % (connection_args['target_port'], connection_args['target_user'], self.error_log_name))
 
         output.append(r'FOR /F "tokens=* USEBACKQ" %%%%F IN ^(^`%%command%%^`^) DO ^(')
         output.append(r'    SET DADADIR=%%%%F')
@@ -89,7 +89,7 @@ class ImportScriptWindows(ImportScript):
         output.append(r'^)')
         
         
-        output.append(r'mysql.exe -h127.0.0.1 -P%s -u%s -p ^< %s_#####_import\%s 2^>^> %%%%MYPATH%%%%%s' % (connection_args['target_port'], connection_args['target_user'], schema_name, path_to_file, self.error_log_name))
+        output.append(r'sdp.exe -h127.0.0.1 -P%s -u%s -p ^< %s_#####_import\%s 2^>^> %%%%MYPATH%%%%%s' % (connection_args['target_port'], connection_args['target_user'], schema_name, path_to_file, self.error_log_name))
         output.append(r'if %%ERRORLEVEL%% GEQ 1 ^(')
         output.append(r'    echo Script has failed. See the log file for details.')
         output.append(r'    exit /b 1')
@@ -241,7 +241,7 @@ class SourceRDBMSMssql(SourceRDBMS):
 class SourceRDBMSMysql(SourceRDBMS):
     def get_copy_table_cmd(self, table, connection_args):
         if self.source_os == 'windows':
-            return 'mysqldump.exe --login-path=wb_migration_source -t --tab=. %(source_schema)s %(source_table)s --fields-terminated-by=,' % dict(list(table.items()) + list(connection_args.items()))
+            return 'sdpdump.exe --login-path=wb_migration_source -t --tab=. %(source_schema)s %(source_table)s --fields-terminated-by=,' % dict(list(table.items()) + list(connection_args.items()))
         else:
             return 'MYSQL_PWD=$arg_source_password mysqldump -h127.0.0.1 -P%(source_port)s -u%(source_user)s -t  --tab=/tmp %(source_schema)s %(source_table)s --fields-terminated-by=\',\'' % dict(list(table.items()) + list(connection_args.items()))
 
@@ -312,7 +312,7 @@ class DataCopyScriptWindows(DataCopyScript):
                 f.write('    exit /b 1\r\n')
                 f.write(')\r\n')
                 
-                f.write("SET command=mysql.exe -h127.0.0.1 -P%s -u%s -p -s -N information_schema -e \"SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = 'datadir'\" 2>> \"%%MYPATH%%%s\"\r\n" % (connection_args['source_port'], connection_args['source_user'], self.error_log_name))
+                f.write("SET command=sdp.exe -h127.0.0.1 -P%s -u%s -p -s -N information_schema -e \"SELECT Variable_Value FROM GLOBAL_VARIABLES WHERE Variable_Name = 'datadir'\" 2>> \"%%MYPATH%%%s\"\r\n" % (connection_args['source_port'], connection_args['source_user'], self.error_log_name))
 
                 f.write('FOR /F "tokens=* USEBACKQ" %%F IN (`%command%`) DO (\r\n')
                 f.write('    SET DADADIR=%%F\r\n')

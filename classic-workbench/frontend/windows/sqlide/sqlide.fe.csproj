@@ -87,9 +87,9 @@
       <Name>base.wr</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\MySQLCsUtilities\MySQLCsUtilities.csproj">
+    <ProjectReference Include="..\MySQLCsUtilities\sdp.utilities.csproj">
       <Project>{ed3999b7-1041-449b-a9c8-a5c76b7732fe}</Project>
-      <Name>MySQLCsUtilities</Name>
+      <Name>sdp.utilities</Name>
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>

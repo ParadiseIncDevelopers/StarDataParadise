@@ -13,7 +13,7 @@
       Icons
     -->
 
-    <Icon Id="WBIcon.exe" SourceFile="resources/MySQLWorkbench.ico" />
+    <Icon Id="WBIcon.exe" SourceFile="resources/sdpWorkbench.ico" />
 
     <!-- *****************************************************************************************
       Directories / Files
@@ -73,10 +73,10 @@
                 <File Id="file1099" Name="python312.dll" />
                 <File Id="python.exe" Name="python.exe" />
                 <?endif?>
-                <File Id="file1101" Name="mysqldump.exe" />
-                <File Id="file1102" Name="mysql.exe" />
-                <File Id="file1103" Name="mysql_system_status.vbs" />
-                <File Id="file1104" Name="mysql_system_status_rmt.vbs" />
+                <File Id="file1101" Name="sdpdump.exe" />
+                <File Id="file1102" Name="sdp.exe" />
+                <File Id="file1103" Name="sdp_system_status.vbs" />
+                <File Id="file1104" Name="sdp_system_status_rmt.vbs" />
                 <File Id="file1106" Name="Scintilla.dll" />
                 <File Id="file68725" Name="sqlite3.dll" />
                 <File Id="gdal.dll" Name="gdal.dll" />
@@ -109,17 +109,17 @@
 
               <Component DiskId="1" Guid="87543D9F-DCBF-41bd-89ED-42161A8DA2AA" Id="Libraries" Location="either">
                 <File Id="file101" Name="utilities.grt.dll" />
-                <File Id="file102" Name="db.mysql.editors.wbp.be.dll" />
-                <File Id="file103" Name="db.mysql.editors.wbp.fe.dll" />
-                <File Id="file104" Name="db.mysql.editors.wbp.wr.dll" />
-                <File Id="file105" Name="db.mysql.grt.dll" />
+                <File Id="file102" Name="db.sdp.editors.wbp.be.dll" />
+                <File Id="file103" Name="db.sdp.editors.wbp.fe.dll" />
+                <File Id="file104" Name="db.sdp.editors.wbp.wr.dll" />
+                <File Id="file105" Name="db.sdp.grt.dll" />
                 <File Id="file106" Name="db.search.wbp.dll" />
-                <File Id="file111" Name="db.mysql.diff.reporting.wbp.dll" />
-                <File Id="file112" Name="db.mysql.sqlparser.grt.dll" />
-                <File Id="file112x" Name="db.mysql.parser.grt.dll" />
-                <File Id="file113" Name="db.mysql.wbp.dll" />
+                <File Id="file111" Name="db.sdp.diff.reporting.wbp.dll" />
+                <File Id="file112" Name="db.sdp.sqlparser.grt.dll" />
+                <File Id="file112x" Name="db.sdp.parser.grt.dll" />
+                <File Id="file113" Name="db.sdp.wbp.dll" />
                 <File Id="file115" Name="grt.db.fe.dll" />
-                <File Id="file116" Name="mysql.forms.dll" />
+                <File Id="file116" Name="sdp.forms.dll" />
                 <File Id="file117" Name="mysqlcppconn-10-vs14.dll" />
                 <File Id="file118" Name="sqlide.fe.dll" />
                 <File Id="file122" Name="WbPlugins.dll" />
@@ -133,7 +133,7 @@
                 <File Id="file1073" Name="base.wr.dll" />
                 <File Id="wbssh.dll" Name="wbssh.dll" />
                 <File Id="mtemplate.dll" Name="mtemplate.dll" />
-                <File Id="file1052" Name="MySQLCsUtilities.dll" />
+                <File Id="file1052" Name="sdp.utilities.dll" />
                 <File Id="file1053" Name="WBControls.dll" />
                 <File Id="file1054" Name="WBControls.dll.config" />
                 <File Id="file1067" Name="wb.model.editors.wbp.be.dll" />
@@ -142,7 +142,7 @@
                 <File Id="file1070" Name="wb.model.grt.dll" />
                 <?if $(var.SETUP_TYPE) != "community" ?>
                 <File Id="file1071" Name="wb.model.reporting.wbp.dll" />
-                <File Id="file1075" Name="wb.mysql.validation.grt.dll" />
+                <File Id="file1075" Name="wb.sdp.validation.grt.dll" />
                 <?endif?>
                 <File Id="file1076" Name="wb.printing.wbp.be.dll" />
                 <File Id="file1077" Name="wb.printing.wbp.fe.dll" />
@@ -157,7 +157,7 @@
                 <File Id="file1096" Name="_cairo.pyd" />
                 <?endif?>
                 <File Id="file1097" Name="sshtunnel.py" />
-                <File Id="file1095" Name="db.mysql.query.grt.dll" />
+                <File Id="file1095" Name="db.sdp.query.grt.dll" />
                 <File Id="file1105" Name="shell_snippets.py.txt" />
                 <File Id="file1107" Name="base.windows.dll" />
                 <File Id="file1108" Name="db_utils.py" />
@@ -172,20 +172,20 @@
                 <File Id="file1117" Name="wb.model.advfind.wbp.dll" />
                 <?endif?>
                 <File Id="file1116" Name="wbadminhelper.exe" />
-                <File Id="file1118" Name="mysqlwbmeb.py" />
-                <File Id="file1119" Name="mysqlwbmeb.vbs" />
+                <File Id="file1118" Name="sdpwbmeb.py" />
+                <File Id="file1119" Name="sdpwbmeb.vbs" />
               </Component>
 
               <Component DiskId="1" Guid="47641656-8430-4722-B558-DAE76CA7C0CA" Id="MySQLWorkbench.exe" Location="either">
                 <File Id="file1056" KeyPath="yes" Name="MySQLWorkbench.exe" />
                 <File Id="MySQLWorkbench.exe.config" Name="MySQLWorkbench.exe.config" />
-                <File Id="MySQLWorkbenchDoc.ico" Name="MySQLWorkbenchDoc.ico" />
+                <File Id="StarDataParadiseDoc.ico" Name="StarDataParadiseDoc.ico" />
 
                 <RegistryValue Action="write" Id="Reg.Extn.MWB" Key=".mwb" Root="HKCR" Type="string" Value="MWBfile" />
 
                 <RegistryKey ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes" Id="Reg.Class.MWB" Key="MWBfile" Root="HKCR">
                   <RegistryValue Id="Reg.Class.MWB.Value" Type="string" Value="MySQL Workbench File" />
-                  <RegistryValue Id="Reg.Class.MWB.Icon" Key="DefaultIcon" Type="string" Value="[#MySQLWorkbenchDoc.ico],0" />
+                  <RegistryValue Id="Reg.Class.MWB.Icon" Key="DefaultIcon" Type="string" Value="[#StarDataParadiseDoc.ico],0" />
                   <RegistryValue Action="write" Id="Reg.Class.MWB.Command" Key="Shell\Open\Command" Type="string" Value="&quot;[#file1056]&quot; &quot;%1&quot;" />
                 </RegistryKey>
 
@@ -193,7 +193,7 @@
 
                 <RegistryKey ForceCreateOnInstall="yes" Id="Reg.Class.SQL" Key="SQLfile" Root="HKCR">
                   <RegistryValue Id="Reg.Class.SQL.Value" Type="string" Value="SQL Text File" />
-                  <RegistryValue Id="Reg.Class.SQL.Icon" Key="DefaultIcon" Type="string" Value="[#MySQLWorkbenchDoc.ico],0" />
+                  <RegistryValue Id="Reg.Class.SQL.Icon" Key="DefaultIcon" Type="string" Value="[#StarDataParadiseDoc.ico],0" />
                   <RegistryValue Action="write" Id="Reg.Class.SQL.Command" Key="Shell\Open\Command" Type="string" Value="&quot;[#file1056]&quot; &quot;%1&quot;" />
                 </RegistryKey>
 
@@ -206,7 +206,7 @@
                 <Shortcut Advertise="no" Description="MySQL Workbench Visual Database Designer" Directory="MysqlProgramMenuFolder" Icon="WBIcon.exe" IconIndex="0" Id="WBProgramShortcut" Name="$(var.PRODUCT_NAME)" Show="normal" Target="[INSTALLDIR]MySQLWorkbench.exe" WorkingDirectory="INSTALLDIR" />
               </Component>
               <Component DiskId="1" Guid="DA7365B3-7FCC-4724-B583-6577FA55C841" Id="mysql_canvas" Location="either">
-                <File Id="file12004" Name="mysql.canvas.dll" />
+                <File Id="file12004" Name="sdp.canvas.dll" />
               </Component>
 
               <Directory Id="sdp_locales_dir" Name="locales">
@@ -332,8 +332,8 @@
                       <File Id="file5071" Name="workbench.physical.Model.16x16.png" />
                       <File Id="file5072" Name="workbench.physical.Model.48x48.png" />
                       <File Id="file5073" Name="workbench.physical.mssql.Model.48x48.png" />
-                      <File Id="file5074" Name="workbench.physical.mysql.Model.16x16.png" />
-                      <File Id="file5075" Name="workbench.physical.mysql.Model.48x48.png" />
+                      <File Id="file5074" Name="workbench.physical.sdp.Model.16x16.png" />
+                      <File Id="file5075" Name="workbench.physical.sdp.Model.48x48.png" />
                       <File Id="file5076" Name="workbench.physical.oracle.Model.48x48.png" />
                       <File Id="file5077" Name="workbench.physical.RoutineGroupFigure.16x16.png" />
                       <File Id="file5078" Name="workbench.physical.sqlite.Model.48x48.png" />
@@ -494,20 +494,20 @@
                     <File Id="file6055" Name="grt.png" />
                     <File Id="file6056" Name="history.png" />
                     <File Id="file6057" Name="layers.png" />
-                    <File Id="file6058" Name="MySQLWorkbench-128.png" />
-                    <File Id="file6059" Name="MySQLWorkbench-16.png" />
-                    <File Id="file6061" Name="MySQLWorkbench-32.png" />
-                    <File Id="file6063" Name="MySQLWorkbench-48.png" />
-                    <File Id="file6064" Name="MySQLWorkbenchDoc-128.png" />
-                    <File Id="file6065" Name="MySQLWorkbenchDoc-16.png" />
-                    <File Id="file6066" Name="MySQLWorkbenchDoc-24.png" />
-                    <File Id="file6067" Name="MySQLWorkbenchDoc-32.png" />
-                    <File Id="file6068" Name="MySQLWorkbenchDoc-48.png" />
-                    <File Id="file6069" Name="MySQLWorkbenchDoc-64.png" />
-                    <File Id="file6070" Name="MySQLWorkbenchDocIcon128x128.png" />
-                    <File Id="file6071" Name="MySQLWorkbenchDocIcon16x16.png" />
-                    <File Id="file6072" Name="MySQLWorkbenchDocIcon32x32.png" />
-                    <File Id="file6073" Name="MySQLWorkbenchDocIcon48x48.png" />
+                    <File Id="file6058" Name="sdpWorkbench-128.png" />
+                    <File Id="file6059" Name="sdpWorkbench-16.png" />
+                    <File Id="file6061" Name="sdpWorkbench-32.png" />
+                    <File Id="file6063" Name="sdpWorkbench-48.png" />
+                    <File Id="file6064" Name="sdpWorkbenchDoc-128.png" />
+                    <File Id="file6065" Name="sdpWorkbenchDoc-16.png" />
+                    <File Id="file6066" Name="sdpWorkbenchDoc-24.png" />
+                    <File Id="file6067" Name="sdpWorkbenchDoc-32.png" />
+                    <File Id="file6068" Name="sdpWorkbenchDoc-48.png" />
+                    <File Id="file6069" Name="sdpWorkbenchDoc-64.png" />
+                    <File Id="file6070" Name="sdpWorkbenchDocIcon128x128.png" />
+                    <File Id="file6071" Name="sdpWorkbenchDocIcon16x16.png" />
+                    <File Id="file6072" Name="sdpWorkbenchDocIcon32x32.png" />
+                    <File Id="file6073" Name="sdpWorkbenchDocIcon48x48.png" />
                     <File Id="file6074" Name="properties.png" />
                     <File Id="file6075" Name="schemata.png" />
                     <File Id="file6076" Name="user_datatypes.png" />
@@ -517,9 +517,9 @@
                     <File Id="file60015" Name="admin_meb_backup.png" />
                     <File Id="file60016" Name="admin_meb_restore.png" />
                     <File Id="file60018" Name="admin_info_unknown.png" />
-                    <File Id="file60019" Name="MySQLWorkbench.ico" />
-                    <File Id="file60020" Name="MySQLWorkbench-256.png" />
-                    <File Id="file60021" Name="MySQLWorkbench-512.png" />
+                    <File Id="file60019" Name="sdpWorkbench.ico" />
+                    <File Id="file60020" Name="sdpWorkbench-256.png" />
+                    <File Id="file60021" Name="sdpWorkbench-512.png" />
                     <File Id="file60029" Name="tiny_new.png" />
                     <File Id="file60031" Name="tiny_new_diagram.png" />
                     <File Id="file60032" Name="tiny_new_doc.png" />
@@ -577,13 +577,13 @@
                     <File Id="file60098" Name="admin_start_stop.png" />
                     <File Id="file60100" Name="admin_status_vars.png" />
                     <File Id="file60102" Name="admin_system_startup.png" />
-                    <File Id="file60111" Name="MySQLPlugin-16.png" />
-                    <File Id="file60112" Name="MySQLPlugin-24.png" />
-                    <File Id="file60113" Name="MySQLPlugin-32.png" />
-                    <File Id="file60114" Name="MySQLPlugin-48.png" />
-                    <File Id="file60115" Name="MySQLPlugin-64.png" />
-                    <File Id="file60116" Name="MySQLPlugin-128.png" />
-                    <File Id="file60117" Name="MySQLPlugin-256.png" />
+                    <File Id="file60111" Name="sdpPlugin-16.png" />
+                    <File Id="file60112" Name="sdpPlugin-24.png" />
+                    <File Id="file60113" Name="sdpPlugin-32.png" />
+                    <File Id="file60114" Name="sdpPlugin-48.png" />
+                    <File Id="file60115" Name="sdpPlugin-64.png" />
+                    <File Id="file60116" Name="sdpPlugin-128.png" />
+                    <File Id="file60117" Name="sdpPlugin-256.png" />
                     <File Id="file60118" Name="mini_edit.png" />
                     <File Id="file60119" Name="mini_ok.png" />
                     <File Id="file60120" Name="record_autosize.png" />
@@ -605,16 +605,16 @@
                     <File Id="file60135" Name="wb-toolbar_nav-forward.png" />
                     <File Id="file60664" Name="wb_toolbar_pages_18x18.png" />
                     <File Id="file60665" Name="admin_audit_inspector.png" />
-                    <File Id="file62000" Name="mysql-logo-00.png" />
-                    <File Id="file62001" Name="mysql-logo-50.png" />
-                    <File Id="file62002" Name="mysql-logo-51.png" />
-                    <File Id="file62003" Name="mysql-logo-55.png" />
-                    <File Id="file62004" Name="mysql-logo-56.png" />
-                    <File Id="file62005" Name="mysql-logo-57.png" />
-                    <File Id="file62006" Name="mysql-logo-58.png" />
-                    <File Id="file62007" Name="mysql-status-off.png" />
-                    <File Id="file62008" Name="mysql-status-on.png" />
-                    <File Id="file62009" Name="mysql-status-separator.png" />
+                    <File Id="file62000" Name="sdp-logo-00.png" />
+                    <File Id="file62001" Name="sdp-logo-50.png" />
+                    <File Id="file62002" Name="sdp-logo-51.png" />
+                    <File Id="file62003" Name="sdp-logo-55.png" />
+                    <File Id="file62004" Name="sdp-logo-56.png" />
+                    <File Id="file62005" Name="sdp-logo-57.png" />
+                    <File Id="file62006" Name="sdp-logo-58.png" />
+                    <File Id="file62007" Name="sdp-status-off.png" />
+                    <File Id="file62008" Name="sdp-status-on.png" />
+                    <File Id="file62009" Name="sdp-status-separator.png" />
                     <File Id="file62010" Name="wb-backup-logo-small.png" />
                     <File Id="file62011" Name="wb-backup-logo.png" />
                     <File Id="file62012" Name="edit_table_templates.png" />
@@ -634,10 +634,10 @@
                     <File Id="file62026" Name="dashboard_arrow_in_static.png" />
                     <File Id="file62027" Name="dashboard_arrow_out_static.png" />
                     <File Id="dashboard_header_innodb_light" Name="dashboard_header_innodb_light.png" />
-                    <File Id="dashboard_header_mysql_light" Name="dashboard_header_mysql_light.png" />
+                    <File Id="dashboard_header_mysql_light" Name="dashboard_header_sdp_light.png" />
                     <File Id="dashboard_header_network_light" Name="dashboard_header_network_light.png" />
                     <File Id="dashboard_header_innodb_dark" Name="dashboard_header_innodb_dark.png" />
-                    <File Id="dashboard_header_mysql_dark" Name="dashboard_header_mysql_dark.png" />
+                    <File Id="dashboard_header_mysql_dark" Name="dashboard_header_sdp_dark.png" />
                     <File Id="dashboard_header_network_dark" Name="dashboard_header_network_dark.png" />
                     <File Id="file62031" Name="admin_dashboard.png" />
                     <File Id="file62033" Name="admin_instrumentation_setup.png" />
@@ -759,7 +759,7 @@
                     <File Id="file60596" Name="task_executing.png" />
                     <File Id="file60597" Name="task_unchecked.png" />
                     <File Id="file60599" Name="task_warning.png" />
-                    <File Id="file60607" Name="MySQL-WB-about-screen.png" />
+                    <File Id="file60607" Name="sdp-WB-about-screen.png" />
                     <File Id="file60610" Name="check.png" />
                     <File Id="file60611" Name="uncheck.png" />
                     <File Id="file60612" Name="unknown.png" />
@@ -2203,9 +2203,9 @@
                   <File Id="file66000" Name="db_mssql_grt.py" />
                   <File Id="file66001" Name="db_mssql_migration_grt.py" />
 
-                  <File Id="file66100" Name="db_mysql_fe_grt.py" />
-                  <File Id="file66101" Name="db_mysql_migration_grt.py" />
-                  <File Id="file66102" Name="db_mysql_re_grt.py" />
+                  <File Id="file66100" Name="db_sdp_fe_grt.py" />
+                  <File Id="file66101" Name="db_sdp_migration_grt.py" />
+                  <File Id="file66102" Name="db_sdp_re_grt.py" />
 
                   <File Id="file66200" Name="db_generic_re_grt.py" />
                   <File Id="file66201" Name="db_generic_migration_grt.py" />
@@ -2288,8 +2288,8 @@
 
                 <Directory Id="data" Name="data">
                   <Component DiskId="1" Guid="2bfa656d-c6a9-4c05-b7d8-155ccb03fc21" Id="modules_data" Location="either">
-                    <File Id="file7002" Name="mysql_rdbms_info.xml" />
-                    <File Id="file7003" Name="mysql_engines.xml" />
+                    <File Id="file7002" Name="sdp_rdbms_info.xml" />
+                    <File Id="file7003" Name="sdp_engines.xml" />
                     <File Id="file7004" Name="mssql_rdbms_info.xml" />
                     <File Id="file7005" Name="generic_rdbms_info.xml" />
                     <File Id="file7007" Name="migration_generic_typemap.xml" />
@@ -2327,10 +2327,10 @@
                       <File Id="file8023" Name="XLS.tpli" />
                       <File Id="file8024" Name="XML.tpli" />
                       <File Id="file8025" Name="tab.tpli" />
-                      <File Id="file8026" Name="XML_mysql.post.tpl" />
-                      <File Id="file8027" Name="XML_mysql.pre.tpl" />
-                      <File Id="file8028" Name="XML_mysql.tpl" />
-                      <File Id="file8029" Name="XML_mysql.tpli" />
+                      <File Id="file8026" Name="XML_sdp.post.tpl" />
+                      <File Id="file8027" Name="XML_sdp.pre.tpl" />
+                      <File Id="file8028" Name="XML_sdp.tpl" />
+                      <File Id="file8029" Name="XML_sdp.tpli" />
                       <File Id="file8030" Name="JSON.post.tpl" />
                       <File Id="file8031" Name="JSON.pre.tpl" />
                       <File Id="file8032" Name="JSON.tpl" />
@@ -2415,34 +2415,34 @@
                 </Directory>
               </Directory>
 
-              <Directory Id="mysql.profiles_dir" Name="mysql.profiles">
-                <Component DiskId="1" Guid="{6818AA27-3CA1-4e52-9BE6-94004D7A81D8}" Id="mysql.profiles" Location="either">
-                  <File Id="file12100c" Name="CentOS_7_(MySQL_Package).xml" />
-                  <File Id="file12100" Name="Fedora_Linux_(MySQL_Package).xml" />
+              <Directory Id="mysql.profiles_dir" Name="sdp.profiles">
+                <Component DiskId="1" Guid="{6818AA27-3CA1-4e52-9BE6-94004D7A81D8}" Id="sdp.profiles" Location="either">
+                  <File Id="file12100c" Name="CentOS_7_(sdp_Package).xml" />
+                  <File Id="file12100" Name="Fedora_Linux_(sdp_Package).xml" />
                   <File Id="file12101" Name="Fedora_Linux_(Vendor_Package).xml" />
                   <File Id="file121012" Name="Fedora_Linux_24_(Vendor_Package).xml" />
                   <File Id="file121012a" Name="Fedora_Linux_25_(Vendor_Package).xml" />
-                  <File Id="file12102" Name="FreeBSD_(MySQL_Package).xml" />
-                  <File Id="file12103" Name="Generic_Linux_(MySQL_tar_package).xml" />
-                  <File Id="file12104" Name="macOS_(MySQL_Package).xml" />
-                  <File Id="file12105" Name="OpenSolaris_(MySQL_Package).xml" />
-                  <File Id="file12106" Name="RHEL_(MySQL_Package).xml" />
-                  <File Id="file12107" Name="SLES_(MySQL_Package).xml" />
-                  <File Id="file12108" Name="Ubuntu_Linux_(MySQL_Package).xml" />
+                  <File Id="file12102" Name="FreeBSD_(sdp_Package).xml" />
+                  <File Id="file12103" Name="Generic_Linux_(sdp_tar_package).xml" />
+                  <File Id="file12104" Name="macOS_(sdp_Package).xml" />
+                  <File Id="file12105" Name="OpenSolaris_(sdp_Package).xml" />
+                  <File Id="file12106" Name="RHEL_(sdp_Package).xml" />
+                  <File Id="file12107" Name="SLES_(sdp_Package).xml" />
+                  <File Id="file12108" Name="Ubuntu_Linux_(sdp_Package).xml" />
                   <File Id="file12109" Name="Ubuntu_Linux_(Vendor_Package).xml" />
-                  <File Id="file12108u" Name="Ubuntu_Linux_(sysvinit,_MySQL_Package).xml" />
+                  <File Id="file12108u" Name="Ubuntu_Linux_(sysvinit,_sdp_Package).xml" />
                   <File Id="file12109u" Name="Ubuntu_Linux_(sysvinit,_Vendor_Package).xml" />
                   <File Id="file12113" Name="Linux_(Custom).xml" />
-                  <File Id="file12122" Name="Windows_x64_(MySQL_x86_zip_Package).xml" />
-                  <File Id="file12123" Name="Windows_(MySQL_5.5_Installer_Package).xml" />
-                  <File Id="file12126" Name="Windows_(MySQL_5.6_Installer_Package).xml" />
-                  <File Id="file12127" Name="Windows_(MySQL_5.7_Installer_Package).xml" />
-                  <File Id="file12128" Name="Windows_(MySQL_8.0_Installer_Package).xml" />
-                  <File Id="file12129" Name="Oracle_Linux_6_(MySQL_Package).xml" />
-                  <File Id="file12130" Name="Oracle_Linux_7_(MySQL_Package).xml" />
-                  <File Id="file12131" Name="RHEL_7_(MySQL_Package).xml" />
-                  <File Id="file12132" Name="MySQL_Sandbox_Linux(MySQL_tar_package).xml" />
-                  <File Id="file12133" Name="MySQL_Sandbox_MacOS(MySQL_tar_package).xml" />
+                  <File Id="file12122" Name="Windows_x64_(sdp_x86_zip_Package).xml" />
+                  <File Id="file12123" Name="Windows_(sdp_5.5_Installer_Package).xml" />
+                  <File Id="file12126" Name="Windows_(sdp_5.6_Installer_Package).xml" />
+                  <File Id="file12127" Name="Windows_(sdp_5.7_Installer_Package).xml" />
+                  <File Id="file12128" Name="Windows_(sdp_8.0_Installer_Package).xml" />
+                  <File Id="file12129" Name="Oracle_Linux_6_(sdp_Package).xml" />
+                  <File Id="file12130" Name="Oracle_Linux_7_(sdp_Package).xml" />
+                  <File Id="file12131" Name="RHEL_7_(sdp_Package).xml" />
+                  <File Id="file12132" Name="sdp_Sandbox_Linux(sdp_tar_package).xml" />
+                  <File Id="file12133" Name="sdp_Sandbox_MacOS(sdp_tar_package).xml" />
                 </Component>
               </Directory>
 
@@ -2452,7 +2452,7 @@
                   <File Id="file14003" Name="structs.db.mgmt.xml" />
                   <File Id="file14004" Name="structs.db.migration.xml" />
                   <File Id="file14005" Name="structs.db.mssql.xml" />
-                  <File Id="file14006" Name="structs.db.mysql.xml" />
+                  <File Id="file14006" Name="structs.db.sdp.xml" />
                   <File Id="file14007" Name="structs.db.oracle.xml" />
                   <File Id="file14008" Name="structs.db.query.xml" />
                   <File Id="file14009" Name="structs.db.sybase.xml" />

@@ -77,9 +77,9 @@
       <Project>{9d8ca378-b2ae-4e1e-9f86-fa01440c57f7}</Project>
       <Name>wbpublic.wr</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\frontend\windows\MySQLCsUtilities\MySQLCsUtilities.csproj">
+    <ProjectReference Include="..\..\..\..\frontend\windows\MySQLCsUtilities\sdp.utilities.csproj">
       <Project>{ed3999b7-1041-449b-a9c8-a5c76b7732fe}</Project>
-      <Name>MySQLCsUtilities</Name>
+      <Name>sdp.utilities</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\frontend\windows\WBPlugins\WBPlugins.csproj">
       <Project>{960ef7b9-a96a-4290-aed9-2689eb28bbf7}</Project>

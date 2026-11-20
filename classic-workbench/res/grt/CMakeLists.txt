@@ -3,7 +3,7 @@ set(DATA_FILES
     structs.db.mgmt.xml
     structs.db.migration.xml
     structs.db.mssql.xml
-    structs.db.mysql.xml
+    structs.db.sdp.xml
     structs.db.oracle.xml
     structs.db.query.xml
     structs.db.sybase.xml

@@ -43,7 +43,7 @@ namespace MySQL.GUI.Workbench
     {
       InitializeComponent();
       Icon = (Icon)Properties.Resources.MySQLWorkbench.Clone();
-      string markPath = Path.Combine(Path.GetDirectoryName(typeof(ExceptionDialog).Assembly.Location), "images", "icons", "MySQLWorkbench-32.png");
+      string markPath = Path.Combine(Path.GetDirectoryName(typeof(ExceptionDialog).Assembly.Location), "images", "icons", "sdpWorkbench-32.png");
       if (File.Exists(markPath))
         using (Image mark = Image.FromFile(markPath)) pictureBox1.Image = new Bitmap(mark);
       else

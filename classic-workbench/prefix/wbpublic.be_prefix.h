@@ -66,7 +66,7 @@
 #include "grts/structs.db.query.h"
 #include "grts/structs.workbench.physical.h"
 #include "grts/structs.db.mgmt.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #define RAPIDJSON_HAS_STDSTRING 1
 #include <rapidjson/rapidjson.h>

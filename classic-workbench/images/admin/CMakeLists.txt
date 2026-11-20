@@ -29,23 +29,23 @@ set(IMAGE_FILES
 	dashboard_arrow_in_static.png
 	dashboard_arrow_out_static.png
 	dashboard_header_innodb_light.png
-	dashboard_header_mysql_light.png
+	dashboard_header_sdp_light.png
 	dashboard_header_network_light.png
 	dashboard_header_innodb_dark.png
-	dashboard_header_mysql_dark.png
+	dashboard_header_sdp_dark.png
 	dashboard_header_network_dark.png
 	dashboard_separator.png
-	mysql-logo-00.png
-	mysql-logo-50.png
-	mysql-logo-51.png
-	mysql-logo-55.png
-	mysql-logo-56.png
-	mysql-logo-57.png
-	mysql-logo-58.png
-	mysql-status-off.png
-	mysql-status-on.png
-	mysql-status-separator-linux.png
-	mysql-status-separator.png
+	sdp-logo-00.png
+	sdp-logo-50.png
+	sdp-logo-51.png
+	sdp-logo-55.png
+	sdp-logo-56.png
+	sdp-logo-57.png
+	sdp-logo-58.png
+	sdp-status-off.png
+	sdp-status-on.png
+	sdp-status-separator-linux.png
+	sdp-status-separator.png
 	page_restore.png
 	ps_easysetup_logo.png
 	ps_easysetup_logo_enabled.png

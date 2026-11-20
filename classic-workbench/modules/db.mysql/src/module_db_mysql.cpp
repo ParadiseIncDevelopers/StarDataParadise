@@ -2743,7 +2743,7 @@ std::string DbMySQLImpl::makeCreateScriptForObject(GrtNamedObjectRef object) {
 
 db_mgmt_RdbmsRef DbMySQLImpl::initializeDBMSInfo() {
   db_mgmt_RdbmsRef rdbms = db_mgmt_RdbmsRef::cast_from(grt::GRT::get()->unserialize(
-    base::makePath(bec::GRTManager::get()->get_basedir(), "modules/data/mysql_rdbms_info.xml")));
+    base::makePath(bec::GRTManager::get()->get_basedir(), "modules/data/sdp_rdbms_info.xml")));
 
   workbench_WorkbenchRef::cast_from(grt::GRT::get()->get("/wb"))->rdbmsMgmt()->rdbms().insert(rdbms);
   return rdbms;

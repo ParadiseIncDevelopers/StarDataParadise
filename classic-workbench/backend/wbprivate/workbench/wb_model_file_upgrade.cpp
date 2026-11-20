@@ -27,7 +27,7 @@
 #include "wb_model_file.h"
 #include "upgrade_helper.h"
 #include "grtdb/db_object_helpers.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "sqlide/table_inserts_loader_be.h"
 #include "base/log.h"
 

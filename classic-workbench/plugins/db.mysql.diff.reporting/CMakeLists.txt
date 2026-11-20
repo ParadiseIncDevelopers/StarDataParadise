@@ -38,3 +38,6 @@ if(COMMAND cotire)
 endif()
 
 install(TARGETS db.mysql.diff.reporting.wbp DESTINATION ${WB_PACKAGE_PLUGINS_DIR})
+
+# StarDataParadise artifact names; logical CMake targets remain compatible.
+set_target_properties(db.mysql.diff.reporting.wbp PROPERTIES OUTPUT_NAME "db.sdp.diff.reporting.wbp")

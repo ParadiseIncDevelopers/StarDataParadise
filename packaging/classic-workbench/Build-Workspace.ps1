@@ -1,33 +1,57 @@
 [CmdletBinding()]
 param(
     [string] $NativeSource = (Join-Path $PSScriptRoot '../../out/mysql-workbench-native-src'),
-    [string] $Output = (Join-Path $PSScriptRoot '../../out/classic-workspace-ui'),
+    [string] $Output = (Join-Path $PSScriptRoot '../../out/classic-sdp-names-ui'),
     [string] $RuntimeSeed = '',
+    [switch] $SyncOnly,
     [string] $JavaHome = 'C:\Program Files\Java\jdk-17',
     [ValidateRange(1, 8)] [int] $Jobs = 3,
     [string[]] $Projects = @(
         'library/base/base.vcxproj',
+        'library/grt/grt.vcxproj',
+        'library/mysql.canvas/sdp.canvas.vcxproj',
+        'library/parsers/parsers.vcxproj',
+        'library/forms/sdp.forms.vcxproj',
+        'library/cdbc/cdbc.vcxproj',
+        'library/base.wr/base.wr.vcxproj',
+        'library/base.windows/base.windows.csproj',
         'frontend/windows/WBControls/WBControls.csproj',
-        'library/forms/mysql.forms.vcxproj',
         'library/forms/winforms/mforms.wr.vcxproj',
         'backend/wbpublic/wbpublic.be.vcxproj',
         'backend/windows/wbpublic.wr/wbpublic.wr.vcxproj',
+        'frontend/windows/MySQLCsUtilities/sdp.utilities.csproj',
         'backend/wbprivate/wbprivate.be.vcxproj',
         'backend/windows/wbprivate.wr/wbprivate.wr.vcxproj',
+        'frontend/windows/WBPlugins/WBPlugins.csproj',
+        'frontend/windows/sqlide/sqlide.fe.csproj',
         'frontend/windows/grt.db/grt.db.fe.csproj',
-        'plugins/db.mysql.editors/backend/db.mysql.editors.wbp.be.vcxproj',
-        'plugins/db.mysql.editors/windows/wrapper/db.mysql.editors.wbp.wr.vcxproj',
-        'plugins/db.mysql.editors/windows/cs/db.mysql.editors.wbp.fe.csproj',
+        'modules/db.mysql/db.sdp.grt.vcxproj',
+        'plugins/db.mysql.editors/backend/db.sdp.editors.wbp.be.vcxproj',
+        'plugins/db.mysql.editors/windows/wrapper/db.sdp.editors.wbp.wr.vcxproj',
+        'plugins/db.mysql.editors/windows/cs/db.sdp.editors.wbp.fe.csproj',
         'plugins/wb.model.editors/backend/wb.model.editors.wbp.be.vcxproj',
         'plugins/wb.model.editors/windows/wrapper/wb.model.editors.wbp.wr.vcxproj',
         'plugins/wb.model.editors/windows/cs/wb.model.editors.wbp.fe.csproj',
+        'plugins/wb.printing/backend/wb.printing.wbp.be.vcxproj',
+        'plugins/wb.printing/windows/wrapper/wb.printing.wbp.wr.vcxproj',
+        'plugins/wb.printing/windows/cs/wb.printing.wbp.fe.csproj',
         'plugins/db.search/db.search.wbp.be.vcxproj',
-        'frontend/windows/sqlide/sqlide.fe.csproj',
-        'frontend/windows/MySQLWorkbench/MySQLWorkbench.csproj'
+        'modules/db.mysql.query/db.sdp.query.grt.vcxproj',
+        'modules/db.mysql.parser/db.sdp.parser.grt.vcxproj',
+        'modules/db.mysql.sqlparser/db.sdp.sqlparser.grt.vcxproj',
+        'plugins/db.mysql/db.sdp.wbp.vcxproj',
+        'plugins/db.mysql.diff.reporting/db.sdp.diff.reporting.wbp.vcxproj',
+        'modules/wb.model/wb.model.grt.vcxproj',
+        'plugins/wb.model.snippets/wb.model.snippets.wbp.vcxproj',
+        'modules/utilities/utilities.grt.vcxproj',
+        'library/forms/swig/_mforms.vcxproj',
+        'library/forms/swig/_cairo.vcxproj',
+        'frontend/windows/MySQLWorkbench/StarDataParadise.csproj'
     )
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Artifact-Names.ps1')
 $workspace = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '../..')).Path
 $canonical = (Resolve-Path -LiteralPath (Join-Path $workspace 'classic-workbench')).Path
 $native = (Resolve-Path -LiteralPath $NativeSource).Path
@@ -42,12 +66,14 @@ if ($output.StartsWith($native + [IO.Path]::DirectorySeparatorChar, [StringCompa
     $output -eq $native) {
     throw 'Use a separate output directory; the existing native runtime is retained.'
 }
-if (!$RuntimeSeed) { $RuntimeSeed = Join-Path $native 'bin/x64/Release_OSS' }
-$seed = (Resolve-Path -LiteralPath $RuntimeSeed).Path
-if ($seed -eq $output) { throw 'RuntimeSeed must differ from Output.' }
-foreach ($relative in @('StarDataParadise.exe', 'python312.dll', '_mforms.pyd', 'data/main_menu.xml')) {
-    if (!(Test-Path -LiteralPath (Join-Path $seed $relative) -PathType Leaf)) {
-        throw "An existing full native build and staged runtime are required. Missing: $relative"
+if (!$SyncOnly) {
+    if (!$RuntimeSeed) { $RuntimeSeed = Join-Path $native 'bin/x64/Release_OSS' }
+    $seed = (Resolve-Path -LiteralPath $RuntimeSeed).Path
+    if ($seed -eq $output) { throw 'RuntimeSeed must differ from Output.' }
+    foreach ($relative in @('StarDataParadise.exe', 'python312.dll', '_mforms.pyd', 'data/main_menu.xml')) {
+        if (!(Test-Path -LiteralPath (Join-Path $seed $relative) -PathType Leaf)) {
+            throw "An existing full native build and staged runtime are required. Missing: $relative"
+        }
     }
 }
 git -C $native merge-base --is-ancestor 'dc3590dbfbee29c87e201d4ef53607e5deb0e4f9' HEAD
@@ -108,11 +134,17 @@ foreach ($copy in $plan) {
     Copy-Item -LiteralPath $copy.Source -Destination $copy.Target -Force
 }
 $hashes | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+if ($SyncOnly) {
+    $global:LASTEXITCODE = 0
+    [pscustomobject]@{ NativeSource = $native; SourcesUpdated = $plan.Count; Manifest = $manifestPath }
+    return
+}
 
 New-Item -ItemType Directory -Path $output -Force | Out-Null
 # Seed missing runtime files without replacing a newer workspace build. The
 # Visual Studio cache may contain locked files and is excluded at every depth.
-robocopy $seed $output /E /XC /XN /XO /R:1 /W:1 /NFL /NDL /NJH /NJS /NP /XD .vs .git /XF *.pyc
+$legacyPatterns = @(Get-SdpLegacyArtifactPatterns)
+robocopy $seed $output /E /XC /XN /XO /R:1 /W:1 /NFL /NDL /NJH /NJS /NP /XD .vs .git mysql.profiles /XF *.pyc WBTests.exe StarDataParadiseModelAcceptance.exe @legacyPatterns
 if ($LASTEXITCODE -ge 8) { throw "Runtime staging failed ($LASTEXITCODE)." }
 
 $drive = @('W', 'V', 'U') | Where-Object { !(Test-Path "${_}:\") } | Select-Object -First 1
@@ -136,7 +168,7 @@ try {
             $logName = 'workspace-' + ($project -replace '[^a-zA-Z0-9.-]', '_') + '.log'
             $log = Join-Path $logDirectory $logName
             Write-Output "Building $project"
-            & $msbuild $projectPath '/t:Build' '/p:BuildProjectReferences=false' '/p:Configuration=Release_OSS' '/p:Platform=x64' '/p:PlatformToolset=v143' "/p:SolutionDir=$sourceAlias" "/p:OutDir=$outputAlias" "/p:OutputPath=$outputAlias" '/p:PostBuildEvent=' '/p:RunPostBuildEvent=Never' "/p:TargetFrameworkRootPath=$framework" "/m:$Jobs" '/nr:false' '/nologo' '/v:m' *> $log
+            & $msbuild $projectPath '/t:Build' '/p:BuildProjectReferences=false' '/p:Configuration=Release_OSS' '/p:Platform=x64' '/p:PlatformToolset=v143' "/p:SolutionDir=$sourceAlias" "/p:OutDir=$outputAlias" "/p:OutputPath=$outputAlias" '/p:PostBuildEvent=' '/p:RunPostBuildEvent=Never' "/p:TargetFrameworkRootPath=$framework" "/p:SdpSwigExecutable=$swig" "/m:$Jobs" '/nr:false' '/nologo' '/v:m' *> $log
             if ($LASTEXITCODE -ne 0) {
                 Get-Content -LiteralPath $log -Tail 45
                 throw "Build failed: $project. Full log: $log"
@@ -185,6 +217,14 @@ foreach ($directory in $moduleDirectories) {
 }
 Copy-ResourceTree (Join-Path $canonical 'library/python/workbench') (Join-Path $output 'workbench')
 Copy-ResourceTree (Join-Path $canonical 'res/locales') (Join-Path $output 'locales')
+Copy-FlatFiles (Join-Path $canonical 'modules/db.mysql/res') (Join-Path $output 'modules/data') '*.xml'
+Copy-FlatFiles (Join-Path $canonical 'res/scripts/python') $output '*.py'
+Copy-FlatFiles (Join-Path $canonical 'res/scripts/vbs') $output '*.vbs'
+Copy-FlatFiles (Join-Path $canonical 'res/scripts/shell') $output '*.vbs'
+Copy-SdpBundledClients (Join-Path $deps 'bin') $output
+foreach ($wrapper in @('mforms.py', 'cairo.py')) {
+    Copy-FlatFiles (Join-Path $native 'library/forms/swig') $output $wrapper
+}
 Copy-FlatFiles (Join-Path $canonical 'res/wbdata') (Join-Path $output 'data') '*.xml'
 Copy-FlatFiles (Join-Path $canonical 'res/wbdata') (Join-Path $output 'data') '*.db'
 Copy-FlatFiles (Join-Path $canonical 'res/grtdata') (Join-Path $output 'data') '*.xml'
@@ -196,13 +236,16 @@ foreach ($directory in @('home', 'sql', 'ui', 'cursors', 'grt')) {
     Copy-ResourceTree (Join-Path $canonical "images/$directory") (Join-Path $output "images/$directory")
 }
 Copy-FlatFiles (Join-Path $canonical 'images/icons') (Join-Path $output 'images/icons') '*.ico'
-Copy-FlatFiles (Join-Path $canonical 'res/mysql.profiles') (Join-Path $output 'mysql.profiles') '*.xml'
+Copy-Item -LiteralPath (Join-Path $canonical 'images/icons/StarDataParadiseDoc.ico') -Destination $output -Force
+Copy-FlatFiles (Join-Path $canonical 'res/sdp.profiles') (Join-Path $output 'sdp.profiles') '*.xml'
 Copy-FlatFiles (Join-Path $canonical 'res/snippets') (Join-Path $output 'snippets') '*.txt'
 Copy-ResourceTree (Join-Path $canonical 'res/scripts/sys') (Join-Path $output 'sys')
 Copy-ResourceTree (Join-Path $canonical 'res/sqlidedata/templates') (Join-Path $output 'modules/data/sqlide')
 Copy-ResourceTree (Join-Path $canonical 'res/sqlidedata/context-help') (Join-Path $output 'modules/data/sqlide')
 Copy-Item -LiteralPath (Join-Path $canonical 'License.txt') -Destination $output -Force
-foreach ($relative in @('StarDataParadise.exe', 'base.dll', 'mysql.forms.dll', 'mforms.wr.dll', 'wbprivate.be.dll', 'python312.dll', '_mforms.pyd', 'modules/sdp_tools_grt.py', 'data/dbquery_toolbar.xml')) {
+foreach ($relative in @('StarDataParadise.exe', 'base.dll', 'sdp.forms.dll', 'mforms.wr.dll', 'wbprivate.be.dll', 'python312.dll', '_mforms.pyd', 'modules/sdp_tools_grt.py', 'data/dbquery_toolbar.xml')) {
     if (!(Test-Path -LiteralPath (Join-Path $output $relative) -PathType Leaf)) { throw "Incomplete workspace runtime: $relative" }
 }
+Assert-SdpArtifactNames $output
+$global:LASTEXITCODE = 0
 [pscustomobject]@{ Executable = (Join-Path $output 'StarDataParadise.exe'); SourcesUpdated = $plan.Count; Logs = $logDirectory }

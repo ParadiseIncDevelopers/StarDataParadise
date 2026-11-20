@@ -31,7 +31,7 @@
 #include <locale>
 #include "mysql_sql_parser_utils.h"
 #include "myx_sql_tree_item.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 //#include "util_functions.h"
 #include "grtpp_util.h"
 

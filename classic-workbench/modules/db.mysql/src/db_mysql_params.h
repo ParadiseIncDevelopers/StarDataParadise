@@ -27,7 +27,7 @@
 #include "db_mysql_public_interface.h"
 
 #include <string>
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 namespace dbmysql {
 

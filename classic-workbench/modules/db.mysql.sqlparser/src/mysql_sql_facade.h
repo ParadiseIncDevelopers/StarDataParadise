@@ -27,7 +27,7 @@
 #include "mysql_sql_parser_public_interface.h"
 #include "grtsqlparser/sql_facade.h"
 #include "mysql_sql_parser_base.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grtpp_module_cpp.h"
 
 #define MysqlSqlFacade_VERSION "2.0"

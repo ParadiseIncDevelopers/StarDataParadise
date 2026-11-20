@@ -502,7 +502,7 @@ ServerInstanceEditor::ServerInstanceEditor(const db_mgmt_ManagementRef &mgmt)
   ///
   std::set<std::string> sys_types;
 
-  std::string path = bec::GRTManager::get()->get_data_file_path("mysql.profiles");
+  std::string path = bec::GRTManager::get()->get_data_file_path("sdp.profiles");
   GDir *dir = g_dir_open(path.c_str(), 0, NULL);
   if (dir) {
     const gchar *file;

@@ -174,7 +174,7 @@ void PluginManagerWindow::refresh_plugin_list() {
           icon_path = module->default_icon_path();
 
         if (icon_path.empty() || !g_file_test(icon_path.c_str(), G_FILE_TEST_IS_REGULAR))
-          icon_path = bec::IconManager::get_instance()->get_icon_path("MySQLPlugin-48.png");
+          icon_path = bec::IconManager::get_instance()->get_icon_path("sdpPlugin-48.png");
 
         // disabled for now b/c TreeView in windows doesn't scale down images to fit the row
         // node->set_icon_path(0, icon_path);
@@ -215,7 +215,7 @@ void PluginManagerWindow::list_selection_changed() {
         icon_path = module->default_icon_path();
 
       if (icon_path.empty() || !g_file_test(icon_path.c_str(), G_FILE_TEST_IS_REGULAR))
-        plugin_icon.set_image(bec::IconManager::get_instance()->get_icon_path("MySQLPlugin-48.png"));
+        plugin_icon.set_image(bec::IconManager::get_instance()->get_icon_path("sdpPlugin-48.png"));
       else
         plugin_icon.set_image(icon_path);
 
@@ -226,7 +226,7 @@ void PluginManagerWindow::list_selection_changed() {
       plugin_author.set_text("");
       plugin_version.set_text("");
       plugin_function.set_text("");
-      plugin_icon.set_image(bec::IconManager::get_instance()->get_icon_path("MySQLPlugin-48.png"));
+      plugin_icon.set_image(bec::IconManager::get_instance()->get_icon_path("sdpPlugin-48.png"));
     }
 
     plugin_type.set_text("");

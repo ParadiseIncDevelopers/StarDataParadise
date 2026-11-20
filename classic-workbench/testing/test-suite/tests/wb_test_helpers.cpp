@@ -185,7 +185,7 @@ WorkbenchTester::WorkbenchTester(bool initPython, const base::Size &apage_size, 
 
   {
     db_mgmt_RdbmsRef rdbms = db_mgmt_RdbmsRef::cast_from(
-      grt::GRT::get()->unserialize(bec::GRTManager::get()->get_basedir() + "/modules/data/mysql_rdbms_info.xml"));
+      grt::GRT::get()->unserialize(bec::GRTManager::get()->get_basedir() + "/modules/data/sdp_rdbms_info.xml"));
     workbench_WorkbenchRef::cast_from(grt::GRT::get()->get("/wb"))->rdbmsMgmt()->rdbms().insert(rdbms);
   }
 
@@ -213,7 +213,7 @@ void WorkbenchTester::initializeRuntime() {
 #ifdef __APPLE__
   prefix = "/../Resources"; // Bundle path.
 #endif
-  std::string rdbmsInfoPath = wboptions->basedir + prefix + "/modules/data/mysql_rdbms_info.xml";
+  std::string rdbmsInfoPath = wboptions->basedir + prefix + "/modules/data/sdp_rdbms_info.xml";
   std::string typeGroupsPath = wboptions->basedir + prefix + "/data/db_datatype_groups.xml";
 
   workbench_WorkbenchRef workbench = wb->get_root();

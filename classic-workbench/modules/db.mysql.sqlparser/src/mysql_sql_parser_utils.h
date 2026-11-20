@@ -26,7 +26,7 @@
 
 #include "mysql_sql_parser_fe.h"
 #include "grt.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grtdb/charset_utils.h"
 
 #include "base/string_utilities.h"

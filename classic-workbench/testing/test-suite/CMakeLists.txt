@@ -243,14 +243,14 @@ target_link_libraries(wbtests-bin
     ${path_to_libraries}/libcdbc.so
     ${path_to_libraries}/libparsers.so
     ${path_to_libraries}/libsqlparser.so
-    ${path_to_libraries}/plugins/db.mysql.wbp.so
+    ${path_to_libraries}/plugins/db.sdp.wbp.so
 
 #    ${path_to_plugins}/libdb.mysql.wbp.debug.so
 #    ${path_to_plugins}/libdb.mysql.editors.wbp.debug.so
     ${path_to_plugins}/db.mysql.editors.wbp.so
 
-    ${path_to_modules}/db.mysql.grt.so
-    ${path_to_modules}/db.mysql.sqlparser.grt.so
+    ${path_to_modules}/db.sdp.grt.so
+    ${path_to_modules}/db.sdp.sqlparser.grt.so
     ${path_to_modules}/wb.model.grt.so
 
     ${ANTLR4_LIBRARIES}

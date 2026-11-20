@@ -27,7 +27,7 @@
 #include "relationship_canvas_floater.h"
 
 #include "grtdb/db_object_helpers.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "base/string_utilities.h"
 
 #include "workbench/wb_context.h"

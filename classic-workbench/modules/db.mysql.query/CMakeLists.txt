@@ -28,3 +28,6 @@ if(COMMAND cotire)
 endif()
 
 install(TARGETS db.mysql.query.grt DESTINATION ${WB_PYTHON_MODULES_DIR})
+
+# StarDataParadise artifact names; logical CMake targets remain compatible.
+set_target_properties(db.mysql.query.grt PROPERTIES OUTPUT_NAME "db.sdp.query.grt")

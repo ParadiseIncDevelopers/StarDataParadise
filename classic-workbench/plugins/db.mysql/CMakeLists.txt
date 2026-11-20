@@ -56,3 +56,6 @@ if(COMMAND cotire)
 
   cotire(db.mysql.wbp)
 endif()
+
+# StarDataParadise artifact names; logical CMake targets remain compatible.
+set_target_properties(db.mysql.wbp PROPERTIES OUTPUT_NAME "db.sdp.wbp")

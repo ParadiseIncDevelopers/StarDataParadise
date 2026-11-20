@@ -13,9 +13,9 @@ install(FILES ${SHELL_SNIPPETS_FILES} DESTINATION ${WB_PACKAGE_SHARED_DIR})
 
 
 set(VBSDATA_FILES
-    shell/mysql_system_status.vbs
-    shell/mysql_system_status_rmt.vbs
-    python/mysqlwbmeb.py
+    shell/sdp_system_status.vbs
+    shell/sdp_system_status_rmt.vbs
+    python/sdpwbmeb.py
 )
 install(FILES ${VBSDATA_FILES} DESTINATION ${WB_PACKAGE_SHARED_DIR})
 

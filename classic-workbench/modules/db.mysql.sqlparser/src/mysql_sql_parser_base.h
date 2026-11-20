@@ -27,7 +27,7 @@
 
 #include "mysql_sql_parser_public_interface.h"
 #include "grtsqlparser/sql_parser_base.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 class Mysql_sql_parser_fe;
 namespace mysql_parser {

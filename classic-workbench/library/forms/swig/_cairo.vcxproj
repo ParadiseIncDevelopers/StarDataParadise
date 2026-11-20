@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -66,7 +66,9 @@
     <Import Project="..\..\..\vsprops\wb_cairo.props" />
     <Import Project="..\..\..\vsprops\wb_cpp_std.props" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+    <PropertyGroup Label="UserMacros">
+      <SdpSwigExecutable Condition="'$(SdpSwigExecutable)'==''">swig</SdpSwigExecutable>
+    </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.pyd</TargetExt>
     <TargetName>$(ProjectName)_d</TargetName>
@@ -158,9 +160,9 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cairo_wrap.cxx</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cairo_wrap.cxx</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release_OSS|x64'">cairo_wrap.cxx</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">swig -ILib -ILib\python -I$(WB_3DPARTY_PATH)\Include -I../../base -fvirtual -fcompact -c++ -python -DCAIRO_HAS_PNG_FUNCTIONS=1 cairo.i </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_OSS|x64'">swig -ILib -ILib\python -I$(WB_3DPARTY_PATH)\Include -I../../base -fvirtual -fcompact -c++ -python -DCAIRO_HAS_PNG_FUNCTIONS=1 -DSWIG_PYTHON_LEGACY_BOOL cairo.i </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">swig -ILib -ILib\python -I$(WB_3DPARTY_PATH)\Include -I../../base -fvirtual -fcompact -c++ -python -DCAIRO_HAS_PNG_FUNCTIONS=1 -DSWIG_PYTHON_LEGACY_BOOL cairo.i </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">&quot;$(SdpSwigExecutable)&quot; -ILib -ILib\python -I$(WB_3DPARTY_PATH)\Include -I../../base -fvirtual -fcompact -c++ -python -DCAIRO_HAS_PNG_FUNCTIONS=1 cairo.i </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release_OSS|x64'">&quot;$(SdpSwigExecutable)&quot; -ILib -ILib\python -I$(WB_3DPARTY_PATH)\Include -I../../base -fvirtual -fcompact -c++ -python -DCAIRO_HAS_PNG_FUNCTIONS=1 -DSWIG_PYTHON_LEGACY_BOOL cairo.i </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">&quot;$(SdpSwigExecutable)&quot; -ILib -ILib\python -I$(WB_3DPARTY_PATH)\Include -I../../base -fvirtual -fcompact -c++ -python -DCAIRO_HAS_PNG_FUNCTIONS=1 -DSWIG_PYTHON_LEGACY_BOOL cairo.i </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Regenerating SWIG cairo wrapper...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Regenerating SWIG cairo wrapper...</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release_OSS|x64'">Regenerating SWIG cairo wrapper...</Message>

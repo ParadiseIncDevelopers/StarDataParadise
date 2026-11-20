@@ -31,7 +31,7 @@
 #include "grts/structs.h"
 #include "grts/structs.workbench.h"
 #include "grts/structs.db.mgmt.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grts/structs.db.mgmt.h"
 
 #include "cppdbc.h"

@@ -1,5 +1,23 @@
 # Classic migration kabul testi
 
+SQL açılışı ve ilk sekmenin gerçek paketlenmiş WinForms denetimleriyle regresyonu:
+
+```powershell
+& packaging/classic-workbench/tests/Test-StartupUi.ps1 -Runtime out/classic-startup-ui -Language tr
+& packaging/classic-workbench/tests/Test-StartupUi.ps1 -Runtime out/classic-startup-ui -Language en
+```
+
+13 kontrol bağlantı/veritabanı oluşturmaz; derlenmiş `WBControls.dll` ve ana uygulamanın gerçek denetimlerini kullanır. `-Preview` üretim sekmelerini ve bekleme satırını ayrı bir QA penceresinde gösterir. Derleme ve test çıktısı `out/classic-startup-acceptance/` altına gider. [Kabul ve native görüntüler](../tasarim/sql-calisma-alani/ACILIS-DUZELTMELERI.md).
+
+SDP dosya adı ve gerçek native/CLR yükleme başvurusu kabulü:
+
+```powershell
+python packaging/classic-workbench/tests/artifact_names_acceptance.py
+python packaging/classic-workbench/tests/artifact_runtime_acceptance.py --runtime out/classic-sdp-names-ui
+```
+
+`artifact_gui_probe.py` ayrı `--configdir` ve `--run-script` ile çalışır. `SDP_ARTIFACT_PROBE_MODEL` mevcut bir QA modelinin yoludur; `SDP_ARTIFACT_PROBE_OUTPUT` JSON çıktısını seçer. Gerçek GRT yollarını, profil kaynaklarını, eski model açılışını ve bellekte SQL ayrıştırmayı sınar; sunucuya bağlanmaz ve modeli kaydetmez. [Derleme, canlı editör ve sınırlar](../tasarim/sql-calisma-alani/DOSYA-ADLARI.md).
+
 ```powershell
 python packaging/classic-workbench/tests/migration_acceptance.py --exe "C:/.../StarDataParadise.exe"
 ```

@@ -29,7 +29,7 @@
 #include "db_plugin_be.h"
 
 // if this plugin is for generic db this shouldn't be here! -alfredo
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "db_mysql_sql_export.h"
 #include "db_mysql_validation_page.h"
 

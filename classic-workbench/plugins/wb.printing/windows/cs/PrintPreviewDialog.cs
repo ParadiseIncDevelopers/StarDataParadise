@@ -68,7 +68,7 @@ namespace MySQL.GUI.Workbench.Plugins
 
       System.Windows.Forms.PrintPreviewDialog preview = new System.Windows.Forms.PrintPreviewDialog();
 
-      preview.Icon = new System.Drawing.Icon("images/icons/MySQLWorkbench.ico");
+      preview.Icon = new System.Drawing.Icon("images/icons/sdpWorkbench.ico");
 
       preview.Document = printDocument;
       preview.UseAntiAlias = true;

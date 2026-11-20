@@ -30,6 +30,6 @@
 
 #include <stack>
 
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #endif

@@ -42,8 +42,8 @@ namespace MySQL.GUI.Workbench.Plugins
       Text = EditorPlugin.TabText;
       TopLevel = true;
       FormBorderStyle = FormBorderStyle.SizableToolWindow;
-      if (File.Exists("images/icons/MySQLWorkbench.ico"))
-        Icon= new Icon("images/icons/MySQLWorkbench.ico", new Size(16, 16));
+      if (File.Exists("images/icons/sdpWorkbench.ico"))
+        Icon= new Icon("images/icons/sdpWorkbench.ico", new Size(16, 16));
     }
 
     #region Native Code

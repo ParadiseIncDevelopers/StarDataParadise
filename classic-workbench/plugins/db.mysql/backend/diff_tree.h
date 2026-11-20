@@ -28,7 +28,7 @@
 
 #include "grt/tree_model.h"
 #include "grts/structs.db.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grt.h"
 
 #include "grtdb/catalog_templates.h"

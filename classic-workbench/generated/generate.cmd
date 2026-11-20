@@ -31,7 +31,7 @@ echo Generating new wrappers...
 ..\tools\bin\x64\Debug\genobj.exe ../res/grt/structs.db.mgmt.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.mgmt
 ..\tools\bin\x64\Debug\genobj.exe ../res/grt/structs.db.migration.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.migration
 ..\tools\bin\x64\Debug\genobj.exe ../res/grt/structs.db.mssql.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.mssql
-..\tools\bin\x64\Debug\genobj.exe ../res/grt/structs.db.mysql.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.mysql
+..\tools\bin\x64\Debug\genobj.exe ../res/grt/structs.db.sdp.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.mysql
 ..\tools\bin\x64\Debug\genobj.exe ../res/grt/structs.db.oracle.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.oracle
 ..\tools\bin\x64\Debug\genobj.exe ../res/grt/structs.db.query.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.query
 ..\tools\bin\x64\Debug\genobj.exe ../res/grt/structs.db.ng.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.ng

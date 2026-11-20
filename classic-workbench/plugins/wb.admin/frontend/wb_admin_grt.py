@@ -445,13 +445,13 @@ def autoDetectLocalInstance(connection):
         version = ".".join(version.split(".")[:2])
 
     def get_profiles_for(system, version):
-        path = mforms.App.get().get_resource_path("mysql.profiles")
+        path = mforms.App.get().get_resource_path("sdp.profiles")
         if not path:
             path = mforms.App.get().get_resource_path("")
             if not path:
-                log_error("Could not find mysql.profiles dir\n")
+                log_error("Could not find sdp.profiles dir\n")
                 return []
-            path += "/mysql.profiles"
+            path += "/sdp.profiles"
         version = Version.fromstr(version or "5.6")
         files = [f for f in os.listdir(path) if f.endswith(".xml")]
         profiles = []

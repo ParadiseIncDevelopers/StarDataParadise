@@ -138,9 +138,9 @@
       <Project>{E439EBC5-F066-4B0F-B2BB-7D8E49D8E747}</Project>
       <Name>mforms.wr</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MySQLCsUtilities\MySQLCsUtilities.csproj">
+    <ProjectReference Include="..\MySQLCsUtilities\sdp.utilities.csproj">
       <Project>{146BEC4D-1647-4854-A928-643C13E9EF5C}</Project>
-      <Name>MySQLCsUtilities</Name>
+      <Name>sdp.utilities</Name>
     </ProjectReference>
     <ProjectReference Include="..\WBControls\WBControls.csproj">
       <Project>{DC4A311E-DBC3-4FB6-88D9-58ED6EACCD1E}</Project>

@@ -2,7 +2,7 @@
 set(SOURCES_TO_GENERATE
     grts/structs.app.h
     grts/structs.db.mgmt.h
-    grts/structs.db.mysql.h
+    grts/structs.db.sdp.h
     grts/structs.db.mssql.h
     grts/structs.db.sybase.h
     grts/structs.db.migration.h

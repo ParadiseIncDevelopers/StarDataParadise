@@ -18,7 +18,7 @@ $BINPATH/genobj ../res/grt/structs.db.xml ../res/grt/ grts ../backend/wbpublic/o
 $BINPATH/genobj ../res/grt/structs.db.mgmt.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.mgmt
 $BINPATH/genobj ../res/grt/structs.db.migration.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.migration
 $BINPATH/genobj ../res/grt/structs.db.mssql.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.mssql
-$BINPATH/genobj ../res/grt/structs.db.mysql.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.mysql
+$BINPATH/genobj ../res/grt/structs.db.sdp.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.mysql
 $BINPATH/genobj ../res/grt/structs.db.oracle.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.oracle
 $BINPATH/genobj ../res/grt/structs.db.query.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.query
 $BINPATH/genobj ../res/grt/structs.db.ng.xml ../res/grt/ grts ../backend/wbpublic/objimpl/db.ng

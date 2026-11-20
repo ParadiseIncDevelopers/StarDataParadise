@@ -26,7 +26,7 @@
 
 #include "grt.h"
 
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #include "common.h"
 #include "expect.h"

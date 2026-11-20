@@ -86,6 +86,8 @@ namespace MySQL.GUI.Workbench
       float queryScale;
       using (Graphics graphics = CreateGraphics())
         queryScale = graphics.DpiX / 96f;
+      // Set the final geometry before the initial query document is docked.
+      mainContentTabControl.ItemSize = new Size((int)Math.Round(120 * queryScale), (int)Math.Round(32 * queryScale));
       editorTabImageList.ImageSize = new Size((int)Math.Round(16 * queryScale), (int)Math.Round(16 * queryScale));
       string queryIcon = System.IO.Path.Combine(Application.StartupPath, "images", "ui", queryScale > 1 ? "sdp_file-code@2x.png" : "sdp_file-code.png");
       if (System.IO.File.Exists(queryIcon))
@@ -748,7 +750,6 @@ namespace MySQL.GUI.Workbench
       using (Graphics graphics = CreateGraphics())
         scale = graphics.DpiX / 96f;
       int sidebarDefault = (int)Math.Round(220 * scale);
-      mainContentTabControl.ItemSize = new Size((int)Math.Round(120 * scale), (int)Math.Round(32 * scale));
 
       // Object side bar.
       int splitterDistance = wbContext.read_state("sidebar_width", "query_editor", sidebarDefault);

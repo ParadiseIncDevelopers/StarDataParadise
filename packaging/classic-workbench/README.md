@@ -2,6 +2,10 @@
 
 Tam Classic kaynak ağacı [classic-workbench/](../../classic-workbench/) altında master dalında yayımlanır. Bu klasör upstream kaynakları, StarDataParadise değişikliklerini, ikonları ve lisans bildirimlerini birlikte içerir. İlk tam kaynak yayını yerel `out/mysql-workbench-native-src` ağacının master commit'inden alınmıştır; güncel ürün kaynağı `classic-workbench/` altında sürümlenir. Aşağıdaki yama akışı da aynı 8.0.47 tabanından kaynak hazırlamak için kullanılabilir.
 
+20 Kasım ek düzeltmesi ilk SQL sekmesinin tam boyanmasını ve kutusuz bağlantı açılış satırını içerir. Yeni yerel çıktı `out/classic-startup-ui/StarDataParadise.exe`; [uygulama, testler ve gerçek görüntüler](tasarim/sql-calisma-alani/ACILIS-DUZELTMELERI.md).
+
+Güncel yerel paket `out/classic-sdp-names-ui/StarDataParadise.exe` yolundadır. Ürün dosyaları, projeler ve yükleme başvuruları `sdp` adlarına taşındı; [ad eşlemesi ve kabul](tasarim/sql-calisma-alani/DOSYA-ADLARI.md) iki zorunlu vendor dosyasını da açıklar. Native solution adı `classic-workbench/StarDataParadiseClassic.sln` olur. `Stage-Native.ps1` ayrı ve yeni çıktı üretir; varsayılanı `out/classic-native-sdp-ui` dizinidir.
+
 Bağlantılar, Modeller ve Veri Taşıma ekranlarının renk, tipografi, ikon ve kompakt yerleşim ölçüleri [ana sayfa tasarım kurallarında](tasarim/ANA_SAYFA.md) yer alır.
 
 ## Güncel Classic çalışma alanı - `v0.3.0-preview.5`
@@ -9,7 +13,7 @@ Bağlantılar, Modeller ve Veri Taşıma ekranlarının renk, tipografi, ikon ve
 Bağlı SQL alanı ve uygulama genelindeki son tasarım değişiklikleri için kanonik kaynak `classic-workbench/` dizinidir. Hazırlanmış 8.0.47 native geliştirme ağacı ve aşağıdaki bağımlılıklar mevcutsa güncel kaynakları ayrı bir çalışma zamanına derleyin:
 
 ```powershell
-pwsh -NoProfile -File packaging/classic-workbench/Build-Workspace.ps1 -Output out/classic-data-schema-delivery
+pwsh -NoProfile -File packaging/classic-workbench/Build-Workspace.ps1 -Output out/classic-sdp-names-ui
 ```
 
 Güncel çıktı `out/classic-data-schema-delivery/StarDataParadise.exe` olur. Varsayılan çalışma zamanı tohumu, hazırlanmış native ağacın `bin/x64/Release_OSS` dizinidir; başka bir tam çalışma zamanı `-RuntimeSeed` ile seçilebilir. Betik kaynakları hash denetimiyle yerel native derleme ağacına eşler, farklı yerel değişiklikte durur ve açık eski uygulamayı sonlandırmaz. 18 native hedefin tam derlemesi, sonraki hedefli turlar ve son `WBControls`/`wbprivate` teslim derlemesi geçti. Kullanıcı ayarlarından ayrı kabul profili `--configdir` ile seçilebilir.
@@ -38,10 +42,11 @@ Windows derlemesi için Visual Studio 18, MSVC v143 x64, C++/CLI, ATL ve Windows
 
 ```powershell
 pwsh -NoProfile -File packaging/classic-workbench/Build-Native.ps1
+pwsh -NoProfile -File packaging/classic-workbench/Stage-Native.ps1 -Output out/classic-native-sdp-ui
 pwsh -NoProfile -File packaging/classic-workbench/Stage-Native.ps1
 ```
 
-Çalıştırılabilir dosya `out/mysql-workbench-native-src/bin/x64/Release_OSS/StarDataParadise.exe` yolundadır. MSBuild, WinForms uygulamasını, C++ ve C++/CLI modüllerini, Python sarmalayıcılarını ve eklentileri 8.0.47 kaynaklarından derler. Paketleme betiği hazırlanmış üçüncü taraf çalışma zamanını ekler.
+MSBuild derleme çıktıları `out/mysql-workbench-native-src/bin/x64/Release_OSS/` dizinine gider. `Build-Native.ps1` kanonik kaynakları korumalı eşleme ile önce native ağaca aktarır. WinForms uygulaması, C++ ve C++/CLI modülleri, Python sarmalayıcıları ve eklentiler 8.0.47 kaynaklarından derlenir. `Stage-Native.ps1` hazırlanmış üçüncü taraf çalışma zamanıyla kullanıma hazır ayrı paketi `out/classic-native-sdp-ui/StarDataParadise.exe` yolunda oluşturur.
 
 26.10.0-StarDataParadise canlı kabulünde TLS kimlik doğrulaması, yanlış CA’nın reddi, BIGINT/DECIMAL/BLOB okuması, `ANALYZE` ve rollback geçti. Klasik SQL editörü örnek satırı gösterdi.
 

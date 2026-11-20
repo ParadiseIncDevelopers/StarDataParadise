@@ -27,7 +27,7 @@
 
 #include "db_mysql_public_interface.h"
 #include "grt/grt_manager.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grt/grt_string_list_model.h"
 #include "db_mysql_validation_page.h"
 

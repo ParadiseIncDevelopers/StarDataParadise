@@ -73,7 +73,7 @@ static grt::ListRef<app_Plugin> get_mysql_plugins_info() {
   app_PluginRef role_editor(grt::Initialized);
   app_PluginRef relationship_editor(grt::Initialized);
 
-  FRONTEND_LIBNAME(schema_editor, ".\\db.mysql.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
+  FRONTEND_LIBNAME(schema_editor, ".\\db.sdp.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
                    "db.mysql.editors.mwbplugin");
   schema_editor->pluginType("gui");
   schema_editor->moduleFunctionName("DbMysqlSchemaEditor");
@@ -84,7 +84,7 @@ static grt::ListRef<app_Plugin> get_mysql_plugins_info() {
   schema_editor->groups().insert("catalog/Editors");
   editors.insert(schema_editor);
 
-  FRONTEND_LIBNAME(table_editor, ".\\db.mysql.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
+  FRONTEND_LIBNAME(table_editor, ".\\db.sdp.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
                    "db.mysql.editors.mwbplugin");
   table_editor->pluginType("gui");
   table_editor->moduleFunctionName("DbMysqlTableEditor");
@@ -95,7 +95,7 @@ static grt::ListRef<app_Plugin> get_mysql_plugins_info() {
   table_editor->groups().insert("catalog/Editors");
   editors.insert(table_editor);
 
-  FRONTEND_LIBNAME(view_editor, ".\\db.mysql.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
+  FRONTEND_LIBNAME(view_editor, ".\\db.sdp.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
                    "db.mysql.editors.mwbplugin");
   view_editor->pluginType("gui");
   view_editor->moduleFunctionName("DbMysqlViewEditor");
@@ -106,7 +106,7 @@ static grt::ListRef<app_Plugin> get_mysql_plugins_info() {
   view_editor->groups().insert("catalog/Editors");
   editors.insert(view_editor);
 
-  FRONTEND_LIBNAME(routine_group_editor, ".\\db.mysql.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
+  FRONTEND_LIBNAME(routine_group_editor, ".\\db.sdp.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
                    "db.mysql.editors.mwbplugin");
   routine_group_editor->pluginType("gui");
   routine_group_editor->moduleFunctionName("DbMysqlRoutineGroupEditor");
@@ -117,7 +117,7 @@ static grt::ListRef<app_Plugin> get_mysql_plugins_info() {
   routine_group_editor->groups().insert("catalog/Editors");
   editors.insert(routine_group_editor);
 
-  FRONTEND_LIBNAME(routine_editor, ".\\db.mysql.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
+  FRONTEND_LIBNAME(routine_editor, ".\\db.sdp.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
                    "db.mysql.editors.mwbplugin");
   routine_editor->pluginType("gui");
   routine_editor->moduleFunctionName("DbMysqlRoutineEditor");
@@ -129,7 +129,7 @@ static grt::ListRef<app_Plugin> get_mysql_plugins_info() {
   editors.insert(routine_editor);
 
   // generic
-  FRONTEND_LIBNAME(user_editor, ".\\db.mysql.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
+  FRONTEND_LIBNAME(user_editor, ".\\db.sdp.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
                    "db.mysql.editors.mwbplugin");
   user_editor->pluginType("gui");
   user_editor->moduleFunctionName("DbMysqlUserEditor");
@@ -140,7 +140,7 @@ static grt::ListRef<app_Plugin> get_mysql_plugins_info() {
   user_editor->groups().insert("catalog/Editors");
   editors.insert(user_editor);
 
-  FRONTEND_LIBNAME(role_editor, ".\\db.mysql.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
+  FRONTEND_LIBNAME(role_editor, ".\\db.sdp.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
                    "db.mysql.editors.mwbplugin");
   role_editor->pluginType("gui");
   role_editor->moduleFunctionName("DbMysqlRoleEditor");
@@ -151,7 +151,7 @@ static grt::ListRef<app_Plugin> get_mysql_plugins_info() {
   role_editor->groups().insert("catalog/Editors");
   editors.insert(role_editor);
 
-  FRONTEND_LIBNAME(relationship_editor, ".\\db.mysql.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
+  FRONTEND_LIBNAME(relationship_editor, ".\\db.sdp.editors.wbp.fe.dll", "db.mysql.editors.wbp.so",
                    "db.mysql.editors.mwbplugin");
   relationship_editor->pluginType("gui");
   relationship_editor->moduleFunctionName("DbMysqlRelationshipEditor");

@@ -75,7 +75,67 @@ namespace MySQL.GUI.Workbench
     private ImageList tabImageList = null;
     private readonly Dictionary<string, int> connectionAvatarIndices = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     private Action pendingConnectionCancel;
+    private bool connectionCancelRequested;
+    private StatusStrip connectionWaitStrip;
+    private ToolStripStatusLabel connectionWaitLabel;
+    private ToolStripButton connectionWaitCancel;
     private readonly Dictionary<ToolStrip, bool> connectionWaitStrips = new Dictionary<ToolStrip, bool>();
+
+    public string PendingConnectionName { get; set; }
+
+    private void ShowConnectionWait()
+    {
+      if (connectionWaitStrip == null)
+      {
+        connectionWaitStrip = new StatusStrip();
+        connectionWaitStrip.Name = "connectionWaitStrip";
+        connectionWaitStrip.SizingGrip = false;
+        connectionWaitStrip.AutoSize = false;
+        connectionWaitStrip.Dock = DockStyle.Bottom;
+        connectionWaitStrip.Font = new Font("Segoe UI", 9.75f);
+        connectionWaitStrip.BackColor = SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(221, 235, 228);
+        connectionWaitStrip.ForeColor = SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(16, 38, 41);
+        using (Graphics graphics = CreateGraphics())
+          connectionWaitStrip.Height = (int)Math.Round(36 * graphics.DpiY / 96f);
+        connectionWaitStrip.Padding = new Padding(10, 3, 10, 3);
+        connectionWaitLabel = new ToolStripStatusLabel();
+        connectionWaitLabel.Name = "connectionWaitLabel";
+        connectionWaitLabel.Spring = true;
+        connectionWaitLabel.AutoToolTip = true;
+        connectionWaitLabel.TextAlign = ContentAlignment.MiddleLeft;
+        var progress = new ToolStripProgressBar();
+        progress.Name = "connectionWaitProgress";
+        progress.Style = ProgressBarStyle.Marquee;
+        progress.MarqueeAnimationSpeed = 30;
+        connectionWaitCancel = new ToolStripButton();
+        connectionWaitCancel.Name = "connectionWaitCancel";
+        connectionWaitCancel.DisplayStyle = ToolStripItemDisplayStyle.Text;
+        connectionWaitCancel.Padding = new Padding(10, 0, 10, 0);
+        connectionWaitCancel.Click += delegate { RequestConnectionCancel(); };
+        connectionWaitStrip.Items.AddRange(new ToolStripItem[] { connectionWaitLabel, progress, connectionWaitCancel });
+        Controls.Add(connectionWaitStrip);
+        // Dock immediately above the ordinary status bar, within the main window.
+        Controls.SetChildIndex(connectionWaitStrip, Controls.GetChildIndex(mainStatusStrip));
+      }
+      connectionCancelRequested = false;
+      connectionWaitLabel.Text = SdpLanguage.Translate("Opening SQL Editor...") + " - " +
+        (PendingConnectionName ?? "").Replace("\r", " ").Replace("\n", " ");
+      connectionWaitLabel.AccessibleName = connectionWaitLabel.Text;
+      connectionWaitCancel.Text = SdpLanguage.Translate("Cancel");
+      connectionWaitCancel.Enabled = true;
+      connectionWaitStrip.Visible = true;
+      connectionWaitStrip.Update();
+    }
+
+    private void RequestConnectionCancel()
+    {
+      if (pendingConnectionCancel == null || connectionCancelRequested) return;
+      connectionCancelRequested = true;
+      connectionWaitLabel.Text = SdpLanguage.Translate("Canceling...");
+      connectionWaitLabel.AccessibleName = connectionWaitLabel.Text;
+      connectionWaitCancel.Enabled = false;
+      pendingConnectionCancel();
+    }
 
     public Action PendingConnectionCancel
     {
@@ -87,6 +147,7 @@ namespace MySQL.GUI.Workbench
         if (value != null)
         {
           tabsContextMenuStrip.Close();
+          ShowConnectionWait();
           LockConnectionWaitStrips(this);
         }
         else
@@ -94,6 +155,8 @@ namespace MySQL.GUI.Workbench
           foreach (var strip in connectionWaitStrips)
             if (!strip.Key.IsDisposed) strip.Key.Enabled = strip.Value;
           connectionWaitStrips.Clear();
+          if (connectionWaitStrip != null) connectionWaitStrip.Visible = false;
+          PendingConnectionName = null;
         }
       }
     }
@@ -103,7 +166,7 @@ namespace MySQL.GUI.Workbench
       foreach (Control control in container.Controls)
       {
         var strip = control as ToolStrip;
-        if (strip != null && !connectionWaitStrips.ContainsKey(strip))
+        if (strip != null && strip != connectionWaitStrip && !connectionWaitStrips.ContainsKey(strip))
         {
           connectionWaitStrips.Add(strip, strip.Enabled);
           strip.Enabled = false;
@@ -1734,7 +1797,7 @@ namespace MySQL.GUI.Workbench
     {
       if (pendingConnectionCancel != null)
       {
-        if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.Enter) pendingConnectionCancel();
+        if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.Enter) RequestConnectionCancel();
         e.SuppressKeyPress = true;
         e.Handled = true;
         return;
@@ -1746,7 +1809,7 @@ namespace MySQL.GUI.Workbench
     {
       if (pendingConnectionCancel != null)
       {
-        if (keyData == Keys.Escape || keyData == Keys.Enter) pendingConnectionCancel();
+        if (keyData == Keys.Escape || keyData == Keys.Enter) RequestConnectionCancel();
         return true;
       }
       return base.ProcessCmdKey(ref msg, keyData);
@@ -1757,7 +1820,7 @@ namespace MySQL.GUI.Workbench
       if (pendingConnectionCancel != null)
       {
         e.Cancel = true;
-        pendingConnectionCancel();
+        RequestConnectionCancel();
         return;
       }
       // Temporarily remove the focus from what ever control has it currently.

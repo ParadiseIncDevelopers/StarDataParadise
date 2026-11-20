@@ -247,7 +247,8 @@ def connectionFromString(connstr):
         # check if this is a mysql cmdline client command
         tokens = shlex.split(connstr.strip())
         if tokens:
-            if tokens[0].endswith("mysql") or tokens[0].endswith("mysql.exe"):
+            client_name = tokens[0].replace("\\", "/").rsplit("/", 1)[-1].lower()
+            if client_name in ("sdp", "sdp.exe", "mysql", "mysql.exe"):
                 i = 1
                 valid = True
                 while i < len(tokens):
@@ -481,7 +482,7 @@ def startCommandLineClientForConnection(conn):
         os.system("""osascript -e 'tell application "Terminal" to do script "%s"'""" % command)
     elif platform.system().lower() == "windows":
         if not bundled_client_path:
-            bundled_client_path = mforms.App.get().get_executable_path("mysql.exe")
+            bundled_client_path = mforms.App.get().get_executable_path("sdp.exe")
 
         # call mysql client, and if it exits with error, pause so that the user can see what went wrong, before closing the window
         # (the ideal way would have been to do what we do for Linux, but Windows shell is too limited)

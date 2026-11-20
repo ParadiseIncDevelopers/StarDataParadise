@@ -2162,6 +2162,23 @@ namespace MySQL.Controls
       }
 		}
 
+    // TabControl updates its native item size without invalidating our cached
+    // rectangles. In particular, the first SQL tab can already be measured when
+    // the restored form state changes the strip height.
+    public new Size ItemSize
+    {
+      get { return base.ItemSize; }
+      set
+      {
+        if (base.ItemSize == value) return;
+        base.ItemSize = value;
+        AdjustLayoutInfo(null);
+        RecalculateFrame();
+        UpdateScroller();
+        Invalidate();
+      }
+    }
+
     public Padding ItemPadding
     {
       get { return itemPadding; }

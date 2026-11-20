@@ -91,8 +91,8 @@ public:
     MinimizeBox = false;
     StartPosition = FormStartPosition::CenterScreen;
     CancelButton = cancelButton;
-    if (File::Exists("images/icons/MySQLWorkbench.ico"))
-      Icon = gcnew Drawing::Icon("images/icons/MySQLWorkbench.ico", Drawing::Size(16, 16));
+    if (File::Exists("images/icons/sdpWorkbench.ico"))
+      Icon = gcnew Drawing::Icon("images/icons/sdpWorkbench.ico", Drawing::Size(16, 16));
 
     // The footer with buttons.
     Controls->Add(footer);

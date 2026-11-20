@@ -45,7 +45,7 @@ AboutBox::AboutBox(const std::string &edition)
   _content.set_spacing(12);
   _heading.set_spacing(12);
   _title_box.set_spacing(4);
-  _logo.set_image(mforms::App::get()->get_resource_path("MySQLWorkbench-128.png"));
+  _logo.set_image(mforms::App::get()->get_resource_path("sdpWorkbench-128.png"));
   _logo.set_scale_contents(true);
   _logo.set_size(48, 48);
   _heading.add(&_logo, false, false);

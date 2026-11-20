@@ -47,7 +47,7 @@
 #include "grtpp_module_cpp.h"
 #include "interfaces/sqlgenerator.h"
 #include "grtdb/db_object_helpers.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 //#include "module_db_mysql_shared_code.h"
 
 using namespace bec;

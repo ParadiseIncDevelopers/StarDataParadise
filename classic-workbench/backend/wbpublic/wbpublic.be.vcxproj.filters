@@ -53,7 +53,7 @@
     <ClInclude Include="..\..\generated\grts\structs.db.mssql.h">
       <Filter>Generated Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\generated\grts\structs.db.mysql.h">
+    <ClInclude Include="..\..\generated\grts\structs.db.sdp.h">
       <Filter>Generated Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\generated\grts\structs.db.query.h">

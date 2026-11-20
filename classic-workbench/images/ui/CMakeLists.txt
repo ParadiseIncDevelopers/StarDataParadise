@@ -15,7 +15,7 @@ set(IMAGE_FILES
     First_16x16.png
     Last_16x16.png
     MacWizardBackground.png
-    MySQL-WB-about-screen.png
+    sdp-WB-about-screen.png
     Refresh_16x16.png
     Refresh_18x18.png
     Refresh_disabled_18x18.png

@@ -66,7 +66,7 @@ $describe("Undo Tests for Editors") {
     $expect(data->tester->getCatalog()->schemata().count()).toEqual(1U, "schemas");
 
     data->schema = data->tester->getCatalog()->schemata()[0];
-    data->rdbms = db_mgmt_RdbmsRef::cast_from(grt::GRT::get()->unserialize(dataDir + "/res/mysql_rdbms_info.xml"));
+    data->rdbms = db_mgmt_RdbmsRef::cast_from(grt::GRT::get()->unserialize(dataDir + "/res/sdp_rdbms_info.xml"));
 
     // make sure the loaded model contains expected number of things
     $expect(data->schema->tables().count()).toEqual(2U, "tables");

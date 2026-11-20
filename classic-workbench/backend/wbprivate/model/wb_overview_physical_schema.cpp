@@ -33,7 +33,7 @@
 #include "grt/exceptions.h"
 
 #include "grts/structs.db.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "base/string_utilities.h"
 
 /**

@@ -27,7 +27,7 @@
 
 #include "db_mysql_diff_reporting_public_interface.h"
 #include "grt/grt_manager.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grt/grt_string_list_model.h"
 
 class DBMYSQLDIFFREPORTINGWBPBE_PUBLIC_FUNC DbMySQLDiffReportingException : public std::logic_error {

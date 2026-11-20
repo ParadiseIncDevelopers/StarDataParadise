@@ -25,7 +25,7 @@
 #pragma once
 
 #include "db_mysql_public_interface.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grt/grt_string_list_model.h"
 #include "diff_tree.h"
 #include "db_mysql_validation_page.h"

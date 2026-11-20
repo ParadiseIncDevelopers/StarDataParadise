@@ -34,6 +34,7 @@ namespace MySQL.Controls
 {
   public interface IConnectionWaitHost
   {
+    string PendingConnectionName { get; set; }
     Action PendingConnectionCancel { get; set; }
   }
 

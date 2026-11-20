@@ -31,7 +31,7 @@ namespace dbmysql {
 
   grt::ListRef<db_mysql_StorageEngine> get_known_engines() {
     return grt::ListRef<db_mysql_StorageEngine>::cast_from(grt::GRT::get()->unserialize(
-      base::makePath(bec::GRTManager::get()->get_basedir(), "modules/data/mysql_engines.xml")));
+      base::makePath(bec::GRTManager::get()->get_basedir(), "modules/data/sdp_engines.xml")));
   }
 
 }

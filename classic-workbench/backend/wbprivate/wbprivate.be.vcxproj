@@ -327,13 +327,13 @@
     <ProjectReference Include="..\..\library\cdbc\cdbc.vcxproj">
       <Project>{2d0409d4-09a1-4776-8dac-3bf778d51734}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\library\forms\mysql.forms.vcxproj">
+    <ProjectReference Include="..\..\library\forms\sdp.forms.vcxproj">
       <Project>{28fcb4e3-8baa-42f2-b2c6-247d9d0745b1}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\library\grt\grt.vcxproj">
       <Project>{dc1ddaad-7dc1-4bc4-b6c8-b7cec998c7ed}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\library\mysql.canvas\mysql.canvas.vcxproj">
+    <ProjectReference Include="..\..\library\mysql.canvas\sdp.canvas.vcxproj">
       <Project>{1b17d534-365d-4c93-b3b6-55610df8629a}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\library\parsers\parsers.vcxproj">

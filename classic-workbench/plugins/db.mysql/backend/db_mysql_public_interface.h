@@ -39,7 +39,7 @@
 #include <string>
 #include <map>
 
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 typedef std::map<std::string, GrtNamedObjectRef> CatalogMap;
 

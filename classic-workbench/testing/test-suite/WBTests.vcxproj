@@ -332,7 +332,7 @@
     <ProjectReference Include="..\..\backend\wbpublic\wbpublic.be.vcxproj">
       <Project>{55ee797d-2b76-474b-82d6-1f96f7788af8}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\internal\wb.mysql.validation\wb.mysql.validation.grt.vcxproj" Condition="'$(Configuration)|$(Platform)'!='Release_OSS|x64'">
+    <ProjectReference Include="..\..\internal\wb.mysql.validation\wb.sdp.validation.grt.vcxproj" Condition="'$(Configuration)|$(Platform)'!='Release_OSS|x64'">
       <Project>{11cc6d53-aa7d-4eed-a984-bc1bc1c37c32}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\library\base\base.vcxproj">
@@ -341,7 +341,7 @@
     <ProjectReference Include="..\..\library\cdbc\cdbc.vcxproj">
       <Project>{2d0409d4-09a1-4776-8dac-3bf778d51734}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\library\forms\mysql.forms.vcxproj">
+    <ProjectReference Include="..\..\library\forms\sdp.forms.vcxproj">
       <Project>{28fcb4e3-8baa-42f2-b2c6-247d9d0745b1}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\library\grt\grt.vcxproj">
@@ -350,7 +350,7 @@
     <ProjectReference Include="..\..\library\mtemplate\mtemplate.vcxproj">
       <Project>{85fcf582-b354-4a7d-b31c-534d71bea53a}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\library\mysql.canvas\mysql.canvas.vcxproj">
+    <ProjectReference Include="..\..\library\mysql.canvas\sdp.canvas.vcxproj">
       <Project>{1b17d534-365d-4c93-b3b6-55610df8629a}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\library\parsers\parsers.vcxproj">
@@ -359,16 +359,16 @@
     <ProjectReference Include="..\..\library\ssh\wbssh.vcxproj">
       <Project>{f678c48f-46ba-4e15-8be2-0d0bd441a23c}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\modules\db.mysql.sqlparser\db.mysql.sqlparser.grt.vcxproj">
+    <ProjectReference Include="..\..\modules\db.mysql.sqlparser\db.sdp.sqlparser.grt.vcxproj">
       <Project>{e3fac4a5-5dcc-43a1-bdd3-0066224ab9a7}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\modules\db.mysql\db.mysql.grt.vcxproj">
+    <ProjectReference Include="..\..\modules\db.mysql\db.sdp.grt.vcxproj">
       <Project>{500b44c3-7d51-42ea-bd8d-5db34c3160fa}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\db.mysql.editors\backend\db.mysql.editors.wbp.be.vcxproj">
+    <ProjectReference Include="..\..\plugins\db.mysql.editors\backend\db.sdp.editors.wbp.be.vcxproj">
       <Project>{b2d1d661-3359-4941-a8e5-72715abac49b}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\db.mysql\db.mysql.wbp.vcxproj">
+    <ProjectReference Include="..\..\plugins\db.mysql\db.sdp.wbp.vcxproj">
       <Project>{4aaa077a-2f2f-4d87-9447-030e1ca1002f}</Project>
     </ProjectReference>
   </ItemGroup>

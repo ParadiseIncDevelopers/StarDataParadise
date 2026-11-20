@@ -26,7 +26,7 @@
 
 #include "grtdb/editor_table.h"
 #include "grts/structs.workbench.physical.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #include "mysql_support_backend_public_interface.h"
 

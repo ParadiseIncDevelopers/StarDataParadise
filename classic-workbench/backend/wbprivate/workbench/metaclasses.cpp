@@ -29,7 +29,7 @@
 #include "grts/structs.db.mgmt.h"
 #include "grts/structs.db.migration.h"
 #include "grts/structs.db.mssql.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grts/structs.db.query.h"
 #include "grts/structs.db.sybase.h"
 #include "grts/structs.eer.h"
@@ -51,7 +51,7 @@ void register_all_metaclasses() {
   register_structs_db_mgmt_xml();
   register_structs_db_migration_xml();
   register_structs_db_mssql_xml();
-  register_structs_db_mysql_xml();
+  register_structs_db_sdp_xml();
   // register_structs_db_oracle_xml();
   register_structs_db_query_xml();
   register_structs_db_sybase_xml();

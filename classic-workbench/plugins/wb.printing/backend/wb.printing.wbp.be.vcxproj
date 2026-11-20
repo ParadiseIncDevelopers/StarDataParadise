@@ -164,7 +164,7 @@
     <ProjectReference Include="..\..\..\library\grt\grt.vcxproj">
       <Project>{dc1ddaad-7dc1-4bc4-b6c8-b7cec998c7ed}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\library\mysql.canvas\mysql.canvas.vcxproj">
+    <ProjectReference Include="..\..\..\library\mysql.canvas\sdp.canvas.vcxproj">
       <Project>{1b17d534-365d-4c93-b3b6-55610df8629a}</Project>
     </ProjectReference>
   </ItemGroup>

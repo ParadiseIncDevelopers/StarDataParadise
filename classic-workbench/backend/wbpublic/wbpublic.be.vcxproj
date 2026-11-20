@@ -320,7 +320,7 @@
     <ClInclude Include="..\..\generated\grts\structs.db.mgmt.h" />
     <ClInclude Include="..\..\generated\grts\structs.db.migration.h" />
     <ClInclude Include="..\..\generated\grts\structs.db.mssql.h" />
-    <ClInclude Include="..\..\generated\grts\structs.db.mysql.h" />
+    <ClInclude Include="..\..\generated\grts\structs.db.sdp.h" />
     <ClInclude Include="..\..\generated\grts\structs.db.query.h" />
     <ClInclude Include="..\..\generated\grts\structs.db.sybase.h" />
     <ClInclude Include="..\..\generated\grts\structs.eer.h" />
@@ -472,7 +472,7 @@
     <ProjectReference Include="..\..\library\cdbc\cdbc.vcxproj">
       <Project>{2d0409d4-09a1-4776-8dac-3bf778d51734}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\library\forms\mysql.forms.vcxproj">
+    <ProjectReference Include="..\..\library\forms\sdp.forms.vcxproj">
       <Project>{28fcb4e3-8baa-42f2-b2c6-247d9d0745b1}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\library\grt\grt.vcxproj">
@@ -481,7 +481,7 @@
     <ProjectReference Include="..\..\library\mtemplate\mtemplate.vcxproj">
       <Project>{85fcf582-b354-4a7d-b31c-534d71bea53a}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\library\mysql.canvas\mysql.canvas.vcxproj">
+    <ProjectReference Include="..\..\library\mysql.canvas\sdp.canvas.vcxproj">
       <Project>{1b17d534-365d-4c93-b3b6-55610df8629a}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\library\parsers\parsers.vcxproj">

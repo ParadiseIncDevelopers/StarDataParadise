@@ -630,6 +630,8 @@ public:
   void request_cancel() {
     if (mforms::ConnectionsSection::opening_section)
       mforms::ConnectionsSection::opening_section->request_connection_cancel();
+    else
+      call_cancel();
   }
 };
 
@@ -642,11 +644,12 @@ bool UtilitiesWrapper::run_cancelable_wait_message(const std::string &title, con
 
   CallSlotDelegate ^ caller = gcnew CallSlotDelegate(&signal_ready, &cancel_slot);
 
-  if (title == "SDP_CONNECTION" && mforms::ConnectionsSection::opening_section != nullptr) {
+  if (title == "SDP_CONNECTION") {
     // Keep the existing worker, authentication dispatch and cancellation protocol.
-    // Only its visual host changes from a branded modal HUD to the selected profile row.
+    // All entry points (profile row, menu, script and session restore) use the
+    // main-window progress strip. A home profile can also show its inline state.
     auto section = mforms::ConnectionsSection::opening_section;
-    section->set_connection_cancel(cancel_slot);
+    if (section != nullptr) section->set_connection_cancel(cancel_slot);
     connection_wait_finished.store(false);
     connection_wait_active.store(true);
     Form ^ owner = Form::ActiveForm;
@@ -657,10 +660,12 @@ bool UtilitiesWrapper::run_cancelable_wait_message(const std::string &title, con
         if (host != nullptr) break;
       }
     }
-    if (host != nullptr)
-      host->PendingConnectionCancel = gcnew System::Action(caller, &CallSlotDelegate::request_cancel);
-    signal_ready();
     try {
+      if (host != nullptr) {
+        host->PendingConnectionName = CppStringToNative(text);
+        host->PendingConnectionCancel = gcnew System::Action(caller, &CallSlotDelegate::request_cancel);
+      }
+      signal_ready();
       while (!connection_wait_finished.load()) {
         Application::DoEvents();
         System::Threading::Thread::Sleep(10);
@@ -668,7 +673,7 @@ bool UtilitiesWrapper::run_cancelable_wait_message(const std::string &title, con
     } finally {
       connection_wait_active.store(false);
       if (host != nullptr) host->PendingConnectionCancel = nullptr;
-      section->set_connection_cancel({});
+      if (section != nullptr) section->set_connection_cancel({});
     }
     // The worker has finished, even when cancellation was requested. Returning
     // completion transfers its owned result to the connection caller, which

@@ -45,6 +45,6 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/foreach.hpp>
 
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #endif

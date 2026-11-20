@@ -25,7 +25,7 @@
 #include "structs.test.h"
 
 #include "grtdb/db_object_helpers.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #include "grt_test_helpers.h"
 #include "wb_test_helpers.h"

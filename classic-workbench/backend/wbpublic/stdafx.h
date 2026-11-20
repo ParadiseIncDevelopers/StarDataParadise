@@ -75,12 +75,12 @@ typedef int ssize_t;
 
 #include "grts/structs.db.h"
 #include "grts/structs.db.mgmt.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "grts/structs.model.h"
 #include "grts/structs.ui.h"
 
 #include "grts/structs.db.query.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 
 #include "grts/structs.meta.h"
 #include "grts/structs.db.migration.h"

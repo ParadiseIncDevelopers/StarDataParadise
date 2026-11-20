@@ -343,7 +343,7 @@ void HostAndRemoteTypePage::enter(bool advancing) {
 
   // Refresh platform list on each enter. This way a change on disk can be reflected without
   // restarting the wizard.
-  std::string path = bec::GRTManager::get()->get_data_file_path("mysql.profiles");
+  std::string path = bec::GRTManager::get()->get_data_file_path("sdp.profiles");
   GDir *dir = g_dir_open(path.c_str(), 0, NULL);
   if (dir) {
     const gchar *file;

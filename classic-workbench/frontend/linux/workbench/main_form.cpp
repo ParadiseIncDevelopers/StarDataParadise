@@ -70,10 +70,10 @@ using base::strfmt;
 static void set_window_icons(Gtk::Window *window) {
   std::vector<Glib::RefPtr<Gdk::Pixbuf> > icons;
 
-  icons.push_back(ImageCache::get_instance()->image_from_filename("MySQLWorkbench-16.png", false));
-  icons.push_back(ImageCache::get_instance()->image_from_filename("MySQLWorkbench-32.png", false));
-  icons.push_back(ImageCache::get_instance()->image_from_filename("MySQLWorkbench-48.png", false));
-  icons.push_back(ImageCache::get_instance()->image_from_filename("MySQLWorkbench-128.png", false));
+  icons.push_back(ImageCache::get_instance()->image_from_filename("sdpWorkbench-16.png", false));
+  icons.push_back(ImageCache::get_instance()->image_from_filename("sdpWorkbench-32.png", false));
+  icons.push_back(ImageCache::get_instance()->image_from_filename("sdpWorkbench-48.png", false));
+  icons.push_back(ImageCache::get_instance()->image_from_filename("sdpWorkbench-128.png", false));
 
   window->set_default_icon_list(icons);
 }

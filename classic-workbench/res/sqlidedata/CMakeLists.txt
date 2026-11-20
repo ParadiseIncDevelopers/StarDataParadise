@@ -23,10 +23,10 @@ set(DATA_FILES
     templates/XML.pre.tpl
     templates/XML.tpl
     templates/XML.tpli
-    templates/XML_mysql.post.tpl
-    templates/XML_mysql.pre.tpl
-    templates/XML_mysql.tpl
-    templates/XML_mysql.tpli
+    templates/XML_sdp.post.tpl
+    templates/XML_sdp.pre.tpl
+    templates/XML_sdp.tpl
+    templates/XML_sdp.tpli
     templates/JSON.post.tpl
     templates/JSON.pre.tpl
     templates/JSON.tpl

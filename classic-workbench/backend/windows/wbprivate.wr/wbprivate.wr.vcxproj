@@ -182,7 +182,7 @@
     <ProjectReference Include="..\..\..\ext\Aga.Controls\Aga.Controls.csproj">
       <Project>{e73bb233-d88b-44a7-a98f-d71ee158381d}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\frontend\windows\MySQLCsUtilities\MySQLCsUtilities.csproj">
+    <ProjectReference Include="..\..\..\frontend\windows\MySQLCsUtilities\sdp.utilities.csproj">
       <Project>{ed3999b7-1041-449b-a9c8-a5c76b7732fe}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\frontend\windows\WBControls\WBControls.csproj">
@@ -197,7 +197,7 @@
     <ProjectReference Include="..\..\..\library\base\base.vcxproj">
       <Project>{c3b85913-b106-40c6-8dde-a7cf52a4ec80}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\library\forms\mysql.forms.vcxproj">
+    <ProjectReference Include="..\..\..\library\forms\sdp.forms.vcxproj">
       <Project>{28fcb4e3-8baa-42f2-b2c6-247d9d0745b1}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\library\forms\winforms\mforms.wr.vcxproj">
@@ -206,7 +206,7 @@
     <ProjectReference Include="..\..\..\library\grt\grt.vcxproj">
       <Project>{dc1ddaad-7dc1-4bc4-b6c8-b7cec998c7ed}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\library\mysql.canvas\mysql.canvas.vcxproj">
+    <ProjectReference Include="..\..\..\library\mysql.canvas\sdp.canvas.vcxproj">
       <Project>{1b17d534-365d-4c93-b3b6-55610df8629a}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\wbprivate\wbprivate.be.vcxproj">

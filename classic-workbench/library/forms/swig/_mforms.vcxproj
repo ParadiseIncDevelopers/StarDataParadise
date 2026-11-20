@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -66,7 +66,9 @@
     <Import Project="..\..\..\vsprops\wb_python.props" />
     <Import Project="..\..\..\vsprops\wb_cpp_std.props" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <SdpSwigExecutable Condition="'$(SdpSwigExecutable)'==''">swig</SdpSwigExecutable>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.pyd</TargetExt>
     <TargetName>$(ProjectName)_d</TargetName>
@@ -155,9 +157,9 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release_OSS|x64'">false</DeploymentContent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">swig  -ILib\python -ILib -I$(WB_3DPARTY_PATH)\Include -I$(WB_3DPARTY_PATH)\include\glib-2.0 -I$(WB_3DPARTY_PATH)\lib\glib-2.0\include -I../../base -I.. -fvirtual -fcompact -c++ -python mforms.i</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release_OSS|x64'">swig  -ILib\python -ILib -I$(WB_3DPARTY_PATH)\Include -I$(WB_3DPARTY_PATH)\include\glib-2.0 -I$(WB_3DPARTY_PATH)\lib\glib-2.0\include -I../../base -I.. -fvirtual -fcompact -c++ -python -DSWIG_PYTHON_LEGACY_BOOL mforms.i</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">swig  -ILib\python -ILib -I$(WB_3DPARTY_PATH)\Include -I$(WB_3DPARTY_PATH)\include\glib-2.0 -I$(WB_3DPARTY_PATH)\lib\glib-2.0\include -I../../base -I.. -fvirtual -fcompact -c++ -python -DSWIG_PYTHON_LEGACY_BOOL mforms.i</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">&quot;$(SdpSwigExecutable)&quot;  -ILib\python -ILib -I$(WB_3DPARTY_PATH)\Include -I$(WB_3DPARTY_PATH)\include\glib-2.0 -I$(WB_3DPARTY_PATH)\lib\glib-2.0\include -I../../base -I.. -fvirtual -fcompact -c++ -python mforms.i</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release_OSS|x64'">&quot;$(SdpSwigExecutable)&quot;  -ILib\python -ILib -I$(WB_3DPARTY_PATH)\Include -I$(WB_3DPARTY_PATH)\include\glib-2.0 -I$(WB_3DPARTY_PATH)\lib\glib-2.0\include -I../../base -I.. -fvirtual -fcompact -c++ -python -DSWIG_PYTHON_LEGACY_BOOL mforms.i</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">&quot;$(SdpSwigExecutable)&quot;  -ILib\python -ILib -I$(WB_3DPARTY_PATH)\Include -I$(WB_3DPARTY_PATH)\include\glib-2.0 -I$(WB_3DPARTY_PATH)\lib\glib-2.0\include -I../../base -I.. -fvirtual -fcompact -c++ -python -DSWIG_PYTHON_LEGACY_BOOL mforms.i</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Regenerating mforms SWIG wrapper...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mforms_wrap.cxx</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Regenerating mforms SWIG wrapper...</Message>
@@ -186,7 +188,7 @@
     <ProjectReference Include="..\..\grt\grt.vcxproj">
       <Project>{dc1ddaad-7dc1-4bc4-b6c8-b7cec998c7ed}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\mysql.forms.vcxproj">
+    <ProjectReference Include="..\sdp.forms.vcxproj">
       <Project>{28fcb4e3-8baa-42f2-b2c6-247d9d0745b1}</Project>
     </ProjectReference>
   </ItemGroup>

@@ -212,7 +212,7 @@
       <ComponentRef Id="catalog_reporting_TEXT_Basic" />
       <ComponentRef Id="mysql_canvas" />
       <ComponentRef Id="structs" />
-      <ComponentRef Id="mysql.profiles" />
+      <ComponentRef Id="sdp.profiles" />
       <ComponentRef Id="snippets" />
       <ComponentRef Id="script_templates" />
       <ComponentRef Id="sys" />

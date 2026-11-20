@@ -26,7 +26,7 @@
 
 #include "grtpp_module_cpp.h"
 #include "grtpp_util.h"
-#include "grts/structs.db.mysql.h"
+#include "grts/structs.db.sdp.h"
 #include "db_mysql_params.h"
 
 static std::string get_type_str_for_grant(const db_DatabaseObjectRef &obj) {

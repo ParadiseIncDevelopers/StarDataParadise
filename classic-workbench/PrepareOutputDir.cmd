@@ -69,8 +69,8 @@ xcopy /i /s /y /d %IMAGES_DIR%\changeset\*.png %TARGET_DIR%\images\icons\. 1> nu
 xcopy /i /s /y /d %IMAGES_DIR%\admin\*.png %TARGET_DIR%\images\icons\. 1> nul 2> nul
 xcopy /i /s /y /d %IMAGES_DIR%\migration\*.png %TARGET_DIR%\images\icons\. 1> nul 2> nul
 xcopy /i /s /y /d %IMAGES_DIR%\cursors\*.png %TARGET_DIR%\images\cursors\. 1> nul 2> nul
-xcopy /i /s /y /d %IMAGES_DIR%\icons\MySQLWorkbench.ico %TARGET_DIR%\images\icons\. 1> nul 2> nul
-xcopy /i /s /y /d %IMAGES_DIR%\icons\MySQLWorkbenchDoc.ico %TARGET_DIR%\. 1> nul 2> nul
+xcopy /i /s /y /d %IMAGES_DIR%\icons\sdpWorkbench.ico %TARGET_DIR%\images\icons\. 1> nul 2> nul
+xcopy /i /s /y /d %IMAGES_DIR%\icons\StarDataParadiseDoc.ico %TARGET_DIR%\. 1> nul 2> nul
 xcopy /i /s /y /d %IMAGES_DIR%\ui\*.png %TARGET_DIR%\images\ui\. 1> nul 2> nul
 xcopy /i /s /y /d %IMAGES_DIR%\ui\*.xpm %TARGET_DIR%\images\ui\. 1> nul 2> nul
 rem Keep the generated icon provenance and the original MIT attribution in native packages.
@@ -88,8 +88,8 @@ xcopy /i /s /y /d %RES_DIR%\grtdata\*.xml %TARGET_DIR%\data\. 1> nul 2> nul
 xcopy /i /s /y /d %RES_DIR%\wbdata\*.xml %TARGET_DIR%\data\. 1> nul 2> nul
 xcopy /i /s /y /d %RES_DIR%\wbdata\data.db %TARGET_DIR%\data\. 1> nul 2> nul
 
-if not exist %TARGET_DIR%\mysql.profiles mkdir %TARGET_DIR%\mysql.profiles
-copy %RES_DIR%\mysql.profiles\*.xml %TARGET_DIR%\mysql.profiles\. 1> nul 2> nul
+if not exist %TARGET_DIR%\sdp.profiles mkdir %TARGET_DIR%\sdp.profiles
+copy %RES_DIR%\sdp.profiles\*.xml %TARGET_DIR%\sdp.profiles\. 1> nul 2> nul
 
 if not exist %TARGET_DIR%\snippets mkdir %TARGET_DIR%\snippets
 copy %RES_DIR%\snippets\*.txt %TARGET_DIR%\snippets\. 1> nul 2> nul
@@ -120,8 +120,8 @@ xcopy /i /s /y /d %LIBRARY_DIR%\forms\swig\cairo.py %TARGET_DIR%\
 
 echo Copy executables ...
 
-xcopy /i /s /y /d %EXT_BIN_DIR%\mysqldump.exe %TARGET_DIR%\.
-xcopy /i /s /y /d %EXT_BIN_DIR%\mysql.exe %TARGET_DIR%\.
+copy /y "%EXT_BIN_DIR%\mysqldump.exe" "%TARGET_DIR%\sdpdump.exe"
+copy /y "%EXT_BIN_DIR%\mysql.exe" "%TARGET_DIR%\sdp.exe"
 
 xcopy /i /s /y /d %EXT_BIN_DIR%\ogrinfo.exe %TARGET_DIR%\.
 xcopy /i /s /y /d %EXT_BIN_DIR%\ogr2ogr.exe %TARGET_DIR%\.
