@@ -21,6 +21,7 @@
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import mforms
+from workbench.sdp_i18n import tr
 import grt
 import sys
 from workbench.log import log_error
@@ -34,6 +35,24 @@ from wb_admin_utils import make_panel_header
 from workbench.utils import human_size, Version
 from wb_common import to_unicode
 
+def metadata_text(value):
+    """mforms labels require text; SQL NULL metadata is an unavailable value."""
+    return "" if value is None else str(value)
+
+
+def read_metadata_row(editor, query):
+    result = None
+    try:
+        result = editor.executeManagementQuery(query, 0)
+        if result and result.goToFirstRow():
+            return {column.name.lower(): result.stringFieldValueByName(column.name)
+                    for column in result.columns}
+        return {}
+    finally:
+        if result:
+            result.reset_references()
+
+
 def make_title(t):
     l = mforms.newLabel(t)
     l.set_style(mforms.BoldStyle)
@@ -46,7 +65,7 @@ def show_table_inspector(editor, selection, page = None):
         dpoint = mforms.fromgrt(editor.dockingPoint)
         dpoint.dock_view(tinspect, "", 0)
         dpoint.select_view(tinspect)
-        tinspect.set_title("%s.%s" % (to_unicode(schema), to_unicode(table)))
+        tinspect.set_title(tr("%s.%s") % (to_unicode(schema), to_unicode(table)))
         if page is not None:
             tinspect.switch_to_page(page)
 
@@ -67,7 +86,7 @@ def handleLiveTreeContextMenu(name, sender, args):
         else:
             return
     if selection:
-        item = mforms.newMenuItem("Create Index" if show_index_page else "Table Inspector")
+        item = mforms.newMenuItem(tr("Create Index") if show_index_page else tr("Table Inspector"))
         item.add_clicked_callback(lambda sender=sender, tables_selected=tables_selected: show_table_inspector(sender, tables_selected , 'indexes' if show_index_page else None))
         if from_schema_inspector:
             menu.insert_item(0, item)
@@ -77,7 +96,7 @@ def handleLiveTreeContextMenu(name, sender, args):
             #menu.insert_item(1 if show_index_page else 2, mforms.newMenuItem("", mforms.SeparatorMenuItem))
 
 class TableInfoPanel(mforms.Box):
-    caption = "Info"
+    caption = tr("General")
     node_name = "informations"
     def __init__(self, editor):
         mforms.Box.__init__(self, False)
@@ -102,95 +121,95 @@ class TableInfoPanel(mforms.Box):
         self.add(self.panel_header_box,False, True)
 
 
-        self.table.add(make_title("Table Details"), 0, 2, 0, 1, mforms.HFillFlag)
+        self.table.add(make_title(tr("Table Details")), 0, 2, 0, 1, mforms.HFillFlag)
 
-        self.table.add(mforms.newLabel("Engine:"),              0, 1, 3, 4, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Engine:")),              0, 1, 3, 4, mforms.HFillFlag)
         self.engine = mforms.newLabel("")
         self.engine.set_style(mforms.BoldStyle)
         self.table.add(self.engine,                             1, 2, 3, 4, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Row format:"),          0, 1, 4, 5, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Row format:")),          0, 1, 4, 5, mforms.HFillFlag)
         self.row_format = mforms.newLabel("")
         self.row_format.set_style(mforms.BoldStyle)
         self.table.add(self.row_format,                         1, 2, 4, 5, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Column count:"),        0, 1, 5, 6, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Column count:")),        0, 1, 5, 6, mforms.HFillFlag)
         self.column_count = mforms.newLabel("")
         self.column_count.set_style(mforms.BoldStyle)
         self.table.add(self.column_count,                       1, 2, 5, 6, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Table rows:"),          0, 1, 6, 7, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Estimated rows:")),          0, 1, 6, 7, mforms.HFillFlag)
         self.table_rows = mforms.newLabel("")
         self.table_rows.set_style(mforms.BoldStyle)
         self.table.add(self.table_rows,                         1, 2, 6, 7, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("AVG row length:"),      0, 1, 7, 8, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Average row size:")),      0, 1, 7, 8, mforms.HFillFlag)
         self.avg_row_length = mforms.newLabel("")
         self.avg_row_length.set_style(mforms.BoldStyle)
         self.table.add(self.avg_row_length,                     1, 2, 7, 8, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Data length:"),         0, 1, 8, 9, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Data size:")),         0, 1, 8, 9, mforms.HFillFlag)
         self.data_length = mforms.newLabel("")
         self.data_length.set_style(mforms.BoldStyle)
         self.table.add(self.data_length,                        1, 2, 8, 9, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Index length:"),        0, 1, 9, 10, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Index size:")),        0, 1, 9, 10, mforms.HFillFlag)
         self.index_length = mforms.newLabel("")
         self.index_length.set_style(mforms.BoldStyle)
         self.table.add(self.index_length,                       1, 2, 9, 10, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Max data length:"),     0, 1, 10, 11, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Maximum data size:")),     0, 1, 10, 11, mforms.HFillFlag)
         self.max_data_length = mforms.newLabel("")
         self.max_data_length.set_style(mforms.BoldStyle)
         self.table.add(self.max_data_length,                    1, 2, 10, 11, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Data free:"),           0, 1, 11, 12, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Free space:")),           0, 1, 11, 12, mforms.HFillFlag)
         self.data_free = mforms.newLabel("")
         self.data_free.set_style(mforms.BoldStyle)
         self.table.add(self.data_free,                          1, 2, 11, 12, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Table size (estimate):"),          0, 1, 12, 13, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Estimated table size:")),          0, 1, 12, 13, mforms.HFillFlag)
         self.table_size = mforms.newLabel("")
         self.table_size.set_style(mforms.BoldStyle)
         self.table.add(self.table_size,                         1, 2, 12, 13, mforms.HFillFlag|mforms.HExpandFlag)
         
         if self.i_s_innodb_available():
-            self.table.add(mforms.newLabel("File format:"),        0, 1, 13, 14, mforms.HFillFlag)
+            self.table.add(mforms.newLabel(tr("File format:")),        0, 1, 13, 14, mforms.HFillFlag)
             self.file_format = mforms.newLabel("")
             self.file_format.set_style(mforms.BoldStyle)
             self.table.add(self.file_format,                       1, 2, 13, 14, mforms.HFillFlag|mforms.HExpandFlag)
             
-            self.table.add(mforms.newLabel("Data path:"),          0, 1, 14, 15, mforms.HFillFlag)
+            self.table.add(mforms.newLabel(tr("Data path:")),          0, 1, 14, 15, mforms.HFillFlag)
             self.data_path = mforms.newLabel("")
             self.data_path.set_style(mforms.BoldStyle)
             self.table.add(self.data_path,                         1, 2, 14, 15, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Update time:"),         0, 1, 13 + offset, 14 + offset, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Update time:")),         0, 1, 13 + offset, 14 + offset, mforms.HFillFlag)
         self.update_time = mforms.newLabel("")
         self.update_time.set_style(mforms.BoldStyle)
         self.table.add(self.update_time,                        1, 2, 13 + offset, 14 + offset, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Create time:"),         0, 1, 14 + offset, 15 + offset, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Create time:")),         0, 1, 14 + offset, 15 + offset, mforms.HFillFlag)
         self.create_time = mforms.newLabel("")
         self.create_time.set_style(mforms.BoldStyle)
         self.table.add(self.create_time,                        1, 2, 14 + offset, 15 + offset, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Auto increment:"),      0, 1, 15 + offset, 16 + offset, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Auto increment:")),      0, 1, 15 + offset, 16 + offset, mforms.HFillFlag)
         self.auto_increment = mforms.newLabel("")
         self.auto_increment.set_style(mforms.BoldStyle)
         self.table.add(self.auto_increment,                     1, 2, 15 + offset, 16 + offset, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Table collation:"),     0, 1, 16 + offset, 17 + offset, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Table collation:")),     0, 1, 16 + offset, 17 + offset, mforms.HFillFlag)
         self.table_collation = mforms.newLabel("")
         self.table_collation.set_style(mforms.BoldStyle)
         self.table.add(self.table_collation,                    1, 2, 16 + offset, 17 + offset, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Create options:"),      0, 1, 17 + offset, 18 + offset, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Create options:")),      0, 1, 17 + offset, 18 + offset, mforms.HFillFlag)
         self.create_options = mforms.newLabel("")
         self.create_options.set_style(mforms.BoldStyle)
         self.table.add(self.create_options,                     1, 2, 17 + offset, 18 + offset, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Comment:"),             0, 1, 18 + offset, 19 + offset, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Comment:")),             0, 1, 18 + offset, 19 + offset, mforms.HFillFlag)
         self.table_comment = mforms.newLabel("")
         self.table_comment.set_style(mforms.BoldStyle)
         self.table_comment.set_wrap_text(True)
@@ -204,29 +223,29 @@ class TableInfoPanel(mforms.Box):
         scroll.set_autohide_scrollers(True)
 
         tbox = mforms.Box(False)
-        tbox.set_spacing(15)
-        tbox.set_padding(15)
+        tbox.set_spacing(8)
+        tbox.set_padding(12)
         tbox.add(self.table, True, True)
         
         scroll.add(tbox)
         self.add(scroll, True, True)
         
         bbox = mforms.Box(True)
-        bbox.set_spacing(15)
-        bbox.set_padding(15)
+        bbox.set_spacing(8)
+        bbox.set_padding(12)
         
         table = mforms.newTable()
         table.set_row_count(1)
         table.set_column_count(3)
 
         self.analyze_btn = mforms.newButton()
-        self.analyze_btn.set_text("Analyze Table")
+        self.analyze_btn.set_text(tr("ANALYZE TABLE"))
         self.analyze_btn.add_clicked_callback(self.analyze_table)
         self.analyze_btn.enable_internal_padding(False)
         
-        table.add(mforms.newLabel("Information on this page may be outdated. Click "), 0, 1, 0, 1, mforms.HFillFlag)
+        table.add(mforms.newLabel(tr("Information on this page may be outdated. Click ")), 0, 1, 0, 1, mforms.HFillFlag)
         table.add(self.analyze_btn,                                                     1, 2, 0, 1, mforms.HFillFlag)
-        table.add(mforms.newLabel(" to update it."),                              2, 3, 0, 1, mforms.HFillFlag)
+        table.add(mforms.newLabel(tr(" to update it.")),                              2, 3, 0, 1, mforms.HFillFlag)
         
         bbox.add(table, False, True)
         
@@ -238,7 +257,7 @@ class TableInfoPanel(mforms.Box):
     def analyze_table(self):
         result = self.editor.executeManagementQuery("ANALYZE TABLE `%s`.`%s`" % (self._schema, self._table), 1)
         form = MaintenanceResultForm(result, False)
-        form.set_title("ANALYZE TABLE")
+        form.set_title(tr("ANALYZE TABLE"))
         form.run()
         self.refresh()
         
@@ -248,85 +267,67 @@ class TableInfoPanel(mforms.Box):
         
 
     def refresh(self):
+        # Some information_schema fields are SQL NULL (for example UPDATE_TIME,
+        # CHECK_TIME and CHECKSUM). Never pass those native None values to Label.
+        fields = ("engine", "row_format", "column_count", "table_rows", "avg_row_length",
+                  "data_length", "index_length", "max_data_length", "data_free", "table_size",
+                  "update_time", "create_time", "auto_increment", "table_collation",
+                  "create_options", "table_comment", "file_format", "data_path")
+        for name in fields:
+            if hasattr(self, name):
+                getattr(self, name).set_text("")
+        self._table_engine = None
+        query = "select * from information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'" % (self._schema, self._table)
         try:
-            rset = self.editor.executeManagementQuery("select * from information_schema.tables WHERE table_schema = '%s' AND table_name = '%s'" % (self._schema, self._table), 0)
-        except grt.DBError as e:
-            log_error("select * from information_schema.tables WHERE table_schema = '%s' AND table_name = '%s': %s\n" % (self._schema, self._table, e))
-            rset = None
-            
-        if rset:
-            ok = rset.goToFirstRow()
-            columns = []
-            column_values = {}
-            for col in rset.columns:
-                if hasattr(self, col.name.lower()):
-                    columns.append(col.name)
-            while ok:
-                for col in columns:
-                    if col.replace(" ", "_").lower() == "engine":
-                        self._table_engine = rset.stringFieldValueByName(col).lower()
-                    getattr(self, col.replace(" ", "_").lower()).set_text(rset.stringFieldValueByName(col))
-                    column_values[col.lower()] = rset.stringFieldValueByName(col)
-                    
-#                     setattr(columnsVal, col.lower(), rset.stringFieldValueByName(col))
+            values = read_metadata_row(self.editor, query)
+            for name, value in values.items():
+                target = name.replace(" ", "_")
+                if hasattr(self, target):
+                    getattr(self, target).set_text(metadata_text(value))
+            engine = values.get("engine")
+            self._table_engine = str(engine).lower() if engine is not None else None
+            for name in ("data_length", "index_length", "max_data_length", "data_free"):
+                value = values.get(name)
+                if value is not None and value != "":
+                    getattr(self, name).set_text(human_size(int(value)))
+            if all(values.get(name) is not None and values.get(name) != ""
+                   for name in ("data_length", "index_length")):
+                self.table_size.set_text(human_size(int(values["data_length"]) + int(values["index_length"])))
+        except grt.DBError as error:
+            log_error("%s: %s\n" % (query, error))
 
-                ok = rset.nextRow()
-
-            try:
-                self.table_size.set_text(human_size(int(column_values['data_length']) + int(column_values['index_length'])))
-                self.data_length.set_text(human_size(int(column_values['data_length'])))
-                self.index_length.set_text(human_size(int(column_values['index_length'])))
-                self.data_free.set_text(human_size(int(column_values['data_free'])))
-                self.max_data_length.set_text(human_size(int(column_values['max_data_length'])))
-            except Exception as e:
-                log_error("Error displaying table info for %s.%s: %s\n" % (self._schema, self._table, e))
-
+        query = "select count(*) column_count from information_schema.columns WHERE table_schema = '%s' and table_name = '%s'" % (self._schema, self._table)
         try:
-            rset = self.editor.executeManagementQuery("select count(*) column_count from information_schema.columns WHERE table_schema = '%s' and table_name = '%s'" % (self._schema, self._table), 0)
-        except grt.DBError as e:
-            log_error("select count(*) column_count from information_schema.columns WHERE table_schema = '%s' and table_name = '%s': %s\n" % (self._schema, self._table, e))
-            rset = None
+            values = read_metadata_row(self.editor, query)
+            self.column_count.set_text(metadata_text(values.get("column_count")))
+        except grt.DBError as error:
+            log_error("%s: %s\n" % (query, error))
 
-        if rset:
-            ok = rset.goToFirstRow()
-            if ok:
-                self.column_count.set_text(rset.stringFieldValueByName("column_count"));
-            
         if self.i_s_innodb_available():
             if self.target_version.is_supported_mysql_version_at_least(8, 0):
                 query = "SELECT @@datadir datadir,sd.path FROM information_schema.INNODB_TABLES st JOIN information_schema.innodb_datafiles sd USING(space) WHERE st.name = '%s/%s'" % (self._schema, self._table)
             else:
                 query = "SELECT @@datadir datadir,st.FILE_FORMAT,sd.path FROM information_schema.INNODB_SYS_TABLES st JOIN information_schema.innodb_sys_datafiles sd USING(space) WHERE st.name = '%s/%s'" % (self._schema, self._table)
             try:
-                rset = self.editor.executeManagementQuery(query, 0)
-            except grt.DBError as e:
-                log_error("%s': %s\n" % (query, e))
-                rset = None
-            if rset:
-                ok = rset.goToFirstRow()
-                if ok:
-                    if self.target_version.is_supported_mysql_version_at_least(8, 0):
-                            self.file_format.set_text("")
-                            data_path = rset.stringFieldValueByName("PATH")
-                    else:
-                            self.file_format.set_text(rset.stringFieldValueByName("FILE_FORMAT"))
-                            data_path = rset.stringFieldValueByName("path")
+                values = read_metadata_row(self.editor, query)
+                self.file_format.set_text(metadata_text(values.get("file_format")))
+                data_path = metadata_text(values.get("path"))
+                if data_path.startswith("."):
+                    data_path = metadata_text(values.get("datadir")) + data_path[2:]
+                self.data_path.set_text(data_path)
+            except grt.DBError as error:
+                log_error("%s: %s\n" % (query, error))
 
-                    if data_path[:1] == ".":
-                        self.data_path.set_text("%s%s" %(rset.stringFieldValueByName("datadir"), data_path[2:]))
-                    else:
-                        self.data_path.set_text(data_path)
-        
     def show_table(self, schema, table):
         self._schema = schema
         self._table = table
 
-        self.panel_header_box.add(make_panel_header("db.Table.32x32.png", self.editor.connection.name, "%s.%s" % (schema, table)), False, True)
+        self.panel_header_box.add(make_panel_header("sdp_table@2x.png", self.editor.connection.name, "%s.%s" % (schema, table)), False, True)
 
         self.refresh()
 
 class TableDDL(mforms.Box):
-    caption = "DDL"
+    caption = tr("DDL")
     node_name = "structure"
     def __init__(self, editor):
         mforms.Box.__init__(self, False)
@@ -334,8 +335,8 @@ class TableDDL(mforms.Box):
         self.set_release_on_add()
 
         self.editor = editor
-        self.set_spacing(15)
-        self.set_padding(15)
+        self.set_spacing(8)
+        self.set_padding(8)
         self.title_box = mforms.newBox(False)
         self.title_box.set_spacing(1)
 
@@ -349,23 +350,27 @@ class TableDDL(mforms.Box):
         self.add(self.code_editor, True, True)
 
     def refresh(self):
+        result = None
+        definition = ""
         try:
-            rset = self.editor.executeManagementQuery("show create table `%s`.`%s`" % (self._schema, self._table), 0)
-        except grt.DBError as e:
-            log_error("show create table `%s`.`%s` : %s\n" % (self._schema, self._table, e))
-            rset = None
-
-        if rset:
-            ok = rset.goToFirstRow()
-            if ok:
-                self.code_editor.set_read_only(False)
-                self.code_editor.set_value(rset.stringFieldValue(1));
-                self.code_editor.set_read_only(True)
+            result = self.editor.executeManagementQuery("show create table `%s`.`%s`" % (self._schema, self._table), 0)
+            if result and result.goToFirstRow():
+                definition = metadata_text(result.stringFieldValue(1))
+        except grt.DBError as error:
+            log_error("show create table `%s`.`%s` : %s\n" % (self._schema, self._table, error))
+        finally:
+            if result:
+                result.reset_references()
+        self.code_editor.set_read_only(False)
+        try:
+            self.code_editor.set_value(definition)
+        finally:
+            self.code_editor.set_read_only(True)
 
     def show_table(self, schema, table):
         self._schema = schema
         self._table = table
-        self.title_box.add(make_title("DDL for %s.%s" % (self._schema, self._table)), False, True)
+        self.title_box.add(make_title(tr("DDL for %s.%s") % (self._schema, self._table)), False, True)
         self.refresh()
 
 class CreateIndexForm(mforms.Form):
@@ -381,11 +386,11 @@ class CreateIndexForm(mforms.Form):
 
         self.target_version = Version.fromgrt(editor.serverVersion)
         
-        self.set_title("Create Index for Table %s.%s" % (schema, table))
+        self.set_title(tr("Create Index for Table %s.%s") % (schema, table))
 
         content = mforms.newBox(False)
         self.set_content(content)
-        content.set_padding(20)
+        content.set_padding(12)
         content.set_spacing(12)
 
         table = mforms.newTable()
@@ -395,7 +400,7 @@ class CreateIndexForm(mforms.Form):
         table.set_column_spacing(8)
         content.add(table, False, True)
 
-        table.add(mforms.newLabel("Index Name:", True), 0, 1, 0, 1, mforms.HFillFlag)
+        table.add(mforms.newLabel(tr("Index Name:"), True), 0, 1, 0, 1, mforms.HFillFlag)
         hbox = mforms.newBox(True)
         hbox.set_spacing(12)
         self.name = mforms.newTextEntry()
@@ -406,17 +411,19 @@ class CreateIndexForm(mforms.Form):
         table.add(hbox, 1, 2, 0, 1, mforms.VFillFlag|mforms.HFillFlag|mforms.HExpandFlag)
 
         if self._engine in ["memory", "heap","ndb"]:
-            table.add(mforms.newLabel("Type:", True), 0, 1, 1, 2, mforms.HFillFlag)
+            table.add(mforms.newLabel(tr("Type:"), True), 0, 1, 1, 2, mforms.HFillFlag)
             self.type = mforms.newSelector()
             self.type.add_items(["BTREE", "HASH"])
             table.add(self.type, 1, 2, 1, 2, mforms.HFillFlag)
 
-        l = mforms.newLabel("Columns:")
+        l = mforms.newLabel(tr("Columns"))
         l.set_text_align(mforms.TopRight)
         table.add(l, 0, 1, 2, 3, mforms.HFillFlag|mforms.VFillFlag)
         self.columns = mforms.newTreeView(mforms.TreeFlatList|mforms.TreeAltRowColors|mforms.TreeShowColumnLines)
-        self.columns.add_column(mforms.StringColumnType, "Column", 200, False)
-        self.columns.add_column(mforms.StringColumnType, "Length", 60, True)
+        self.columns.set_row_height(26)
+        self.columns.set_font("Segoe UI 10")
+        self.columns.add_column(mforms.StringColumnType, tr("Column"), 200, False)
+        self.columns.add_column(mforms.StringColumnType, tr("Length"), 60, True)
         #        self.columns.add_column(mforms.CheckColumnType, "Order", 50, False) # ignored by server
         self.columns.end_columns()
         self.columns.set_size(-1, 80)
@@ -427,11 +434,11 @@ class CreateIndexForm(mforms.Form):
         tbl.set_column_spacing(4)
         tbl.add(self.columns, 0, 1, 0, 3, mforms.HFillFlag|mforms.VFillFlag|mforms.HExpandFlag|mforms.VExpandFlag)
         self.move_up = mforms.newButton()
-        self.move_up.set_text("\xe2\x96\xb2")
+        self.move_up.set_text("↑")
         self.move_up.add_clicked_callback(self.move_row_up)
         self.move_up.enable_internal_padding(False)
         self.move_down = mforms.newButton()
-        self.move_down.set_text("\xe2\x96\xbc")
+        self.move_down.set_text("↓")
         self.move_down.add_clicked_callback(self.move_row_down)
         self.move_down.enable_internal_padding(False)
         tbl.add(self.move_up, 1, 2, 0, 1, mforms.VFillFlag|mforms.HFillFlag)
@@ -439,7 +446,7 @@ class CreateIndexForm(mforms.Form):
         tbl.add(mforms.newLabel(""), 1, 2, 2, 3, mforms.VFillFlag|mforms.HFillFlag|mforms.VExpandFlag)
         table.add(tbl, 1, 2, 2, 3, mforms.VFillFlag|mforms.HFillFlag)
 
-        l = mforms.newLabel("Comments:")
+        l = mforms.newLabel(tr("Comments:"))
         l.set_text_align(mforms.TopRight)
         table.add(l, 0, 1, 3, 4, mforms.HFillFlag|mforms.VFillFlag)
         self.comments = mforms.newTextBox(0)
@@ -453,19 +460,19 @@ class CreateIndexForm(mforms.Form):
         online_ddl_ok = self._editor.serverVersion.majorNumber > 5 or (self._editor.serverVersion.majorNumber == 5 and self._editor.serverVersion.minorNumber >= 6)
 
         if online_ddl_ok:
-            l = mforms.newLabel("\nCreate/Online Options")
+            l = mforms.newLabel(tr("\nCreate/Online Options"))
         else:
-            l = mforms.newLabel("\nCreate/Online Options (requires MySQL 5.6+)")
+            l = mforms.newLabel(tr("\nCreate/Online Options (requires MySQL 5.6+)"))
             l.set_enabled(False)
         l.set_style(mforms.BoldStyle)
         table.add(l, 1, 2, 4, 5, mforms.HFillFlag)
-        table.add(mforms.newLabel("Algorithm:", True), 0, 1, 5, 6, mforms.HFillFlag)
+        table.add(mforms.newLabel(tr("Algorithm:"), True), 0, 1, 5, 6, mforms.HFillFlag)
         self.algorithm = mforms.newSelector()
         self.algorithm.add_items(["Default", "Copy", "InPlace"])
         self.algorithm.set_enabled(online_ddl_ok)
         table.add(self.algorithm, 1, 2, 5, 6, mforms.HFillFlag)
 
-        table.add(mforms.newLabel("Locking:", True), 0, 1, 6, 7, mforms.HFillFlag)
+        table.add(mforms.newLabel(tr("Locking:"), True), 0, 1, 6, 7, mforms.HFillFlag)
         self.lock = mforms.newSelector()
         self.lock.add_items(["Default (allow as much concurrency as possible)", "Exclusive (totally block access to table)", "Shared (allow queries but not DML)", "None (allow queries and DML)"])
         self.lock.set_enabled(online_ddl_ok)
@@ -474,10 +481,10 @@ class CreateIndexForm(mforms.Form):
         bbox = mforms.newBox(True)
         bbox.set_spacing(12)
         self.ok = mforms.newButton()
-        self.ok.set_text("Create")
+        self.ok.set_text(tr("Create"))
 
         self.cancel = mforms.newButton()
-        self.cancel.set_text("Cancel")
+        self.cancel.set_text(tr("Cancel"))
 
         mforms.Utilities.add_end_ok_cancel_buttons(bbox, self.ok, self.cancel)
         content.add_end(bbox, False, True)
@@ -542,22 +549,22 @@ class CreateIndexForm(mforms.Form):
                 self._editor.executeManagementCommand(sql, 1)
                 return True
             except grt.DBError as e:
-                mforms.Utilities.show_error("Create Index",
-                                            "Error creating index.\n%s" % e.args[0],
-                                            "OK", "", "")
+                mforms.Utilities.show_error(tr("Create Index"),
+                                            tr("Error creating index.\n%s") % e.args[0],
+                                            tr("OK"), "", "")
         return True
 
 
 class TableIndexInfoPanel(mforms.Box):
-    caption = "Indexes"
+    caption = tr("Indexes")
     node_name = "indexes"
     def __init__(self, editor):
         mforms.Box.__init__(self, False)
         self.set_managed()
         self.set_release_on_add()
 
-        self.set_padding(12)
-        self.set_spacing(12)
+        self.set_padding(8)
+        self.set_spacing(8)
 
         self.editor = editor
         self.target_version = Version.fromgrt(self.editor.serverVersion)
@@ -572,14 +579,16 @@ class TableIndexInfoPanel(mforms.Box):
         table.set_column_spacing(8)
         self.add(table, False, True)
 
-        table.add(make_title("Indexes in Table"), 0, 1, 0, 1, mforms.HFillFlag)
+        table.add(make_title(tr("Indexes in Table")), 0, 1, 0, 1, mforms.HFillFlag)
         self.index_list = mforms.newTreeView(mforms.TreeFlatList|mforms.TreeAltRowColors|mforms.TreeShowColumnLines)
+        self.index_list.set_row_height(26)
+        self.index_list.set_font("Segoe UI 10")
         if self.target_version.is_supported_mysql_version_at_least(8, 0, 0):
-            self.index_list.add_column(mforms.CheckColumnType, "Visible", 50, True)
-        self.index_list.add_column(mforms.IconStringColumnType, "Key", 140, False)
-        self.index_list.add_column(mforms.StringColumnType, "Type", 80, False)
-        self.index_list.add_column(mforms.StringColumnType, "Unique", 40, False)
-        self.index_list.add_column(mforms.StringColumnType, "Columns", 200, False)
+            self.index_list.add_column(mforms.CheckColumnType, tr("Visible"), 50, True)
+        self.index_list.add_column(mforms.IconStringColumnType, tr("Key"), 140, False)
+        self.index_list.add_column(mforms.StringColumnType, tr("Type"), 80, False)
+        self.index_list.add_column(mforms.StringColumnType, tr("Unique"), 40, False)
+        self.index_list.add_column(mforms.StringColumnType, tr("Columns"), 200, False)
         self.index_list.end_columns()
         self.index_list.add_changed_callback(self.index_selected)
         self.index_list.set_cell_edited_callback(self.edit_index)
@@ -587,9 +596,9 @@ class TableIndexInfoPanel(mforms.Box):
         table.add(self.index_list, 0, 1, 1, 2, mforms.HFillFlag|mforms.VFillFlag)
 
         dhbox = mforms.newBox(True)
-        dhbox.add(make_title("Index Details"), False, True)
+        dhbox.add(make_title(tr("Index Details")), False, True)
         self.drop_index = mforms.newButton()
-        self.drop_index.set_text("Drop Index")
+        self.drop_index.set_text(tr("Drop index"))
         self.drop_index.set_enabled(False)
         self.drop_index.add_clicked_callback(self.do_drop_index)
         dhbox.add_end(self.drop_index, False, True)
@@ -604,42 +613,42 @@ class TableIndexInfoPanel(mforms.Box):
         self.info.set_row_spacing(4)
         self.info.set_column_spacing(4)
 
-        self.info.add(mforms.newLabel("Key Name:"),        0, 1, 0, 1, mforms.HFillFlag)
+        self.info.add(mforms.newLabel(tr("Key Name:")),        0, 1, 0, 1, mforms.HFillFlag)
         self.key_name = mforms.newLabel("")
         self.key_name.set_style(mforms.BoldStyle)
         self.info.add(self.key_name,                       1, 4, 0, 1, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.info.add(mforms.newLabel("Index Type:"),      0, 1, 1, 2, mforms.HFillFlag)
+        self.info.add(mforms.newLabel(tr("Index Type:")),      0, 1, 1, 2, mforms.HFillFlag)
         self.index_type = mforms.newLabel("")
         self.index_type.set_style(mforms.BoldStyle)
         self.info.add(self.index_type,                     1, 2, 1, 2, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.info.add(mforms.newLabel("Packed:"),          2, 3, 1, 2, mforms.HFillFlag)
+        self.info.add(mforms.newLabel(tr("Packed:")),          2, 3, 1, 2, mforms.HFillFlag)
         self.packed = mforms.newLabel("")
         self.packed.set_style(mforms.BoldStyle)
         self.info.add(self.packed,                         3, 4, 1, 2, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.info.add(mforms.newLabel("Allows NULL:"),     0, 1, 2, 3, mforms.HFillFlag)
+        self.info.add(mforms.newLabel(tr("Allows NULL:")),     0, 1, 2, 3, mforms.HFillFlag)
         self.allows_null = mforms.newLabel("")
         self.allows_null.set_style(mforms.BoldStyle)
         self.info.add(self.allows_null,                    1, 2, 2, 3, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.info.add(mforms.newLabel("Unique:"),          2, 3, 2, 3, mforms.HFillFlag)
+        self.info.add(mforms.newLabel(tr("Unique:")),          2, 3, 2, 3, mforms.HFillFlag)
         self.unique_values = mforms.newLabel("")
         self.unique_values.set_style(mforms.BoldStyle)
         self.info.add(self.unique_values,                  3, 4, 2, 3, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.info.add(mforms.newLabel("Cardinality:"),     0, 1, 3, 4, mforms.HFillFlag)
+        self.info.add(mforms.newLabel(tr("Cardinality:")),     0, 1, 3, 4, mforms.HFillFlag)
         self.cardinality = mforms.newLabel("")
         self.cardinality.set_style(mforms.BoldStyle)
         self.info.add(self.cardinality,                    1, 4, 3, 4, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.info.add(mforms.newLabel("Comment:"),         0, 1, 4, 5, mforms.HFillFlag)
+        self.info.add(mforms.newLabel(tr("Comment:")),         0, 1, 4, 5, mforms.HFillFlag)
         self.comment = mforms.newLabel("")
         self.comment.set_style(mforms.BoldStyle)
         self.info.add(self.comment,                        1, 4, 4, 5, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.info.add(mforms.newLabel("User Comment:"),    0, 1, 5, 6, mforms.HFillFlag)
+        self.info.add(mforms.newLabel(tr("User Comment:")),    0, 1, 5, 6, mforms.HFillFlag)
         self.user_comment = mforms.newLabel("")
         self.user_comment.set_style(mforms.BoldStyle)
         self.info.add(self.user_comment,                   1, 4, 5, 6, mforms.HFillFlag|mforms.HExpandFlag)
@@ -653,20 +662,24 @@ class TableIndexInfoPanel(mforms.Box):
         
         self.add(table, True, True)
 
-        table.add(make_title("Columns in table"), 0, 2, 0, 1, mforms.HFillFlag|mforms.HExpandFlag)
+        table.add(make_title(tr("Columns in table")), 0, 2, 0, 1, mforms.HFillFlag|mforms.HExpandFlag)
 
         self.column_list = mforms.newTreeView(mforms.TreeFlatList|mforms.TreeAltRowColors|mforms.TreeShowColumnLines)
-        self.column_list.add_column(mforms.IconStringColumnType, "Column", 150, False)
-        self.column_list.add_column(mforms.StringColumnType, "Type", 150, False)
-        self.column_list.add_column(mforms.StringColumnType, "Nullable", 50, False)
-        self.column_list.add_column(mforms.StringColumnType, "Indexes", 300, False)
+
+        self.column_list.set_row_height(26)
+
+        self.column_list.set_font("Segoe UI 10")
+        self.column_list.add_column(mforms.IconStringColumnType, tr("Column"), 150, False)
+        self.column_list.add_column(mforms.StringColumnType, tr("Type"), 150, False)
+        self.column_list.add_column(mforms.StringColumnType, tr("Nullable"), 50, False)
+        self.column_list.add_column(mforms.StringColumnType, tr("Indexes"), 300, False)
         self.column_list.end_columns()
         self.column_list.set_selection_mode(mforms.TreeSelectMultiple)
         table.add(self.column_list, 0, 2, 1, 2, mforms.HFillFlag|mforms.HExpandFlag|mforms.VFillFlag|mforms.VExpandFlag)
 
         hbox = mforms.newBox(True)
         self.create_index = mforms.newButton()
-        self.create_index.set_text("Create Index for Selected Columns...")
+        self.create_index.set_text(tr("Create index on selected columns…"))
         self.create_index.add_clicked_callback(self.do_create_index)
         hbox.add_end(self.create_index, False, True)
         self.add(hbox, False, True)
@@ -675,12 +688,12 @@ class TableIndexInfoPanel(mforms.Box):
         node = self.index_list.get_selected_node()
         if node:
             index = node.get_string(1) if self.target_version.is_supported_mysql_version_at_least(8, 0, 0) else node.get_string(0)
-            if mforms.Utilities.show_message("Drop Index", "Drop index `%s` from table `%s`.`%s`?" % (index, self._schema, self._table), "Drop", "Cancel", "") == mforms.ResultOk:
+            if mforms.Utilities.show_message(tr("Drop Index"), tr("Drop index `%s` from table `%s`.`%s`?") % (index, self._schema, self._table), tr("Drop"), tr("Cancel"), "") == mforms.ResultOk:
                 try:
                     self.editor.executeManagementCommand("DROP INDEX `%s` ON `%s`.`%s`" % (index, self._schema, self._table), 1)
                     self.refresh()
                 except grt.DBError as e:
-                    mforms.Utilities.show_error("Drop Index", "Error dropping index.\n%s" % e.args[0], "OK", "", "")
+                    mforms.Utilities.show_error(tr("Drop Index"), tr("Error dropping index.\n%s") % e.args[0], tr("OK"), "", "")
 
     def do_create_index(self):
         cols = []
@@ -691,13 +704,13 @@ class TableIndexInfoPanel(mforms.Box):
             if form.run():
                 self.refresh()
         else:
-            mforms.Utilities.show_warning("Create Index","You have to select at least one column.\n", "OK", "", "")
+            mforms.Utilities.show_warning(tr("Create Index"),tr("You have to select at least one column.\n"), tr("OK"), "", "")
 
     def edit_index(self, node, column, value):
         if self.target_version.is_supported_mysql_version_at_least(8, 0, 0):
             index = node.get_string(1)
             sql = "ALTER TABLE `%s`.`%s` ALTER INDEX `%s` %s" % (self._schema, self._table, index, "INVISIBLE" if node.get_bool(0) is True else "VISIBLE")
-            if mforms.Utilities.show_message("Alter Index", "Do you really want to %s ?" % sql, "Yes", "Cancel", "") == mforms.ResultOk:
+            if mforms.Utilities.show_message(tr("Alter Index"), tr("Do you really want to %s ?") % sql, tr("Yes"), tr("Cancel"), "") == mforms.ResultOk:
                 self.editor.executeManagementCommand(sql, 1)
                 node.set_bool(0, False if node.get_bool(0) is True else True)
 
@@ -708,9 +721,9 @@ class TableIndexInfoPanel(mforms.Box):
 
             info, columns = idx
             self.key_name.set_text(info[2])
-            self.unique_values.set_text("NO" if info[1] == "1" else "YES")
+            self.unique_values.set_text(tr("No") if info[1] == "1" else tr("Yes"))
             if info[2] == "PRIMARY" and self.get_table_engine and self.get_table_engine() == "innodb":
-                self.index_type.set_text("%s (clustered)" % info[6])
+                self.index_type.set_text(tr("%s (clustered)") % info[6])
             else:
                 self.index_type.set_text(info[6])
             self.cardinality.set_text(info[3])
@@ -742,8 +755,8 @@ class TableIndexInfoPanel(mforms.Box):
         self.index_list.clear()
         self.index_info = []
         self.column_list.clear()
-        column_icon = mforms.App.get().get_resource_path("db.Column.16x16.png")
-        index_icon = mforms.App.get().get_resource_path("db.Index.16x16.png")
+        column_icon = mforms.App.get().get_resource_path("sdp_columns.png")
+        index_icon = mforms.App.get().get_resource_path("sdp_key.png")
         if table:
             try:
                 rset = self.editor.executeManagementQuery("SHOW INDEX FROM `%s`.`%s`" % (schema, table), 0)
@@ -776,13 +789,13 @@ class TableIndexInfoPanel(mforms.Box):
                                 node.set_icon_path(1, index_icon)
                                 node.set_string(1, curname)
                                 node.set_string(2, itype)
-                                node.set_string(3, "YES" if non_unique != "1" else "NO")
+                                node.set_string(3, tr("Yes") if non_unique != "1" else tr("No"))
                                 node.set_string(4, ", ".join([c[1] for c in columns]))
                             else:
                                 node.set_icon_path(0, index_icon)
                                 node.set_string(0, curname)
                                 node.set_string(1, itype)
-                                node.set_string(2, "YES" if non_unique != "1" else "NO")
+                                node.set_string(2, tr("Yes") if non_unique != "1" else tr("No"))
                                 node.set_string(3, ", ".join([c[1] for c in columns]))
                         columns = []
                         self.index_info.append(([rset.stringFieldValue(i) for i in index_rs_columns], columns))
@@ -808,13 +821,13 @@ class TableIndexInfoPanel(mforms.Box):
                         node.set_icon_path(1, index_icon)
                         node.set_string(1, curname)
                         node.set_string(2, itype)
-                        node.set_string(3, "YES" if non_unique != "1" else "NO")
+                        node.set_string(3, tr("Yes") if non_unique != "1" else tr("No"))
                         node.set_string(4, ", ".join([c[1] for c in columns]))
                     else:
                         node.set_icon_path(0, index_icon)
                         node.set_string(0, curname)
                         node.set_string(1, itype)
-                        node.set_string(2, "YES" if non_unique != "1" else "NO")
+                        node.set_string(2, tr("Yes") if non_unique != "1" else tr("No"))
                         node.set_string(3, ", ".join([c[1] for c in columns]))
             try:
                 rset = self.editor.executeManagementQuery("SHOW COLUMNS FROM `%s`.`%s`" % (schema, table), 0)
@@ -829,7 +842,7 @@ class TableIndexInfoPanel(mforms.Box):
                     node.set_icon_path(0, column_icon)
                     node.set_string(0, rset.stringFieldValue(0))
                     node.set_string(1, rset.stringFieldValue(1))
-                    node.set_string(2, rset.stringFieldValue(2))
+                    node.set_string(2, tr("Yes") if rset.stringFieldValue(2) == "YES" else tr("No"))
                     node.set_string(3, ", ".join(column_to_index.get(rset.stringFieldValue(0), [])))
                     ok = rset.nextRow()
         else:
@@ -857,15 +870,15 @@ class TableManDefs:
 class TableTriggerManager(TableManDefs, TriggerManager):
     icon_column = 0
     show_query = "show triggers from `%(schema)s` like '%(table)s'"
-    columns = [("Trigger", IconStringColumnType, "Name", 200, None),
-           ("Event", StringColumnType, "Event", 100, None),
-           ("Timing", StringColumnType, "Timing", 100, None),
-           ("Created", StringColumnType, "Created", 100, None),
-           ("sql_mode", StringColumnType, "SQL Mode", 100, None),
-           ("Definer", StringColumnType, "Definer", 100, None),
-           ("character_set_client", StringColumnType, "Client Character Set", 100, None),
-           ("collation_connection", StringColumnType, "Connection Collation", 100, None),
-           ("Database Collation", StringColumnType, "Database Collation", 100, None),
+    columns = [("Trigger", IconStringColumnType, tr("Name"), 200, None),
+           ("Event", StringColumnType, tr("Event"), 100, None),
+           ("Timing", StringColumnType, tr("Timing"), 100, None),
+           ("Created", StringColumnType, tr("Created"), 100, None),
+           ("sql_mode", StringColumnType, tr("SQL Mode"), 100, None),
+           ("Definer", StringColumnType, tr("Definer"), 100, None),
+           ("character_set_client", StringColumnType, tr("Client Character Set"), 100, None),
+           ("collation_connection", StringColumnType, tr("Connection Collation"), 100, None),
+           ("Database Collation", StringColumnType, tr("Database Collation"), 100, None),
            ]
     def __init__(self, editor):
         TriggerManager.__init__(self, editor, None)
@@ -877,15 +890,15 @@ class TableColumnManager(TableManDefs, ColumnManager):
     show_query = "select %(columns)s from information_schema.columns where table_schema = '%(schema)s' and table_name = '%(table)s'"
     icon_column = 0
     name_column = 0
-    columns = [("COLUMN_NAME", IconStringColumnType, "Column", 150, None),
-               ("COLUMN_TYPE", StringColumnType, "Type", 120, None),
-               ("COLUMN_DEFAULT", StringColumnType, "Default Value", 120, None),
-               ("IS_NULLABLE", StringColumnType, "Nullable", 50, None),
-               ("CHARACTER_SET_NAME", StringColumnType, "Character Set", 80, None),
-               ("COLLATION_NAME", StringColumnType, "Collation", 100, None),
-               ("PRIVILEGES", StringColumnType, "Privileges", 200, None),
-               ("EXTRA", StringColumnType, "Extra", 100, None),
-               ("COLUMN_COMMENT", StringColumnType, "Comments", 200, None)]
+    columns = [("COLUMN_NAME", IconStringColumnType, tr("Column"), 150, None),
+               ("COLUMN_TYPE", StringColumnType, tr("Type"), 120, None),
+               ("COLUMN_DEFAULT", StringColumnType, tr("Default Value"), 120, None),
+               ("IS_NULLABLE", StringColumnType, tr("Nullable"), 50, None),
+               ("CHARACTER_SET_NAME", StringColumnType, tr("Character Set"), 80, None),
+               ("COLLATION_NAME", StringColumnType, tr("Collation"), 100, None),
+               ("PRIVILEGES", StringColumnType, tr("Privileges"), 200, None),
+               ("EXTRA", StringColumnType, tr("Extra"), 100, None),
+               ("COLUMN_COMMENT", StringColumnType, tr("Comments"), 200, None)]
     def __init__(self, editor):
         ColumnManager.__init__(self, editor, None)
         self.set_managed()
@@ -893,7 +906,7 @@ class TableColumnManager(TableManDefs, ColumnManager):
     
 class ConstraintManager(TableManDefs, ObjectManager):
     icon_column = 0
-    caption = "Foreign keys"
+    caption = tr("Foreign keys")
     klass = "db.Constraints"
     node_name = "constraints"
     show_query = "select %(columns)s \
@@ -901,20 +914,20 @@ class ConstraintManager(TableManDefs, ObjectManager):
                     WHERE ((REFERENCED_TABLE_SCHEMA = '%(schema)s' AND referenced_table_name = '%(table)s') OR (TABLE_SCHEMA='%(schema)s' and table_name = '%(table)s')) AND \
                     REFERENCED_TABLE_NAME is not null ORDER BY TABLE_NAME, COLUMN_NAME;"
     name_column = 0
-    columns = [("constraint_name", IconStringColumnType, "Name", 200, None),
-               ("constraint_schema", StringColumnType, "Schema", 100, None),
-               ("table_name", StringColumnType, "Table", 100, None),
-               ("column_name", StringColumnType, "Column", 100, None),
-               ("referenced_table_schema", StringColumnType, "Referenced Schema", 100, None),
-               ("referenced_table_name", StringColumnType, "Referenced Table", 100, None),
-               ("referenced_column_name", StringColumnType, "Referenced Column", 100, None)]
+    columns = [("constraint_name", IconStringColumnType, tr("Name"), 200, None),
+               ("constraint_schema", StringColumnType, tr("Schema"), 100, None),
+               ("table_name", StringColumnType, tr("Table"), 100, None),
+               ("column_name", StringColumnType, tr("Column"), 100, None),
+               ("referenced_table_schema", StringColumnType, tr("Referenced Schema"), 100, None),
+               ("referenced_table_name", StringColumnType, tr("Referenced Table"), 100, None),
+               ("referenced_column_name", StringColumnType, tr("Referenced Column"), 100, None)]
     def __init__(self, editor):
         ObjectManager.__init__(self, editor, None)
         self.set_managed()
         self.set_release_on_add()
     
 class PartitionManager(TableManDefs, ObjectManager):
-    caption = "Partitions"
+    caption = tr("Partitions")
     klass = "db.Partitions"
     node_name = "partitions"
     show_query = "select %(columns)s \
@@ -922,23 +935,23 @@ class PartitionManager(TableManDefs, ObjectManager):
                     WHERE TABLE_SCHEMA = '%(schema)s' AND TABLE_NAME = '%(table)s' AND PARTITION_NAME IS NOT NULL ORDER BY PARTITION_NAME"
     name_column = 0
     icon_column = 0
-    columns = [("partition_name", IconStringColumnType, "Name", 200, None),
-               ("subpartition_name", StringColumnType, "Subpartiton Name", 100, None),
-               ("partition_ordinal_position", LongIntegerColumnType, "Ordinal Pos", 100, None),
-               ("subpartition_ordinal_position", LongIntegerColumnType, "Subpartiton Ordinal Pos", 100, None),
-               ("partition_method", StringColumnType, "Partition Method", 100, None),
-               ("subpartition_method", StringColumnType, "Subpartition Method", 100, None),
-               ("partition_expression", StringColumnType, "Partition expression", 100, None),
-               ("subpartition_expression", StringColumnType, "Subpartition expression", 100, None),
-               ("partition_description", StringColumnType, "Partition description", 100, None),
-               ("table_rows", LongIntegerColumnType, "Table rows", 100, None),
-               ("avg_row_length", LongIntegerColumnType, "AVG row length", 100, None),
-               ("data_length", LongIntegerColumnType, "Data length", 100, None),
-               ("max_data_length", LongIntegerColumnType, "max data length", 100, None),
-               ("index_length", LongIntegerColumnType, "Index length", 100, None),
-               ("create_time", StringColumnType, "Create time", 150, None),
-               ("update_time", StringColumnType, "Update time", 150, None),
-               ("check_time", StringColumnType, "Check time", 150, None)]
+    columns = [("partition_name", IconStringColumnType, tr("Name"), 200, None),
+               ("subpartition_name", StringColumnType, tr("Subpartiton Name"), 100, None),
+               ("partition_ordinal_position", LongIntegerColumnType, tr("Ordinal Pos"), 100, None),
+               ("subpartition_ordinal_position", LongIntegerColumnType, tr("Subpartiton Ordinal Pos"), 100, None),
+               ("partition_method", StringColumnType, tr("Partition Method"), 100, None),
+               ("subpartition_method", StringColumnType, tr("Subpartition Method"), 100, None),
+               ("partition_expression", StringColumnType, tr("Partition expression"), 100, None),
+               ("subpartition_expression", StringColumnType, tr("Subpartition expression"), 100, None),
+               ("partition_description", StringColumnType, tr("Partition description"), 100, None),
+               ("table_rows", LongIntegerColumnType, tr("Table rows"), 100, None),
+               ("avg_row_length", LongIntegerColumnType, tr("AVG row length"), 100, None),
+               ("data_length", LongIntegerColumnType, tr("Data length"), 100, None),
+               ("max_data_length", LongIntegerColumnType, tr("max data length"), 100, None),
+               ("index_length", LongIntegerColumnType, tr("Index length"), 100, None),
+               ("create_time", StringColumnType, tr("Create time"), 150, None),
+               ("update_time", StringColumnType, tr("Update time"), 150, None),
+               ("check_time", StringColumnType, tr("Check time"), 150, None)]
     def __init__(self, editor):
         ObjectManager.__init__(self, editor, None)
         self.set_managed()
@@ -946,7 +959,7 @@ class PartitionManager(TableManDefs, ObjectManager):
     
     
 class GrantsTableManager(TableManDefs, ObjectManager):
-    caption = "Table privileges"
+    caption = tr("Table privileges")
     klass = "db.Grants"
     node_name = "table_privileges"
     name_column = 0
@@ -970,14 +983,14 @@ class GrantsTableManager(TableManDefs, ObjectManager):
         except grt.DBError as e:
             if e.args[1] == 1044 or e.args[1] == 1142:
                 
-                self.show_error("Access Error", "The current user does not have enough privileges to execute %s.\n\n%s" % (query, e.args[0]))
+                self.show_error(tr("Access Error"), tr("The current user does not have enough privileges to execute %s.\n\n%s") % (query, e.args[0]))
             else:
-                self.show_error("MySQL Error", "An error occurred retrieving information about the schema.\nQuery: %s\nError: %s" % (query, e.args[0]))
+                self.show_error(tr("SQL error"), tr("An error occurred retrieving information about the schema.\nQuery: %s\nError: %s") % (query, e.args[0]))
             return
         
-        self.columns = [('user', StringColumnType, 'User', 100, None),
-                        ('host', StringColumnType, 'Host', 100, None),
-                        ('scope', StringColumnType, 'Scope', 100, None)]
+        self.columns = [('user', StringColumnType, tr("User"), 100, None),
+                        ('host', StringColumnType, tr("Host"), 100, None),
+                        ('scope', StringColumnType, tr("Scope"), 100, None)]
         
         ok = rset.goToFirstRow()
         if ok:
@@ -1036,7 +1049,7 @@ class GrantsTableManager(TableManDefs, ObjectManager):
         self.refresh_row_count()
 
 class GrantsColumnManager(TableManDefs, ObjectManager):
-    caption = "Column privileges"
+    caption = tr("Column privileges")
     klass = "db.Grants"
     node_name = "column_privileges"
     name_column = 0
@@ -1058,14 +1071,14 @@ class GrantsColumnManager(TableManDefs, ObjectManager):
             rset = self.editor.executeManagementQuery(query, 0)
         except grt.DBError as e:
             if e.args[1] == 1044 or e.args[1] == 1142:
-                self.show_error("Access Error", "The current user does not have enough privileges to execute %s.\n\n%s" % (query, e.args[0]))
+                self.show_error(tr("Access Error"), tr("The current user does not have enough privileges to execute %s.\n\n%s") % (query, e.args[0]))
             else:
-                self.show_error("MySQL Error", "An error occurred retrieving information about the schema.\nQuery: %s\nError: %s" % (query, e.args[0]))
+                self.show_error(tr("SQL error"), tr("An error occurred retrieving information about the schema.\nQuery: %s\nError: %s") % (query, e.args[0]))
             return
 
-        self.columns = [('user', StringColumnType, 'User', 100, None),
-                        ('host', StringColumnType, 'Host', 100, None),
-                        ('scope', StringColumnType, 'Scope', 100, None)]
+        self.columns = [('user', StringColumnType, tr("User"), 100, None),
+                        ('host', StringColumnType, tr("Host"), 100, None),
+                        ('scope', StringColumnType, tr("Scope"), 100, None)]
 
         ok = rset.goToFirstRow()
         if ok:
@@ -1102,7 +1115,7 @@ class GrantsColumnManager(TableManDefs, ObjectManager):
 
     
 class GrantsManager(TableManDefs, mforms.Box):
-    caption = "Grants"
+    caption = tr("Privileges")
     klass = "db.Grants"
     node_name = "grants"
     name_column = 0
@@ -1140,7 +1153,8 @@ class GrantsManager(TableManDefs, mforms.Box):
         self.bbox.set_spacing(8)
         self.add(self.bbox, False, True)
         self.refresh_btn = mforms.newButton()
-        self.refresh_btn.set_text("Refresh")
+        self.refresh_btn.set_text(tr("Refresh"))
+        self.refresh_btn.set_min_size(100, -1)
         self.refresh_btn.add_clicked_callback(self.refresh)
         self.bbox.add_end(self.refresh_btn, False, True)
         
@@ -1154,12 +1168,12 @@ class TableInspector(mforms.AppView):
         self.tab_list = {}
         self.pages = []
 
-        mforms.AppView.__init__(self, False, "Table Inspector", "TableInspector", False)
+        mforms.AppView.__init__(self, False, tr("Table Inspector"), "TableInspector", False)
 
         self.set_managed()
         self.set_release_on_add()
 
-        self.tab = mforms.newTabView()
+        self.tab = mforms.newTabView(mforms.TabViewClassic)
         self.add(self.tab, True, True)
 
         tabs = [TableInfoPanel, TableColumnManager, TableIndexInfoPanel, TableTriggerManager, ConstraintManager, PartitionManager, GrantsManager, TableDDL]

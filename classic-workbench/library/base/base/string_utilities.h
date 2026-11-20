@@ -45,7 +45,15 @@
 #include <iomanip>
 #include <cstdint>
 
-#define _(s) s // TODO: replace with localization code.
+namespace base {
+  // UI strings only. SQL, identifiers, protocol fields and server values must
+  // never be passed through the language catalog.
+  BASELIBRARY_PUBLIC_FUNC const char *translate_ui(const char *source);
+  BASELIBRARY_PUBLIC_FUNC std::string translate_ui(const std::string &source);
+  BASELIBRARY_PUBLIC_FUNC void initialize_ui_language(const std::string &directory, const std::string &language);
+}
+
+#define _(s) base::translate_ui(s)
 
 using std::int64_t;
 

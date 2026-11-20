@@ -153,6 +153,8 @@ namespace mforms {
     std::shared_ptr<ConnectionEntry> _selectedEntry;
     std::string _selectedConnectionId;
     bool _openingConnection = false;
+    bool _connectionCancelRequested = false;
+    std::function<bool()> _connectionCancel;
     void selectEntry(const std::shared_ptr<ConnectionEntry> &entry);
     void openSelectedConnection();
     int rowHeight(int width) const;
@@ -215,6 +217,10 @@ namespace mforms {
                                        void *data, const std::string &format) override;
 
   public:
+    static ConnectionsSection *opening_section;
+    void set_connection_cancel(const std::function<bool()> &cancel) { _connectionCancel = cancel; }
+    bool connection_cancel_requested() const { return _connectionCancelRequested; }
+    void request_connection_cancel();
     static const int CONNECTIONS_LEFT_PADDING = 12;
     static const int CONNECTIONS_RIGHT_PADDING = 12;  // The tile spacing right to the last tile in the row does not
                                                       // belong to this padding.

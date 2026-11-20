@@ -89,6 +89,7 @@ class MYSQLWBBACKEND_PUBLIC_FUNC SqlEditorPanel : public mforms::AppView {
   bool _busy;
   bool _was_empty;
   bool _is_scratch;
+  bool _data_mode = false;
 
   mforms::ToolBar *setup_editor_toolbar();
   void update_title();
@@ -138,6 +139,7 @@ public:
   virtual void set_title(const std::string &title);
 
   void update_limit_rows();
+  void set_data_mode(bool enabled);
 
   SqlEditorForm *owner() {
     return _form;

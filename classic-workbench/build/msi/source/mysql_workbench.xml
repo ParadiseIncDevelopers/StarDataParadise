@@ -143,6 +143,7 @@
       <ComponentRef Id="modules_data" />
       <ComponentRef Id="modules_data_sqlite" />
       <ComponentRef Id="library_workbench" />
+      <ComponentRef Id="sdp_locales" />
       <ComponentRef Id="library_workbench_graphics" />
 
       <ComponentRef Id="python_dlls" />

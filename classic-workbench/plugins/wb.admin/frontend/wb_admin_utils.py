@@ -22,10 +22,145 @@
 
 import weakref
 import sys
+import json
 
 from mforms import newLabel
 import mforms
 from workbench.log import log_error, log_debug3
+from workbench.sdp_i18n import tr
+
+
+CLASSIC_PAGE_TITLES = {
+    "Server Status": "Server overview", "Client Connections": "Client sessions",
+    "Users and Privileges": "Users and privileges", "Server Variables": "Variables",
+    "Data Export": "SQL export", "Data Import": "SQL import",
+    "Startup / Shutdown MySQL Server": "Server service", "Server Logs": "Server logs",
+    "Options File": "Configuration", "Performance Reports": "Query reports",
+    "Performance Dashboard": "Live monitoring", "Performance Schema Setup": "Measurement settings",
+    "Performance Schema - Setup": "Measurement settings", "Status and System Variables": "Variables",
+    "Data Import/Restore": "SQL import", "Startup / Shutdown": "Server service",
+    "Dashboard": "Live monitoring",
+}
+
+
+def read_product_metrics(ctrl_be):
+    """Read optional SDP facilities without installing them or treating absence as zero."""
+    def scalar(sql):
+        result = ctrl_be.exec_query(sql)
+        if result and result.nextRow():
+            return result.stringByIndex(1)
+        return None
+
+    def optional(sql, transform=str):
+        try:
+            value = scalar(sql)
+            return transform(value) if value is not None else tr("Not reported")
+        except Exception as exc:
+            code = getattr(exc, "error", None)
+            if code in (1044, 1045, 1142, 1227, 1370):
+                return tr("Access denied")
+            if code in (1049, 1146, 1305):
+                return tr("Not installed")
+            return tr("Unavailable")
+
+    def commands(value):
+        payload = json.loads(value)
+        values = payload.get("commands")
+        if not isinstance(values, list) or not all(isinstance(item, str) for item in values):
+            raise ValueError("Invalid capability command list")
+        known = {"create_model": "CREATE MODEL", "train_model": "TRAIN MODEL",
+                 "predict_model": "PREDICT MODEL", "analyze_shorthand": "ANALYZE"}
+        return ", ".join(known.get(item, item) for item in values) or tr("No optional commands enabled")
+
+    metrics = [
+        ("SDP SQL commands", optional("SELECT STARDATAPARADISE_CAPABILITIES()", commands),
+         "Commands declared by this server; registry installation is checked separately."),
+        ("Compatibility mode", optional("SELECT @@SESSION.sdp_compatibility_mode"),
+         "Mode of this administration SQL session."),
+        ("Model definitions", optional("SELECT COUNT(*) FROM sdp_models.sdp_model_definitions"),
+         "Visible definitions in the default Classic model registry."),
+        ("Trained model versions", optional("SELECT COUNT(*) FROM sdp_models.sdp_model_versions"),
+         "Visible trained versions in the default Classic model registry."),
+        ("Compute queue", optional("SELECT COUNT(*) FROM sdp_jobs.compute_jobs WHERE state IN ('queued','running')"),
+         "Visible queued and running jobs; missing queue is not counted as zero."),
+        ("History SQL routines", optional("SELECT COUNT(DISTINCT ROUTINE_NAME) FROM information_schema.ROUTINES "
+                                         "WHERE ROUTINE_NAME IN ('history_log','history_read','history_diff')"),
+         "Visible history_log, history_read and history_diff routine names."),
+    ]
+    try:
+        result = ctrl_be.exec_query("SHOW SESSION STATUS LIKE 'Ssl_cipher'")
+        cipher = result.stringByIndex(2) if result and result.nextRow() else None
+        tls = cipher if cipher else (tr("Unencrypted") if cipher == "" else tr("Not reported"))
+    except Exception:
+        tls = tr("Unavailable")
+    metrics.append(("Administration session TLS", tls,
+                    "Cipher reported by this administration connection, not server TLS capability."))
+    return metrics
+
+
+class ClassicProductMetrics(mforms.Box):
+    """Dense, flat SDP capability readout shared by overview and performance."""
+    def __init__(self, ctrl_be):
+        mforms.Box.__init__(self, False)
+        self.set_managed()
+        self.set_release_on_add()
+        self.ctrl_be = ctrl_be
+        self.set_spacing(6)
+        row = mforms.newBox(True)
+        row.set_spacing(8)
+        icon = mforms.newImageBox()
+        icon.set_image(mforms.App.get().get_resource_path("sdp_database-cog.png"))
+        row.add(icon, False, True)
+        title = mforms.newLabel(tr("SDP SQL capabilities"))
+        title.set_style(mforms.BoldStyle)
+        row.add(title, True, True)
+        button = mforms.newButton()
+        button.set_text(tr("Refresh"))
+        button.add_clicked_callback(self.refresh)
+        row.add_end(button, False, True)
+        self.add(row, False, True)
+        self.table = mforms.newTable()
+        self.table.set_column_count(2)
+        self.table.set_row_count(7)
+        self.table.set_column_spacing(12)
+        self.table.set_row_spacing(6)
+        self.add(self.table, False, True)
+        self.rows = []
+        self.refresh()
+
+    def refresh(self):
+        for control in self.rows:
+            self.table.remove(control)
+        self.rows = []
+        for index, (caption, value, explanation) in enumerate(read_product_metrics(self.ctrl_be)):
+            label = mforms.newLabel(tr(caption))
+            label.set_tooltip(tr(explanation))
+            label.set_text_align(mforms.MiddleLeft)
+            content = mforms.newLabel(value)
+            content.set_style(mforms.BoldStyle)
+            content.set_tooltip(tr(explanation))
+            content.set_text_align(mforms.MiddleLeft)
+            self.table.add(label, 0, 1, index, index + 1, mforms.HFillFlag | mforms.VFillFlag)
+            self.table.add(content, 1, 2, index, index + 1, mforms.HFillFlag | mforms.VFillFlag)
+            self.rows.extend((label, content))
+
+
+def classic_page_header(title, description, right_view=None):
+    """Shared dense header for all administrator pages, without decorative art."""
+    row = mforms.newBox(True)
+    row.set_padding(8)
+    row.set_spacing(12)
+    row.set_back_color("#EDF2F4")
+    heading = mforms.newLabel(tr(CLASSIC_PAGE_TITLES.get(description, description)))
+    heading.set_style(mforms.BoldStyle)
+    heading.set_text_align(mforms.MiddleLeft)
+    row.add(heading, False, True)
+    profile = mforms.newLabel(title)
+    profile.set_text_align(mforms.MiddleLeft)
+    row.add(profile, True, True)
+    if right_view:
+        row.add_end(right_view, False, True)
+    return row
 
 #-------------------------------------------------------------------------------
 
@@ -44,43 +179,23 @@ def weakcb(object, cbname):
 
 
 def no_remote_admin_warning_label(server_instance_settings):
-    if server_instance_settings.uses_ssh:
-        warning = newLabel("There is no SSH connection to the server.\nTo use this functionality, the server where MySQL is located must have a SSH server running\nand you must provide its login information in the server profile.")
-    else:
-        if server_instance_settings.uses_wmi:
-            warning = newLabel("There is no WMI connection to the server.\nTo use this functionality, the server where MySQL is located must be configured to use WMI\nand you must provide its login information in the server profile.")
-        else:
-            warning = newLabel("Remote Administration is disabled.\nTo use this functionality, the server where MySQL is located must either have an SSH server running,\nor if it is a Windows machine, must have WMI enabled.\nAdditionally you must enable remote administration in the server profile, providing login details for it.")
-    warning.set_style(mforms.BigStyle)
-    warning.set_text_align(mforms.MiddleCenter)
+    warning = newLabel(management_requirement(server_instance_settings))
+    warning.set_style(mforms.BoldStyle)
+    warning.set_wrap_text(True)
+    warning.set_text_align(mforms.TopLeft)
     return warning
 
 
+def management_requirement(profile):
+    if profile.uses_ssh:
+        return tr("SSH management is not connected. Configure the SSH host and credentials in this connection profile.")
+    if profile.uses_wmi:
+        return tr("Windows management is not connected. Check the WMI settings in this connection profile.")
+    return tr("Host management is not configured. Choose a management method in this connection profile to use service and file actions.")
+
+
 def make_panel_header(icon, title, subtitle, button=None):
-    table = mforms.newTable()
-    table.set_name(title + " Panel")
-    table.set_row_count(2)
-    table.set_column_count(3)
-    table.set_row_spacing(0)
-    table.set_column_spacing(15)
-    image = mforms.newImageBox()
-    image.set_name(title + " Icon")
-    image.set_image(mforms.App.get().get_resource_path(icon))
-    image.set_image_align(mforms.TopCenter)
-    table.add(image, 0, 1, 0, 2, mforms.VFillFlag | mforms.HFillFlag)
-    label = mforms.newLabel(title)
-    label.set_name(title)
-    label.set_text_align(mforms.BottomLeft)
-    label.set_style(mforms.SmallStyle)
-    table.add(label, 1, 2, 0, 1, mforms.HFillFlag | mforms.HExpandFlag | mforms.VFillFlag)
-    label = mforms.newLabel(subtitle)
-    label.set_name(subtitle)
-    label.set_text_align(mforms.TopLeft)
-    label.set_style(mforms.VeryBigStyle)
-    table.add(label, 1, 2, 1, 2, mforms.HFillFlag | mforms.HExpandFlag | mforms.VFillFlag)
-    if button:
-        table.add(button, 2, 3, 0, 2, mforms.VFillFlag | mforms.HFillFlag)
-    return table
+    return classic_page_header(title, subtitle, button)
 
 def show_error_page(parent, text):
     if not hasattr(parent, '_error_label'):
@@ -110,15 +225,15 @@ class WbAdminValidationBase:
         self._error_message = error_message
 
     def errorScreen(self):
-        warning = newLabel("\n\n\n\n" + self._error_message)
-        warning.set_style(mforms.BigStyle)
-        warning.set_text_align(mforms.MiddleCenter)
+        warning = newLabel(self._error_message)
+        warning.set_wrap_text(True)
+        warning.set_text_align(mforms.TopLeft)
         warning.show(True)
         return warning
 
 
-ValidationErrorServerNotRunning = "There is no connection to the MySQL Server.\nThis functionality requires an established connection to a running MySQL server."
-ValidationErrorBadConfigFile = "Location of MySQL configuration file (ie: my.cnf) not specified"
+ValidationErrorServerNotRunning = tr("No server connection. Connect to a running server to open this page.")
+ValidationErrorBadConfigFile = tr("No configuration file path is set in this profile. Configure the profile and choose the server configuration file.")
 
 
 class WbAdminValidationConnection(WbAdminValidationBase):
@@ -144,12 +259,7 @@ class WbAdminValidationRemoteAccess(WbAdminValidationBase):
         
         self._instance_info = instance_info
 
-        if self._instance_info.uses_ssh:
-            self.set_error_message("There is no SSH connection to the server.\nTo use this functionality, the server where MySQL is located must have an SSH server running\nand you must provide its login information in the server profile.")
-        elif self._instance_info.uses_wmi:
-            self.set_error_message("There is no WMI connection to the server.\nTo use this functionality, the server where MySQL is located must be configured to use WMI\nand you must provide its login information in the server profile.")
-        else:
-            self.set_error_message("Remote Administration is disabled.\nTo use this functionality, the server where MySQL is located must have either an SSH server running,\nor if it is a computer running Windows, must have WMI enabled.\nAdditionally, you must enable remote administration in the server profile and provide login details for it.")
+        self.set_error_message(management_requirement(self._instance_info))
 
     def validate(self):
         return self._instance_info.admin_enabled
@@ -234,43 +344,13 @@ class WbAdminTabBase(mforms.Box):
         self._validations.append(validation)
 
     def create_standard_header(self, icon, title, description, rightViewObject = None):
-        header = mforms.newTable()
-        header.set_name(description + " Header")
-        header.set_row_count(2)
-        header.set_column_count(3)
-        header.set_row_spacing(0)
-        header.set_column_spacing(15)
-        header.set_padding(12)
-        header.set_name("Header")
-
-        image = mforms.newImageBox()
-        image.set_image(mforms.App.get().get_resource_path(icon))
-        image.set_image_align(mforms.TopCenter)
-        image.set_name(description + " Image")
-        label1 = mforms.newLabel(title)
-        label1.set_name(title)
-        label1.set_text_align(mforms.BottomLeft)
-        label1.set_style(mforms.SmallStyle)
-
-        label2 = mforms.newLabel(description)
-        label2.set_name(description)
-        label2.set_text_align(mforms.TopLeft)
-        label2.set_style(mforms.VeryBigStyle)
-
-        header.add(image, 0, 1, 0, 2, mforms.VFillFlag | mforms.HFillFlag)
-        header.add(label1, 1, 2, 0, 1, mforms.HFillFlag | mforms.HExpandFlag | mforms.VFillFlag)
-        header.add(label2, 1, 2, 1, 2, mforms.HFillFlag | mforms.HExpandFlag | mforms.VFillFlag)
-
-        if rightViewObject:
-            header.add(rightViewObject, 2, 3, 0, 2, mforms.VFillFlag | mforms.HFillFlag)
-
-        return header
+        return classic_page_header(title, description, rightViewObject)
 
     def set_header(self, header):
         if self._header_contents:
             self._page_header.remove(self._header_contents)
         self._header_contents = header
-        self._header_contents.set_padding(10, 10, 10, 5)
+        self._header_contents.set_padding(8)
         self._page_header.add(self._header_contents, True, True)
 
     def set_standard_header(self, icon, title, description):
@@ -291,8 +371,28 @@ class WbAdminTabBase(mforms.Box):
                 self._page_body.add(self._body_contents)
 
     def set_error_screen(self, failedValidation):
-        self.set_body_contents(failedValidation.errorScreen())
+        box = mforms.newBox(False)
+        box.set_padding(12)
+        box.set_spacing(8)
+        box.add(failedValidation.errorScreen(), False, True)
+        actions = mforms.newBox(True)
+        actions.set_spacing(8)
+        configure = mforms.newButton()
+        configure.set_text("Profili yapılandır")
+        configure.add_clicked_callback(self.configure_profile)
+        actions.add(configure, False, True)
+        retry = mforms.newButton()
+        retry.set_text("Yeniden dene")
+        retry.add_clicked_callback(weakcb(self, "page_activated"))
+        actions.add(retry, False, True)
+        box.add(actions, False, True)
+        self.set_body_contents(box)
         self._error_screen_displayed = True
+
+    def configure_profile(self):
+        # The existing editor persists local/SSH management and configuration paths.
+        import wb_admin_grt
+        wb_admin_grt.openConnectionSettings(self.editor)
 
     def set_footer(self, footer):
 
@@ -300,7 +400,7 @@ class WbAdminTabBase(mforms.Box):
             self._page_footer.remove(self._footer_contents)
         self._footer_contents = footer
         self._footer_contents.set_name("Footer")
-        self._footer_contents.set_padding(10, 5, 10, 10)
+        self._footer_contents.set_padding(8)
         self._page_footer.add(self._footer_contents, True, True)
 
     def ui_created(self):
@@ -351,6 +451,10 @@ class WbAdminTabBase(mforms.Box):
             import traceback
             traceback.print_exc()
             log_error("Exception activating the page - %s" % str(e))
+            # An unsupported server capability must leave an actionable error
+            # surface rather than an empty administrator document.
+            failed = WbAdminValidationBase("Sayfa yüklenemedi.\n%s" % str(e))
+            self.set_error_screen(failed)
         finally:
             self.resume_layout()
 

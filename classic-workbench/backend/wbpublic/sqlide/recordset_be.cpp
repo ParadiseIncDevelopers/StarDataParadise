@@ -1387,6 +1387,7 @@ static mforms::ToolBarItem *add_toolbar_action_item(mforms::ToolBar *toolbar, be
                                                     const std::string &item_name, const std::string &item_tooltip) {
   mforms::ToolBarItem *item = mforms::manage(new mforms::ToolBarItem(mforms::ActionItem));
   item->set_name(accessibilityName);
+  item->set_text(accessibilityName);
   item->setInternalName(item_name);
   item->set_icon(im->get_icon_path(item_icon));
   item->set_tooltip(item_tooltip);
@@ -1419,76 +1420,61 @@ void Recordset::search_activated(mforms::ToolBarItem *item) {
 void Recordset::rebuild_toolbar() {
   if (_toolbar) {
     _toolbar->remove_all();
-    // hack so that this label only appears for resultset grids and not inserts editor
-    if (!_inserts_editor) {
-      mforms::ToolBarItem *item = mforms::manage(new mforms::ToolBarItem(mforms::TitleItem));
-      ;
-      item->set_text("Result Grid");
-      _toolbar->add_item(item);
-      _toolbar->add_separator_item();
-    }
-
     mforms::ToolBarItem *item;
     bec::IconManager *im = bec::IconManager::get_instance();
 
     item =
-      add_toolbar_action_item(_toolbar, im, "Reset Record Sort", "record_sort_reset.png", "record_sort_reset", "Resets all sorted columns");
+      add_toolbar_action_item(_toolbar, im, "Sıralamayı sıfırla", "sdp_arrows-sort.png", "record_sort_reset", "Sütun sıralamasını sıfırla");
 
     if (!_data_storage || _data_storage->reloadable()) {
-      item = add_toolbar_action_item(_toolbar, im, "Refresh", "record_refresh.png", "record_refresh",
-                                     "Refresh data re-executing the original query");
+      item = add_toolbar_action_item(_toolbar, im, "Yenile", "sdp_refresh.png", "record_refresh",
+                                     "Sonucu oluşturan sorguyu yeniden çalıştır");
       item->signal_activated()->connect(std::bind(&Recordset::refresh, this));
     }
 
-    add_toolbar_label_item(_toolbar, "Filter Rows:", "Filter Rows");
+    _toolbar->add_separator_item();
+    add_toolbar_label_item(_toolbar, "Filtre", "Satır filtresi");
 
     item = mforms::manage(new mforms::ToolBarItem(mforms::SearchFieldItem));
-    item->set_name("Search Field");
+    item->set_name("Sonuç satırlarında ara");
+    item->set_tooltip("Sonuç kümesindeki satırları süz");
     item->signal_activated()->connect(std::bind(&Recordset::search_activated, this, std::placeholders::_1));
     _toolbar->add_item(item);
 
     if (!is_readonly() || _inserts_editor) {
       _toolbar->add_separator_item();
-      add_toolbar_label_item(_toolbar, "Edit:", "Edit");
-      add_toolbar_action_item(_toolbar, im, "Edit Row", "record_edit", "Edit current row");    // connect in frontend
-      add_toolbar_action_item(_toolbar, im, "Insert Row", "record_add", "Insert new row");       // connect in frontend
-      add_toolbar_action_item(_toolbar, im, "Delete Selected", "record_del", "Delete selected rows"); // connect in frontend
+      add_toolbar_action_item(_toolbar, im, "Düzenle", "sdp_edit.png", "record_edit", "Etkin satırı düzenle");
+      add_toolbar_action_item(_toolbar, im, "Satır ekle", "sdp_row-insert-top.png", "record_add", "Taslağa yeni satır ekle");
+      add_toolbar_action_item(_toolbar, im, "Satır sil", "sdp_trash.png", "record_del", "Seçili satırları silinmek üzere işaretle");
     }
     _toolbar->add_separator_item();
+    add_toolbar_action_item(_toolbar, im, "Dışa aktar", "sdp_file-export.png", "record_export",
+                            "Sonuç kümesini dosyaya aktar");
     if (!is_readonly() || _inserts_editor)
-      add_toolbar_label_item(_toolbar, "Export/Import:", "Export or Import");
-    else
-      add_toolbar_label_item(_toolbar, "Export:", "Export or Import");
-    add_toolbar_action_item(_toolbar, im, "Export Record", "record_export",
-                            "Export recordset to an external file");
-    if (!is_readonly() || _inserts_editor)
-      add_toolbar_action_item(_toolbar, im, "Record Import", "record_import",
-                              "Import records from an external file");
+      add_toolbar_action_item(_toolbar, im, "İçe aktar", "sdp_file-import.png", "record_import",
+                              "Dosyadan satırları içe aktar");
 
 #ifndef __APPLE__
     _toolbar->add_separator_item();
-    add_toolbar_label_item(_toolbar, "Wrap Cell Content:", "Wrap Cell Content");
-    add_toolbar_action_item(_toolbar, im, "Wrap Vertical", "record_wrap_vertical",
-                            "Toggle wrapping of cell contents"); // connect in frontend
+    add_toolbar_action_item(_toolbar, im, "Metni sar", "sdp_text-wrap.png", "record_wrap_vertical",
+                            "Uzun hücre metnini satırlara böl"); // connect in frontend
 #endif
 
     if (limit_rows_applicable()) {
       _toolbar->add_separator_item();
-      add_toolbar_label_item(_toolbar, "Fetch rows:", "Fetch Rows");
-      item = add_toolbar_action_item(_toolbar, im, "Fetch Previous", "record_fetch_prev.png",
-                                     "Fetch previous frame of records from the data source");
+      item = add_toolbar_action_item(_toolbar, im, "Önceki", "sdp_chevron-left.png", "record_fetch_prev",
+                                     "Önceki sonuç sayfasını getir");
       item->signal_activated()->connect(std::bind(&Recordset::scroll_rows_frame_backward, this));
-      item = add_toolbar_action_item(_toolbar, im, "Fetch Next", "record_fetch_next.png", "scroll_rows_frame_forward",
-                                     "Fetch next frame of records from the data source");
+      item = add_toolbar_action_item(_toolbar, im, "Sonraki", "sdp_chevron-right.png", "scroll_rows_frame_forward",
+                                     "Sonraki sonuç sayfasını getir");
       item->signal_activated()->connect(std::bind(&Recordset::scroll_rows_frame_forward, this));
     }
 
     if (_inserts_editor /* && !is_readonly()*/) {
       _toolbar->add_separator_item();
-      add_toolbar_label_item(_toolbar, "Apply changes:", "Apply Changes");
-      item = add_toolbar_action_item(_toolbar, im, "Save Record", "record_save", "Apply changes to data");
+      item = add_toolbar_action_item(_toolbar, im, "Uygula", "sdp_device-floppy.png", "record_save", "Değişiklikleri uygula");
       item->signal_activated()->connect(std::bind(&Recordset::apply_changes, this));
-      item = add_toolbar_action_item(_toolbar, im, "Discard Record", "record_discard", "Discard changes to data");
+      item = add_toolbar_action_item(_toolbar, im, "Geri al", "sdp_arrow-back-up.png", "record_discard", "Taslak değişikliklerini geri al");
       item->signal_activated()->connect(std::bind(&Recordset::rollback, this));
     }
   }

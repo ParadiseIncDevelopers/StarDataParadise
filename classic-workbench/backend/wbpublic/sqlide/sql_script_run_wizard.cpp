@@ -28,49 +28,48 @@
 #include "mforms/code_editor.h"
 #include "mforms/selector.h"
 #include "mforms/button.h"
+#include "mforms/filechooser.h"
+#include "base/string_utilities.h"
 
 //--------------------------------------------------------------------------------------------------
 
 SqlScriptReviewPage::SqlScriptReviewPage(grtui::WizardForm *form, GrtVersionRef version, std::string algorithm,
                                          std::string lock)
-  : grtui::WizardPage(form, "review"), _box(false) {
-  set_title(_("Review the SQL Script to be Applied on the Database"));
-  set_short_title(_("Review SQL Script"));
+  : grtui::WizardPage(form, "review"), _box(false), _preview_box(true), _summary_box(false) {
+  set_title(_("Review SQL changes"));
+  set_short_title(_("SQL preview"));
+  set_padding(12);
+  set_spacing(8);
 
-  _box.set_spacing(5);
+  _box.set_spacing(8);
   add(&_box, true, true);
+  _target_heading.set_style(mforms::BoldStyle);
+  _target_heading.set_wrap_text(true);
+  _box.add(&_target_heading, false, true);
 
-  _page_heading.set_text(
-    _("Please review the following SQL script that will be applied to the database.\n"
-      "Note that once applied, these statements may not be revertible without losing some of the data.\n"
-      "You can also manually change the SQL statements before execution."));
-  _page_heading.set_wrap_text(true);
-  _box.add(&_page_heading, false, false);
+  _page_heading.set_text(_("SQL script - Read only"));
+  _page_heading.set_style(mforms::BoldStyle);
+  _box.add(&_page_heading, false, true);
 
   // Online DDL options. Structure is very similar as in the preferences, just on one line, instead 2.
   // Add them only if online DDL options were given (which only happens for meta data changes).
   // This is not supposed to be shown for pre 5.6 servers
   if (!algorithm.empty() && !lock.empty() &&
       (version.is_valid() && bec::is_supported_mysql_version_at_least(version, 5, 6))) {
-    mforms::Panel *frame = mforms::manage(new mforms::Panel(mforms::TitledBoxPanel));
-    frame->set_title(_("Online DDL"));
-    _box.add(frame, false);
-
     // The passed in values for online DDL algorithm and lock are used to properly
     // initialize the selectors.
     mforms::Box *line_box = mforms::manage(new mforms::Box(true));
-    line_box->set_padding(20, 0, 20, 0);
-    line_box->set_spacing(20);
-    frame->add(line_box);
+    line_box->set_spacing(8);
+    _box.add(line_box, false, true);
 
     mforms::Label *label = mforms::manage(new mforms::Label(_("Algorithm:")));
     line_box->add(label, false, false);
 
     _algorithm_selector = mforms::manage(new mforms::Selector());
     scoped_connect(_algorithm_selector->signal_changed(), std::bind(&SqlScriptReviewPage::option_changed, this));
-    _algorithm_selector->add_item("Default");
-    _algorithm_selector->add_item("In place");
-    _algorithm_selector->add_item("Copy");
+    _algorithm_selector->add_item(_("Default"));
+    _algorithm_selector->add_item(_("In place"));
+    _algorithm_selector->add_item(_("Copy"));
     if (algorithm == "INPLACE")
       _algorithm_selector->set_selected(1);
     else if (algorithm == "COPY")
@@ -81,15 +80,15 @@ SqlScriptReviewPage::SqlScriptReviewPage(grtui::WizardForm *form, GrtVersionRef 
         "algorithm as default. This setting can also be adjusted for each alter operation."));
     line_box->add(_algorithm_selector, false, false);
 
-    label = mforms::manage(new mforms::Label(_("Lock Type:")));
+    label = mforms::manage(new mforms::Label(_("Lock:")));
     line_box->add(label, false, false);
 
     _lock_selector = mforms::manage(new mforms::Selector());
     scoped_connect(_lock_selector->signal_changed(), std::bind(&SqlScriptReviewPage::option_changed, this));
-    _lock_selector->add_item("Default");
-    _lock_selector->add_item("None");
-    _lock_selector->add_item("Shared");
-    _lock_selector->add_item("Exclusive");
+    _lock_selector->add_item(_("Default"));
+    _lock_selector->add_item(_("None"));
+    _lock_selector->add_item(_("Shared"));
+    _lock_selector->add_item(_("Exclusive"));
     if (lock == "NONE")
       _lock_selector->set_selected(1);
     else if (lock == "SHARED")
@@ -123,7 +122,19 @@ SqlScriptReviewPage::SqlScriptReviewPage(grtui::WizardForm *form, GrtVersionRef 
         _sql_editor->set_language(mforms::LanguageMySQL);
     }
   }
-  _box.add(_sql_editor, true, true);
+  _preview_box.set_spacing(10);
+  _summary_box.set_size(170, -1);
+  _summary_box.set_spacing(8);
+  auto summary_title = mforms::manage(new mforms::Label(_("Operation")));
+  summary_title->set_style(mforms::BoldStyle);
+  _summary_box.add(summary_title, false, true);
+  _operation_heading.set_wrap_text(true);
+  _summary_box.add(&_operation_heading, false, true);
+  _preview_box.add(&_summary_box, false, true);
+  _preview_box.add(_sql_editor, true, true);
+  _box.add(&_preview_box, true, true);
+  _caution.set_wrap_text(true);
+  _box.add(&_caution, false, true);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -136,8 +147,26 @@ SqlScriptReviewPage::~SqlScriptReviewPage() {
 //--------------------------------------------------------------------------------------------------
 
 void SqlScriptReviewPage::enter(bool advancing) {
-  _sql_editor->set_value(values().get_string("sql_script"));
+  set_script_text(values().get_string("sql_script"));
+  std::string connection = values().get_string("target_connection", "");
+  std::string object = values().get_string("target_object", "");
+  std::string schema = values().get_string("target_schema", "");
+  if (!schema.empty() && !object.empty())
+    object = schema + "." + object;
+  _target_heading.set_text(connection + (!object.empty() ? " - " + object : ""));
+  _target_heading.show(!connection.empty() || !object.empty());
+  bool data_changes = values().get_string("change_kind", "schema") == "data";
+  _operation_heading.set_text(std::string(data_changes ? _("Row changes") : _("Object definition")) +
+                              (object.empty() ? "" : "\n" + object));
+  _caution.set_text(data_changes ? _("Pending row changes are sent to the server only after Apply.") :
+      _("DDL changes on the target may be permanent. Review the script before applying."));
   grtui::WizardPage::enter(advancing);
+}
+
+void SqlScriptReviewPage::set_script_text(const std::string &text) {
+  _sql_editor->set_features(mforms::FeatureReadOnly, false);
+  _sql_editor->set_value(text);
+  _sql_editor->set_features(mforms::FeatureReadOnly, true);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -159,6 +188,22 @@ std::string SqlScriptReviewPage::next_button_caption() {
   return _("Apply");
 }
 
+std::string SqlScriptReviewPage::extra_button_caption() {
+  return _("Save script...");
+}
+
+void SqlScriptReviewPage::extra_clicked() {
+  mforms::FileChooser file(mforms::SaveFile);
+  file.set_title(_("Save SQL script"));
+  file.set_extensions(_("SQL files (*.sql)|*.sql"), "sql");
+  if (!file.run_modal()) return;
+  try {
+    base::setTextFileContent(file.get_path(), _sql_editor->get_text(false));
+  } catch (const std::exception &error) {
+    mforms::Utilities::show_error(_("Could not save script"), error.what(), _("Close"));
+  }
+}
+
 //--------------------------------------------------------------------------------------------------
 
 void SqlScriptReviewPage::option_changed() {
@@ -170,7 +215,7 @@ void SqlScriptReviewPage::option_changed() {
     static std::string locks[] = {"DEFAULT", "NONE", "SHARED", "EXCLUSIVE"};
     std::string lock = locks[_lock_selector->get_selected_index()];
 
-    _sql_editor->set_value(wizard->regenerate_script(algorithm, lock));
+    set_script_text(wizard->regenerate_script(algorithm, lock));
   }
 }
 
@@ -178,18 +223,18 @@ void SqlScriptReviewPage::option_changed() {
 
 SqlScriptApplyPage::SqlScriptApplyPage(grtui::WizardForm *form)
   : grtui::WizardProgressPage(form, "apply", true), _err_count(0) {
-  set_title(_("Applying SQL script to the database"));
-  set_short_title(_("Apply SQL Script"));
+  set_title(_("Applying SQL changes"));
+  set_short_title(_("Apply result"));
 
-  /*TaskRow *task=*/add_async_task(_("Execute SQL Statements"),
+  /*TaskRow *task=*/add_async_task(_("Execute SQL statements"),
                                    std::bind(&SqlScriptApplyPage::execute_sql_script, this),
-                                   _("Executing SQL Statements..."));
+                                   _("Executing SQL statements..."));
 
-  end_adding_tasks(_("SQL script was successfully applied to the database."));
+  end_adding_tasks(_("SQL script applied."));
 
   {
     _abort_btn = mforms::manage(new mforms::Button());
-    _abort_btn->set_text("Abort");
+    _abort_btn->set_text(_("Stop"));
     _abort_btn->signal_clicked()->connect(std::bind(&SqlScriptApplyPage::abort_exec, this));
     _progress_bar_box->add_end(_abort_btn, false, true);
   }
@@ -197,17 +242,19 @@ SqlScriptApplyPage::SqlScriptApplyPage(grtui::WizardForm *form)
 }
 
 void SqlScriptApplyPage::abort_exec() {
-  dynamic_cast<SqlScriptRunWizard *>(_form)->abort_apply();
+  auto wizard = dynamic_cast<SqlScriptRunWizard *>(_form);
+  if (wizard && wizard->abort_apply)
+    wizard->abort_apply();
 }
 
 int SqlScriptApplyPage::on_error(long long err_code, const std::string &err_msg, const std::string &err_sql) {
   std::string sql = base::strip_text(err_sql, true, true);
-  _log += "ERROR";
+  _log += _("Error");
   if (err_code >= 0)
     _log += base::strfmt(" %lli", err_code);
   _log += base::strfmt(": %s\n", err_msg.c_str());
   if (!err_sql.empty())
-    _log += base::strfmt("SQL Statement:\n%s\n", sql.c_str());
+    _log += base::strfmt(_("SQL Statement:\n%s\n"), sql.c_str());
   _log += "\n";
   return 0;
 }
@@ -224,7 +271,7 @@ int SqlScriptApplyPage::on_exec_stat(long success_count, long err_count) {
 
 grt::ValueRef SqlScriptApplyPage::do_execute_sql_script(const std::string &sql_script) {
   bec::GRTManager::get()->run_once_when_idle(
-    this, std::bind(&SqlScriptApplyPage::add_log_text, this, "Executing:\n" + sql_script + "\n"));
+    this, std::bind(&SqlScriptApplyPage::add_log_text, this, std::string(_("Executing:\n")) + sql_script + "\n"));
 
   apply_sql_script(sql_script);
 
@@ -254,7 +301,7 @@ bool SqlScriptApplyPage::execute_sql_script() {
 }
 
 std::string SqlScriptApplyPage::next_button_caption() {
-  return finish_button_caption();
+  return _("Close");
 }
 
 bool SqlScriptApplyPage::allow_back() {
@@ -289,7 +336,8 @@ SqlScriptRunWizard::SqlScriptRunWizard(GrtVersionRef version, std::string algori
   : grtui::WizardForm() {
   set_name("Script Run Wizard");
   setInternalName("script_run_wizard");
-  set_title(_("Apply SQL Script to Database"));
+  set_title(_("Review SQL changes"));
+  set_size(920, 620);
   review_page = new SqlScriptReviewPage(this, version, algorithm, lock);
   add_page(mforms::manage(review_page));
   apply_page = new SqlScriptApplyPage(this);

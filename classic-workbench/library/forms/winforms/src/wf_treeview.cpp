@@ -265,6 +265,16 @@ ref struct NodeOverlay {
 ref class MformsTree : TreeViewAdv {
 public:
   virtual void DrawNode(TreeNodeAdv ^ node, DrawContext context) override {
+    // The live schema browser uses the same flat mint selection as document tabs.
+    // Keep system colors for high contrast and leave other native tree views alone.
+    if ((Name == "Schema Tree" || Name == "Filtered Schema Tree") && node->IsSelected &&
+        !SystemInformation::HighContrast) {
+      Drawing::Rectangle row(2, context.Bounds.Top, Math::Max(0, Width - 4), RowHeight);
+      auto selection = gcnew SolidBrush(ColorTranslator::FromHtml("#DDEBE4"));
+      context.Graphics->FillRectangle(selection, row);
+      delete selection;
+      context.DrawSelection = DrawSelectionMode::None;
+    }
     if (Name == "Profiller" && node->IsSelected && !SystemInformation::HighContrast) {
       Drawing::Rectangle row(0, context.Bounds.Top, Width, RowHeight);
       auto selection = gcnew SolidBrush(ColorTranslator::FromHtml("#DDEBE4"));

@@ -30,7 +30,6 @@
 
 #include "mforms/appview.h"
 #include "mforms/tabview_dock.h"
-#include "mforms/tabswitcher.h"
 
 #include "sqlide/recordset_be.h"
 
@@ -47,7 +46,9 @@ namespace mforms {
   class ContextMenu;
   class TreeView;
   class GridView;
+  class Splitter;
   class ScrollPanel;
+  class Label;
 };
 
 class ResultFormView;
@@ -80,6 +81,7 @@ public:
 
   void show_export_recordset();
   void show_import_recordset();
+  void show_execution_plan();
   void dock_result_grid(mforms::View *view);
   //  mforms::View *result_grid() { return _result_grid; }
 
@@ -98,6 +100,7 @@ public:
   }
 
   void apply_changes();
+  void show_data_details(bool enabled);
   void discard_changes();
   bool has_pending_changes();
 
@@ -116,23 +119,27 @@ public:
 
 private:
   mforms::TabView _tabview;
-  mforms::TabSwitcher _switcher;
   DockingDelegate *_tabdock_delegate;
   mforms::DockingPoint _tabdock;
+  boost::signals2::scoped_connection _view_changed_connection;
+  bool _updating_views = false;
 
   mforms::AppView *_column_info_box;
   mforms::AppView *_query_stats_box;
   mforms::ScrollPanel *_query_stats_panel;
   mforms::AppView *_resultset_placeholder;
   mforms::AppView *_execution_plan_placeholder;
+  mforms::Label *_plan_status = nullptr;
   ResultFormView *_form_result_view;
+  ResultFormView *_inline_form_view = nullptr;
+  mforms::Splitter *_data_splitter = nullptr;
+  mforms::Box *_data_context = nullptr;
+  mforms::Label *_data_row_count = nullptr;
+  bool _inline_form_created = false;
   SpatialDataView *_spatial_result_view;
   mforms::ContextMenu *_column_info_menu;
   mforms::ContextMenu *_grid_header_menu;
-  std::list<mforms::ToolBar *> _toolbars;
   mforms::GridView *_result_grid;
-  boost::signals2::signal<void(bool)> _collapse_toggled;
-  boost::signals2::connection _collapse_toggled_sig;
 
   db_query_ResultPanelRef _grtobj;
 
@@ -151,12 +158,11 @@ private:
   void update_selection_for_menu_extra(mforms::ContextMenu *menu, const std::vector<int> &rows, int column);
   void switch_tab();
 
-  void toggle_switcher_collapsed();
-  void switcher_collapsed();
 
   void create_query_stats_panel();
   void create_column_info_panel();
   void create_spatial_view_panel_if_needed();
+  void create_execution_plan_placeholder();
 
   void dock_result_grid(mforms::GridView *view);
 
@@ -164,7 +170,6 @@ private:
   std::vector<float> get_autofit_column_widths(Recordset *rs);
   void reset_column_widths();
 
-  void add_switch_toggle_toolbar_item(mforms::ToolBar *tbar);
 
   void copy_column_info_name(mforms::TreeView *tree);
   void copy_column_info(mforms::TreeView *tree);

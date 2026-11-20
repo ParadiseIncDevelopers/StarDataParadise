@@ -25,6 +25,8 @@
 #include "wf_base.h"
 #include "wf_view.h"
 #include "wf_utilities.h"
+#include "mforms/home_screen_connections.h"
+#include <atomic>
 
 #include "base/log.h"
 #include "base/string_utilities.h"
@@ -39,6 +41,9 @@
   processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 DEFAULT_LOG_DOMAIN(DOMAIN_MFORMS_WRAPPER)
+
+static std::atomic<bool> connection_wait_active(false);
+static std::atomic<bool> connection_wait_finished(false);
 
 using namespace System::Windows::Forms;
 using namespace System::Drawing;
@@ -621,6 +626,11 @@ public:
       return (*cancel_slot)();
     return true;
   }
+
+  void request_cancel() {
+    if (mforms::ConnectionsSection::opening_section)
+      mforms::ConnectionsSection::opening_section->request_connection_cancel();
+  }
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -631,6 +641,40 @@ bool UtilitiesWrapper::run_cancelable_wait_message(const std::string &title, con
   logDebug("Running a cancelable wait message\n");
 
   CallSlotDelegate ^ caller = gcnew CallSlotDelegate(&signal_ready, &cancel_slot);
+
+  if (title == "SDP_CONNECTION" && mforms::ConnectionsSection::opening_section != nullptr) {
+    // Keep the existing worker, authentication dispatch and cancellation protocol.
+    // Only its visual host changes from a branded modal HUD to the selected profile row.
+    auto section = mforms::ConnectionsSection::opening_section;
+    section->set_connection_cancel(cancel_slot);
+    connection_wait_finished.store(false);
+    connection_wait_active.store(true);
+    Form ^ owner = Form::ActiveForm;
+    MySQL::Controls::IConnectionWaitHost ^ host = dynamic_cast<MySQL::Controls::IConnectionWaitHost ^>(owner);
+    if (host == nullptr) {
+      for each (Form ^ candidate in Application::OpenForms) {
+        host = dynamic_cast<MySQL::Controls::IConnectionWaitHost ^>(candidate);
+        if (host != nullptr) break;
+      }
+    }
+    if (host != nullptr)
+      host->PendingConnectionCancel = gcnew System::Action(caller, &CallSlotDelegate::request_cancel);
+    signal_ready();
+    try {
+      while (!connection_wait_finished.load()) {
+        Application::DoEvents();
+        System::Threading::Thread::Sleep(10);
+      }
+    } finally {
+      connection_wait_active.store(false);
+      if (host != nullptr) host->PendingConnectionCancel = nullptr;
+      section->set_connection_cancel({});
+    }
+    // The worker has finished, even when cancellation was requested. Returning
+    // completion transfers its owned result to the connection caller, which
+    // disposes it and checks the cancellation flag before opening an editor.
+    return true;
+  }
 
   HUDForm::ReadyDelegate ^ readyDelegate = gcnew HUDForm::ReadyDelegate(caller, &CallSlotDelegate::call_start);
   HUDForm::CancelDelegate ^ cancelDelegate = gcnew HUDForm::CancelDelegate(caller, &CallSlotDelegate::call_cancel);
@@ -654,6 +698,10 @@ bool UtilitiesWrapper::run_cancelable_wait_message(const std::string &title, con
 void UtilitiesWrapper::stop_cancelable_wait_message() {
   logDebug("Explicit cancelation of the wait message\n");
 
+  if (connection_wait_active.load()) {
+    connection_wait_finished.store(true);
+    return;
+  }
   HUDForm::Finish();
 }
 
@@ -693,7 +741,8 @@ void UtilitiesWrapper::set_clipboard_text(const std::string &content) {
         msg += converted_text;
         logDebug2("Error while setting the text: %s\n", NativeToCppString(msg).c_str());
 
-        CustomMessageBox::Show(MessageType::MessageError, _("Error while copying to clipboard"), msg, "Close");
+        CustomMessageBox::Show(MessageType::MessageError, CppStringToNative(_("Error while copying to clipboard")),
+                               msg, CppStringToNative(_("Close")));
       }
     }
   }

@@ -44,7 +44,7 @@ using MySQL.Workbench;
 
 namespace MySQL.GUI.Workbench
 {
-  public partial class MainForm : Form, IWorkbenchObserver
+  public partial class MainForm : Form, IWorkbenchObserver, IConnectionWaitHost
   {
     #region Member Variables
 
@@ -73,6 +73,44 @@ namespace MySQL.GUI.Workbench
 
     private bool shuttingDown = false;
     private ImageList tabImageList = null;
+    private readonly Dictionary<string, int> connectionAvatarIndices = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    private Action pendingConnectionCancel;
+    private readonly Dictionary<ToolStrip, bool> connectionWaitStrips = new Dictionary<ToolStrip, bool>();
+
+    public Action PendingConnectionCancel
+    {
+      get { return pendingConnectionCancel; }
+      set
+      {
+        pendingConnectionCancel = value;
+        contentTabControl.NavigationLocked = value != null;
+        if (value != null)
+        {
+          tabsContextMenuStrip.Close();
+          LockConnectionWaitStrips(this);
+        }
+        else
+        {
+          foreach (var strip in connectionWaitStrips)
+            if (!strip.Key.IsDisposed) strip.Key.Enabled = strip.Value;
+          connectionWaitStrips.Clear();
+        }
+      }
+    }
+
+    private void LockConnectionWaitStrips(Control container)
+    {
+      foreach (Control control in container.Controls)
+      {
+        var strip = control as ToolStrip;
+        if (strip != null && !connectionWaitStrips.ContainsKey(strip))
+        {
+          connectionWaitStrips.Add(strip, strip.Enabled);
+          strip.Enabled = false;
+        }
+        LockConnectionWaitStrips(control);
+      }
+    }
 
     public MainPageDockDelegate dockDelegate = null;
 
@@ -105,6 +143,12 @@ namespace MySQL.GUI.Workbench
       tabImageList.ImageSize = new Size(18, 16);
       ImageListHelper.Add(ApplicationCommand(AppCommand.AppGetResourcePath, "WB_Home.png"), tabImageList);
       contentTabControl.ImageList = tabImageList;
+      contentTabControl.TabStyle = FlatTabControl.TabStyleType.DocumentRail;
+      contentTabControl.Font = new Font("Segoe UI", 9.75f, FontStyle.Regular, GraphicsUnit.Point);
+      contentTabControl.Margin = Padding.Empty;
+      contentTabControl.ContentPadding = Padding.Empty;
+      contentTabControl.RenderWithGlow = false;
+      contentTabControl.ShowToolTips = true;
 
       // Create a timer to be triggered when the backend needs
       timer = new System.Windows.Forms.Timer();
@@ -902,7 +946,10 @@ namespace MySQL.GUI.Workbench
       foreach (ITabDocument document in contentTabControl.Documents)
       {
         if (document is IWorkbenchDocument)
+        {
           (document as IWorkbenchDocument).UpdateColors();
+          StyleHomeMenu(wbContext.menu_for_form((document as IWorkbenchDocument).BackendForm));
+        }
         else
           if (document is AppViewDockContent)
           {
@@ -961,6 +1008,7 @@ namespace MySQL.GUI.Workbench
 
     public void PerformCommand(String command)
     {
+      if (pendingConnectionCancel != null) return;
       switch (command)
       {
         case "overview.mysql_model":
@@ -1033,7 +1081,8 @@ namespace MySQL.GUI.Workbench
         {
           // Reset host if the tab control is not what we are looking for and start over.
           FlatTabControl.TabStyleType style = (host as FlatTabControl).TabStyle;
-          if (style == FlatTabControl.TabStyleType.TopNormal || style == FlatTabControl.TabStyleType.TopTransparent)
+          if (style == FlatTabControl.TabStyleType.TopNormal || style == FlatTabControl.TabStyleType.TopTransparent ||
+            style == FlatTabControl.TabStyleType.DocumentRail)
             break;
         }
         control = host;
@@ -1196,17 +1245,9 @@ namespace MySQL.GUI.Workbench
     {
       if (ControlUtilities.IsCompositionEnabled())
       {
-        int topAreaHeight = contentTabControl.ItemSize.Height + contentTabControl.Margin.Top +
-          toolbarHeight + Margin.Top;
-
-        // For Win8 glass area extension is producing weird results (white frames).
-        // So we only extend the top area.
-        Win32.MARGINS margins;
-        if (ControlUtilities.IsWin8OrAbove())
-          margins = new Win32.MARGINS(0, topAreaHeight - 3, 0, 0);
-        else
-          margins = new Win32.MARGINS(3, topAreaHeight, 3, 2);
-        Win32.DwmExtendFrameIntoClientArea(Handle, margins);
+        // Keep the native title/window buttons above the document rail. Menus and
+        // toolbars remain in each document below that rail, outside the title bar.
+        Win32.DwmExtendFrameIntoClientArea(Handle, new Win32.MARGINS(0, 0, 0, 0));
       }
     }
 
@@ -1236,7 +1277,7 @@ namespace MySQL.GUI.Workbench
       contentPanel.BackColor = MySQL.Conversions.GetApplicationColor(ApplicationColor.AppColorMainBackground, false);
       contentPanel.CustomBackground = false;
       contentPanel.Dock = DockStyle.Fill;
-      contentPanel.Padding = withPadding ? new Padding(6) : new Padding(0);
+      contentPanel.Padding = Padding.Empty;
       root.Controls.Add(contentPanel);
       if (content != null)
       {
@@ -1277,7 +1318,10 @@ namespace MySQL.GUI.Workbench
         root.Controls.Add(menuPanel);
         if (toolbar != null)
         {
-          toolbar.BackColor = Conversions.GetApplicationColor(ApplicationColor.AppColorMainTab, false);
+          toolbar.BackColor = SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(231, 238, 239);
+          toolbar.ForeColor = SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(16, 38, 41);
+          toolbar.Font = new Font("Segoe UI", 9.75f, FontStyle.Regular, GraphicsUnit.Point);
+          toolbar.GripStyle = ToolStripGripStyle.Hidden;
 
           menuPanel.Controls.Add(toolbar);
           toolbar.Dock = DockStyle.Top;
@@ -1300,7 +1344,7 @@ namespace MySQL.GUI.Workbench
 
     private void StyleHomeMenu(MenuStrip menu)
     {
-      if (menu == null || menu.Items.Count == 0 || menu.Items[0].Text.Replace("&", "") != "Dosya") return;
+      if (menu == null || menu.Items.Count == 0) return;
       if (menu.Font.Name != "Segoe UI" || menu.Font.SizeInPoints != 9.75f)
         menu.Font = new Font("Segoe UI", 9.75f, FontStyle.Regular, GraphicsUnit.Point);
       if (!(menu.Renderer is HomeMenuRenderer))
@@ -1312,6 +1356,7 @@ namespace MySQL.GUI.Workbench
       menu.ForeColor = SystemInformation.HighContrast ? SystemColors.MenuText : Color.FromArgb(16, 38, 41);
       foreach (ToolStripItem homeItem in menu.Items)
       {
+        homeItem.Text = MySQL.Controls.SdpLanguage.Translate(homeItem.Text);
         homeItem.Padding = new Padding(6, 2, 6, 2);
         StyleHomeMenuItems(homeItem as ToolStripMenuItem, menu.Font, menu.Renderer);
       }
@@ -1327,6 +1372,8 @@ namespace MySQL.GUI.Workbench
     private static void StyleHomeMenuItems(ToolStripMenuItem item, Font font, ToolStripRenderer renderer)
     {
       if (item == null) return;
+      item.Text = MySQL.Controls.SdpLanguage.Translate(item.Text);
+      item.ToolTipText = MySQL.Controls.SdpLanguage.Translate(item.ToolTipText);
       item.DropDown.Font = font;
       item.DropDown.Renderer = renderer;
       foreach (ToolStripItem child in item.DropDownItems)
@@ -1430,7 +1477,7 @@ namespace MySQL.GUI.Workbench
     {
       // Reset status bar to clean up any previously done action message.
       // Hide the statusbar on the home page, though.
-      StatusBarText = "Ready";
+      StatusBarText = MySQL.Controls.SdpLanguage.Translate("Ready");
 
       // The home screen tab has no text since we only use an icon there.
       // So we can use this as quick check here.
@@ -1582,6 +1629,25 @@ namespace MySQL.GUI.Workbench
           contentTabControl.TabPages[index].ImageIndex = 0;
           contentTabControl.SetCloseButtonVisibility(0, FlatTabControl.CloseButtonVisiblity.HideButton);
         }
+        else if (index > 0 && document is SqlIdeForm)
+        {
+          string avatarPath = (document as SqlIdeForm).Backend.connection_avatar_path();
+          if (!String.IsNullOrEmpty(avatarPath) && File.Exists(avatarPath))
+          {
+            int avatarIndex;
+            if (!connectionAvatarIndices.TryGetValue(avatarPath, out avatarIndex))
+            {
+              // The initial home icon is loaded with AddStrip. Framework ImageList
+              // key metadata may not cover every native strip entry, so keep our
+              // own indices instead of scanning it with ContainsKey/IndexOfKey.
+              avatarIndex = tabImageList.Images.Count;
+              using (Image avatar = Image.FromFile(avatarPath))
+                tabImageList.Images.Add(new Bitmap(avatar));
+              connectionAvatarIndices.Add(avatarPath, avatarIndex);
+            }
+            contentTabControl.TabPages[index].ImageIndex = avatarIndex;
+          }
+        }
 
         if (activate)
         {
@@ -1666,11 +1732,34 @@ namespace MySQL.GUI.Workbench
 
     private void MainForm_KeyDown(object sender, KeyEventArgs e)
     {
+      if (pendingConnectionCancel != null)
+      {
+        if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.Enter) pendingConnectionCancel();
+        e.SuppressKeyPress = true;
+        e.Handled = true;
+        return;
+      }
       //wbContext.handle_key_event(true, e);
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+      if (pendingConnectionCancel != null)
+      {
+        if (keyData == Keys.Escape || keyData == Keys.Enter) pendingConnectionCancel();
+        return true;
+      }
+      return base.ProcessCmdKey(ref msg, keyData);
     }
 
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
     {
+      if (pendingConnectionCancel != null)
+      {
+        e.Cancel = true;
+        pendingConnectionCancel();
+        return;
+      }
       // Temporarily remove the focus from what ever control has it currently.
       // This way controls that save content on leave get their chance.
       Focus();
@@ -1831,6 +1920,13 @@ namespace MySQL.GUI.Workbench
         Conversions.SetColorScheme(ColorScheme.ColorSchemeHighContrast);
 
       LoadFormState();
+      using (Graphics g = CreateGraphics())
+      {
+        float scale = g.DpiX / 96f;
+        contentTabControl.ItemSize = new Size((int)Math.Round(44 * scale), (int)Math.Round(32 * scale));
+        contentTabControl.ItemPadding = new Padding((int)Math.Round(10 * scale), 0, (int)Math.Round(6 * scale), 0);
+        contentTabControl.MaxTabSize = (int)Math.Round(220 * scale);
+      }
 
       BringToFront();
       Activate();
@@ -1945,6 +2041,7 @@ namespace MySQL.GUI.Workbench
 
     private void contentTabControl_MouseClick(object sender, MouseEventArgs e)
     {
+      if (pendingConnectionCancel != null) return;
       switch (e.Button)
       {
         case MouseButtons.Right:

@@ -84,6 +84,13 @@ namespace MySQL.GUI.Workbench
       string userDir = System.IO.Path.Combine(System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "StarDataParadise"), "Workbench8.0.47");
+      for (int i = 0; i < Args.Length; ++i)
+      {
+        if (Args[i].StartsWith("--configdir=", StringComparison.OrdinalIgnoreCase))
+          userDir = System.IO.Path.GetFullPath(Args[i].Substring("--configdir=".Length));
+        else if (Args[i].Equals("--configdir", StringComparison.OrdinalIgnoreCase) && i + 1 < Args.Length)
+          userDir = System.IO.Path.GetFullPath(Args[++i]);
+      }
       Logger.InitLogger(userDir);
 
       if (!consoleRedirectionWorked)
@@ -146,8 +153,26 @@ namespace MySQL.GUI.Workbench
       if (singleInstance)
       {
         var application = Assembly.GetExecutingAssembly().GetName();
+        string instanceName = application.Name + "." + application.Version;
+        // A separate configuration owns separate recovery files and must never
+        // forward commands (especially --quit-when-done) to the user's session.
+        for (int i = 0; i < Args.Length; ++i)
+        {
+          string configPath = null;
+          if (Args[i].StartsWith("--configdir=", StringComparison.OrdinalIgnoreCase))
+            configPath = Args[i].Substring("--configdir=".Length);
+          else if (Args[i].Equals("--configdir", StringComparison.OrdinalIgnoreCase) && i + 1 < Args.Length)
+            configPath = Args[++i];
+          if (!String.IsNullOrEmpty(configPath))
+          {
+            configPath = System.IO.Path.GetFullPath(configPath).TrimEnd('\\', '/').ToUpperInvariant();
+            using (var hash = System.Security.Cryptography.SHA256.Create())
+              instanceName += "." + BitConverter.ToString(hash.ComputeHash(System.Text.Encoding.UTF8.GetBytes(configPath))).Replace("-", "");
+            break;
+          }
+        }
         if (!ApplicationInstanceManager.CreateSingleInstance(
-          application.Name + "." + application.Version, Args, SingleInstanceCallback))
+          instanceName, Args, SingleInstanceCallback))
         {
           Logger.LogInfo("Workbench", "Exiting as another instance of WB is already running.\n");
           return;

@@ -817,7 +817,7 @@ mforms::ToolBar *CommandUI::create_toolbar(const std::string &toolbar_file,
       tbitem = mforms::manage(new mforms::ToolBarItem(mforms::LabelItem));
       tbitem->set_name(titem->accessibilityName());
       tbitem->setInternalName(titem->name());
-      tbitem->set_text(titem->tooltip());
+      tbitem->set_text(_(titem->tooltip()));
       tbar->add_item(tbitem);
       continue;
     } else if (titem->itemType() == "selector") {
@@ -859,7 +859,7 @@ mforms::ToolBar *CommandUI::create_toolbar(const std::string &toolbar_file,
     }*/
 
     std::string tooltip;
-    tooltip = titem->tooltip();
+    tooltip = _(titem->tooltip());
     //    if (shortcut.empty())
     tbitem->set_tooltip(tooltip);
     //    else
@@ -880,7 +880,7 @@ mforms::ToolBar *CommandUI::create_toolbar(const std::string &toolbar_file,
         // tbitem->set_enabled(validate_command_item(titem, cmd) != ItemDisabled);
 
         if (tooltip.empty())
-          tbitem->set_tooltip(plugin->description());
+          tbitem->set_tooltip(_(plugin->description()));
       }
     } else if (cmd.type == "call") {
     } else if (cmd.type == "builtin") {

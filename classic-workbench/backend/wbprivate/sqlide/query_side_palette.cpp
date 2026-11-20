@@ -311,7 +311,7 @@ QuerySidePalette::QuerySidePalette(const SqlEditorForm::Ref &owner)
   help_page->add(_help_toolbar, false, true);
   _contentBorder->add(_help_text, true, true);
   help_page->add(_contentBorder, true, true);
-  add_page(help_page, _("Context Help"));
+  add_page(help_page, "SQL yardımı");
 
   Box *snippet_page = manage(new Box(false));
 
@@ -335,7 +335,7 @@ QuerySidePalette::QuerySidePalette(const SqlEditorForm::Ref &owner)
   snippet_page->add(_snippet_toolbar, false, true);
   content_border->add(_snippet_box, true, true);
   snippet_page->add(content_border, true, true);
-  add_page(snippet_page, "Snippets");
+  add_page(snippet_page, "SQL parçaları");
 
   scoped_connect(_snippet_list->signal_selection_changed(),
                  std::bind(&QuerySidePalette::snippet_selection_changed, this));
@@ -695,7 +695,7 @@ ToolBar *QuerySidePalette::prepare_help_toolbar() {
   topic_entries.push_back("CREATE FUNCTION");
   topic_entries.push_back("ALTER TABLE");
   _quick_jump_item->set_selector_items(topic_entries);
-  _quick_jump_item->set_text(_("Jump To"));
+  _quick_jump_item->set_text("Konuya git");
   scoped_connect(_quick_jump_item->signal_activated(),
                  std::bind(&QuerySidePalette::help_toolbar_item_activated, this, std::placeholders::_1));
   toolbar->add_item(_quick_jump_item);

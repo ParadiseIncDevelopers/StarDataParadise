@@ -32,6 +32,11 @@ using MySQL.Utilities;
 
 namespace MySQL.Controls
 {
+  public interface IConnectionWaitHost
+  {
+    Action PendingConnectionCancel { get; set; }
+  }
+
   public class HeaderPanel : System.Windows.Forms.Panel
   {
     /// <summary> 
@@ -55,8 +60,8 @@ namespace MySQL.Controls
       UpdateStyles();
 
       Padding = new Padding(0, 24, 0, 0);
-      BackColor = Color.FromArgb(0xff, 0x49, 0x61, 0x84);
-      ForeColor = Color.White;
+      BackColor = Color.FromArgb(231, 238, 239);
+      ForeColor = Color.FromArgb(16, 38, 41);
     }
 
     #endregion
@@ -65,13 +70,8 @@ namespace MySQL.Controls
 
     override protected void OnPaintBackground(PaintEventArgs e)
     {
-      SolidBrush brush;
-      if (ControlUtilities.IsHierarchyFocused(this))
-        brush = new SolidBrush(HeaderColorFocused);
-      else
-        brush = new SolidBrush(HeaderColor);
-      e.Graphics.FillRectangle(brush, e.ClipRectangle);
-      brush.Dispose();
+      using (Brush brush = new SolidBrush(SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(231, 238, 239)))
+        e.Graphics.FillRectangle(brush, e.ClipRectangle);
     }
     
     override protected void OnPaint(PaintEventArgs e)
@@ -96,47 +96,13 @@ namespace MySQL.Controls
           stringFormat.Alignment = StringAlignment.Near;
           stringFormat.LineAlignment = StringAlignment.Center;
 
-          Brush brush;
-          if (ControlUtilities.IsHierarchyFocused(this))
-            brush = new SolidBrush(ForeColorFocused);
-          else
-            brush = new SolidBrush(ForeColor);
-          g.DrawString(Text, Font, brush, bounds, stringFormat);
-          brush.Dispose();
-
-          // Exclude text area from bounds rectangle (for the pattern);
-          SizeF size = g.MeasureString(Text, Font);
-          bounds.X += (float)Math.Ceiling(size.Width) + 4;
-          bounds.Width -= (float)Math.Ceiling(size.Width) + 4;
+          using (Brush brush = new SolidBrush(SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(16, 38, 41)))
+            g.DrawString(Text, Font, brush, bounds, stringFormat);
         }
 
-        // As patter we draw 3 lines with specific dash pattern.
-        Color patternColor;
-        if (ControlUtilities.IsHierarchyFocused(this))
-          patternColor = Color.FromArgb(75, ForeColorFocused);
-        else
-          patternColor = Color.FromArgb(0x99, 0x99, 0x99);
-        using (Pen linePen = new Pen(patternColor, 1))
-        {
-          linePen.DashPattern = new float[] { 1f, 3f };
-
-          PointF start = new PointF(bounds.Left + 2, bounds.Height / 2f - 2);
-          PointF end = new PointF(bounds.Right, bounds.Height / 2f - 2);
-
-          // Ensure we end with outer line's dots.
-          int patternCount = 2 + (int)(end.X - start.X) / 4;
-          start.X = end.X - 4 * patternCount + 3;
-
-          g.DrawLine(linePen, start, end);
-          start.Y += 4;
-          end.Y += 4;
-          g.DrawLine(linePen, start, end);
-
-          start = new PointF(start.X + 2, start.Y - 2);
-          end = new PointF(end.X - 2, end.Y - 2);
-          g.DrawLine(linePen, start, end);
-        }
       }
+      using (Pen divider = new Pen(SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(163, 180, 188)))
+        g.DrawLine(divider, 0, Padding.Top - 1, Width, Padding.Top - 1);
     }
 
     #endregion
@@ -217,7 +183,7 @@ namespace MySQL.Controls
       }
     }
 
-    private Color headerColor = Color.FromArgb(255, 73, 97, 132);
+    private Color headerColor = Color.FromArgb(231, 238, 239);
     public Color HeaderColor
     {
       get { return headerColor; }
@@ -231,7 +197,7 @@ namespace MySQL.Controls
       }
     }
 
-    private Color headerColorFocused = Color.FromArgb(255, 73, 97, 132);
+    private Color headerColorFocused = Color.FromArgb(231, 238, 239);
     public Color HeaderColorFocused
     {
       get { return headerColorFocused; }
@@ -245,7 +211,7 @@ namespace MySQL.Controls
       }
     }
 
-    private Color foreColorFocused = Color.White;
+    private Color foreColorFocused = Color.FromArgb(16, 38, 41);
     public Color ForeColorFocused
     {
       get { return foreColorFocused; }

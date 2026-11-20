@@ -112,7 +112,7 @@ protected:
   typedef std::function<void(const std::string&, const std::string&, const std::list<std::string>&,
                              const std::list<std::string>&, const std::string&, const bool match_PK)>
     select_func_t;
-  void run(select_func_t select_func);
+  void run(select_func_t select_func, bool preview_only = false);
   void select_data(const std::string& schema_name, const std::string& table_name,
                    const std::list<std::string>& pk_columns, const std::list<std::string>& select_columns,
                    const std::string& limit_clause, const bool match_PK);
@@ -211,6 +211,7 @@ public:
                                 const bool match_PK) const;
   void search();
   void count();
+  std::string preview();
 };
 
 void DBSearch::stop() {
@@ -371,7 +372,19 @@ void DBSearch::count() {
                 std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
 };
 
-void DBSearch::run(select_func_t select_func) {
+std::string DBSearch::preview() {
+  std::string query;
+  // The normal metadata discovery and SQL producer are shared. This callback
+  // intentionally replaces select_data: no row-search SELECT is executed.
+  run([this, &query](const std::string& schema, const std::string& table,
+      const std::list<std::string>& keys, const std::list<std::string>& columns,
+      const std::string& limit, bool match_pk) {
+    query = build_select_query(schema, table, columns, limit, match_pk);
+  }, true);
+  return query;
+}
+
+void DBSearch::run(select_func_t select_func, bool preview_only) {
   struct working_state_guard {
     volatile bool& _state;
     working_state_guard(volatile bool& state) : _state(state) {
@@ -394,7 +407,8 @@ void DBSearch::run(select_func_t select_func) {
   std::map<std::string, std::vector<std::string> > schemas_tables;
   {
     std::unique_ptr<sql::Statement> stmt(_db_conn->createStatement());
-    for (size_t count = _filter_list.count(), i = 0; i < count; i++) {
+    const size_t filter_count = preview_only ? std::min<size_t>(1, _filter_list.count()) : _filter_list.count();
+    for (size_t count = filter_count, i = 0; i < count; i++) {
       wait_if_paused();
       if (_stop) {
         _working = false;
@@ -413,6 +427,8 @@ void DBSearch::run(select_func_t select_func) {
         while (rs->next()) {
           std::string schema = rs->getString(1);
           schemas[schema].push_back(table_column);
+          if (preview_only)
+            break;
         }
       } else
         schemas[schema_pattern].push_back(table_column);
@@ -453,6 +469,8 @@ void DBSearch::run(select_func_t select_func) {
         while (rs->next()) {
           std::string table = rs->getString(1);
           schemas_tables[schema_name + '.' + table].push_back(column_pattern);
+          if (preview_only)
+            break;
         }
       }
     }
@@ -553,6 +571,9 @@ void DBSearch::run(select_func_t select_func) {
       select_func(schema_name, table_name, pk_columns, select_columns, limit_clause, match_PK);
       _searched_tables++;
 
+      if (preview_only)
+        break;
+
       if ((_limit_total > 0) && (_limit_counter <= 0))
         break;
     }
@@ -565,6 +586,13 @@ void DBSearch::run(select_func_t select_func) {
   _working = false;
 }
 
+std::string DBSearchPanel::preview_sql(sql::ConnectionWrapper connection, const std::string& keyword,
+    const grt::StringListRef& filters, const SearchMode mode, const int total_limit,
+    const int table_limit, const bool invert, const int data_type, const std::string& cast_to) {
+  DBSearch preview(connection, keyword, filters, mode, total_limit, table_limit, invert, data_type, cast_to);
+  return preview.preview();
+}
+
 DBSearchPanel::DBSearchPanel()
   : Box(false),
     _progress_box(true),
@@ -573,30 +601,30 @@ DBSearchPanel::DBSearchPanel()
     _search_finished(true) {
   set_spacing(8);
 
-  _pause_button.set_text("Pause");
+  _pause_button.set_text("Duraklat");
   scoped_connect(_pause_button.signal_clicked(), std::bind(&DBSearchPanel::toggle_pause, this));
 
   _progress_box.set_spacing(4);
 
-  _progress_label.set_text(_("Searching in server..."));
+  _progress_label.set_text(_("Sunucuda aranıyor…"));
   add(&_progress_label, false, true);
   _progress_box.add(&_progress_bar, true, true);
   _progress_box.add(&_pause_button, false, true);
   add(&_progress_box, false, true);
 
   _results_tree.set_selection_mode(mforms::TreeSelectMultiple);
-  _results_tree.add_column(mforms::StringColumnType, "Schema", 100);
-  _results_tree.add_column(mforms::StringColumnType, "Table", 100);
-  _results_tree.add_column(mforms::StringColumnType, "Key", 80);
-  _results_tree.add_column(mforms::StringColumnType, "Column", 100);
-  _results_tree.add_column(mforms::StringColumnType, "Data", 800);
+  _results_tree.add_column(mforms::StringColumnType, "Şema", 130);
+  _results_tree.add_column(mforms::StringColumnType, "Tablo", 160);
+  _results_tree.add_column(mforms::StringColumnType, "Anahtar", 100);
+  _results_tree.add_column(mforms::StringColumnType, "Sütun", 130);
+  _results_tree.add_column(mforms::StringColumnType, "Değer", 400);
   _results_tree.end_columns();
   add(&_results_tree, true, true);
 
   _results_tree.set_context_menu(&_context_menu);
   _context_menu.signal_will_show()->connect(std::bind(&DBSearchPanel::prepare_menu, this));
 
-  _matches_label.set_text(_("Matches:"));
+  _matches_label.set_text(_("Eşleşme:"));
   add(&_matches_label, false, true);
 }
 
@@ -838,7 +866,7 @@ bool DBSearchPanel::update() {
     base::MutexLock search_lock(_searcher->get_search_result_mutex());
     is_working = _searcher->is_working();
     if (_searcher->is_paused()) {
-      _progress_label.set_text("Paused");
+      _progress_label.set_text("Duraklatıldı");
       //            _progress_bar.stop();
     } else {
       //            _progress_bar.start();
@@ -861,7 +889,7 @@ bool DBSearchPanel::update() {
 void DBSearchPanel::toggle_pause() {
   if (_searcher) {
     _searcher->toggle_pause();
-    _pause_button.set_text(_searcher->is_paused() ? "Resume" : "Pause");
+    _pause_button.set_text(_searcher->is_paused() ? "Sürdür" : "Duraklat");
     _search_finished = _searcher->is_paused();
   }
 }

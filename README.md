@@ -9,11 +9,11 @@ StarDataParadise için Windows x64 masaüstü SQL istemcisi. Bağlantı profille
 
 ## Tam Classic kaynakları
 
-Classic Workbench 8.0.47 kaynaklarının tamamı [classic-workbench/](classic-workbench/) altında master dalında tutulur. Yerel native master commit'i `b201ed14d7624571975db6a9dfa6dd077d712bf5` bu kaynakların yayın kaydıdır. Derleme bağımlılıkları ve Windows adımları [Classic kılavuzunda](packaging/classic-workbench/README.md) bulunur. [SQL çalışma alanı tasarım galerisi](packaging/classic-workbench/tasarim/sql-calisma-alani/README.md) 41 sayfa taslağı içerir.
+Classic Workbench 8.0.47 kaynaklarının tamamı [classic-workbench/](classic-workbench/) altında master dalında tutulur. Yerel native master commit'i `b201ed14d7624571975db6a9dfa6dd077d712bf5` ilk tam kaynak yayınının kaydıdır; güncel arayüz değişiklikleri aynı kanonik ağaca eklenir. Derleme bağımlılıkları ve Windows adımları [Classic kılavuzunda](packaging/classic-workbench/README.md) bulunur. [SQL çalışma alanı tasarım galerisi](packaging/classic-workbench/tasarim/sql-calisma-alani/README.md) 41 sayfa taslağı içerir.
 
 ## Güncel kaynak sürümü
 
-`v0.3.0-preview.4` Classic 8.0.47 ana sayfasını, kompakt bağlantı ve profil ekranlarını, SQL önizlemesini ve binary veri aktarımı düzeltmesini içerir. [Uygulama ve kabul kaydı](packaging/classic-workbench/tasarim/baglanti-ve-tasima/UYGULAMA.md)
+`v0.3.0-preview.5 - Classic Birleşik Çalışma Alanı`, onaylanan tasarımları SQL/Veri/Şema ve yönetim ekranlarına uygular. Sekmeler, bağlantı beklemesi, ortak ikonlar, Türkçe/İngilizce dil paketi, tablo düzenleme ve SQL önizlemesi, gerçek SDP ölçümleri ve ürün araçları birlikte yayımlanır. 66 Python sınaması, 21 derlenmiş kabul kontrolü ve canlı veri/DDL iptal akışları doğrulandı. [Sürüm adı, amacı ve bütün değişiklikler](packaging/classic-workbench/SURUM_NOTLARI.md) - [Canlı kabul ve ekranlar](packaging/classic-workbench/tasarim/sql-calisma-alani/VERI-SEMA-YONETIM.md)
 
 ## İlk bağlantı
 

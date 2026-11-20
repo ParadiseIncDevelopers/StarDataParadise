@@ -24,6 +24,7 @@
 
 #include "base/string_utilities.h"
 #include "base/file_functions.h"
+#include "base/file_utilities.h"
 #include "base/log.h"
 
 #include <stdexcept>
@@ -34,11 +35,95 @@
 #include <errno.h>
 #include <string.h>
 #include <fstream>
+#include <map>
+#include <mutex>
+#include <rapidjson/document.h>
 #include <boost/locale/encoding_utf.hpp>
 
 DEFAULT_LOG_DOMAIN(DOMAIN_BASE);
 
 namespace base {
+
+  namespace {
+    struct UiCatalog {
+      std::map<std::string, std::string> messages;
+      std::map<std::string, std::string> sources;
+      std::string language = "tr";
+      bool initialized = false;
+      std::mutex mutex;
+    };
+
+    UiCatalog &ui_catalog() {
+      static UiCatalog value;
+      return value;
+    }
+
+    std::string ui_key(const std::string &value) {
+      std::string key;
+      for (char c : value) {
+        if (c != '&' && c != '_') key += c;
+      }
+      return key;
+    }
+  }
+
+  void initialize_ui_language(const std::string &directory, const std::string &language) {
+    auto &catalog = ui_catalog();
+    std::lock_guard<std::mutex> lock(catalog.mutex);
+    // Native, Python and managed controls use one language for the session.
+    // Preferences take effect after restart, so borrowed catalog pointers stay valid.
+    if (catalog.initialized) return;
+    catalog.language = language == "en" ? "en" : "tr";
+    g_setenv("SDP_UI_LANGUAGE", catalog.language.c_str(), TRUE);
+    g_setenv("SDP_UI_LOCALES", directory.c_str(), TRUE);
+    std::vector<std::string> files;
+    GDir *dir = g_dir_open(directory.c_str(), 0, nullptr);
+    if (dir) {
+      while (const char *name = g_dir_read_name(dir)) {
+        const std::string file(name);
+        if (file.size() >= 7 && file.compare(0, 2, "tr") == 0 && file.substr(file.size() - 5) == ".json")
+          files.push_back(file);
+      }
+      g_dir_close(dir);
+    }
+    std::sort(files.begin(), files.end());
+    for (const auto &file : files) {
+      gchar *contents = nullptr;
+      gsize size = 0;
+      if (!g_file_get_contents(makePath(directory, file).c_str(), &contents, &size, nullptr)) continue;
+      rapidjson::Document document;
+      document.Parse(contents, size);
+      g_free(contents);
+      if (document.HasParseError() || !document.IsObject()) {
+        logWarning("Ignored invalid UI language catalog: %s\n", file.c_str());
+        continue;
+      }
+      for (auto member = document.MemberBegin(); member != document.MemberEnd(); ++member) {
+        if (!member->value.IsString()) continue;
+        const std::string source(member->name.GetString(), member->name.GetStringLength());
+        const std::string target(member->value.GetString(), member->value.GetStringLength());
+        catalog.messages[ui_key(source)] = target;
+        catalog.sources.emplace(ui_key(target), source);
+      }
+    }
+    catalog.initialized = true;
+  }
+
+  const char *translate_ui(const char *source) {
+    if (!source || !*source) return source;
+    auto &catalog = ui_catalog();
+    std::lock_guard<std::mutex> lock(catalog.mutex);
+    const std::string key = ui_key(source);
+    if (catalog.language == "en" && catalog.messages.find(key) != catalog.messages.end())
+      return source;
+    const auto &messages = catalog.language == "en" ? catalog.sources : catalog.messages;
+    const auto found = messages.find(key);
+    return found == messages.end() ? source : found->second.c_str();
+  }
+
+  std::string translate_ui(const std::string &source) {
+    return translate_ui(source.c_str());
+  }
 
 #ifdef _MSC_VER
 

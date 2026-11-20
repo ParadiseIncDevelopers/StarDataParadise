@@ -37,6 +37,7 @@
 #include "grt/parse_utils.h"
 #include "base/log.h"
 #include "base/boost_smart_ptr_helpers.h"
+#include "base/wb_memory.h"
 
 #include "mforms/gridview.h"
 #include "mforms/utilities.h"
@@ -94,6 +95,7 @@ public:
 class StringFieldView : public ResultFormView::FieldView {
   mforms::TextEntry *_entry;
   bool _expands;
+  bool _editable;
 
   void changed() {
     _change_callback(_entry->get_string_value());
@@ -102,9 +104,9 @@ class StringFieldView : public ResultFormView::FieldView {
 public:
   StringFieldView(const std::string &name, int max_length, bool editable,
                   const std::function<void(const std::string &s)> &change_callback)
-    : FieldView(name, change_callback), _expands(false) {
+    : FieldView(name, change_callback), _expands(false), _editable(editable) {
     _entry = new mforms::TextEntry();
-    _entry->set_enabled(editable);
+    _entry->set_read_only(!editable);
     _entry->signal_changed()->connect(std::bind(&StringFieldView::changed, this));
     if (max_length > 64)
       _expands = true;
@@ -125,7 +127,9 @@ public:
   }
 
   virtual void set_value(const std::string &value, bool is_null) {
-    _entry->set_value(value);
+    _entry->set_placeholder_text(is_null && _editable ? "NULL" : "");
+    _entry->set_tooltip(is_null ? "SQL NULL" : "");
+    _entry->set_value(is_null && !_editable ? "NULL" : value);
   }
 };
 
@@ -217,6 +221,7 @@ public:
 
 class TextFieldView : public ResultFormView::FieldView {
   mforms::TextBox *_tbox;
+  bool _editable;
 
   void changed() {
     _change_callback(_tbox->get_string_value());
@@ -225,9 +230,9 @@ class TextFieldView : public ResultFormView::FieldView {
 public:
   TextFieldView(const std::string &name, bool editable,
                 const std::function<void(const std::string &s)> &change_callback)
-    : FieldView(name, change_callback) {
+    : FieldView(name, change_callback), _editable(editable) {
     _tbox = new mforms::TextBox(mforms::VerticalScrollBar);
-    _tbox->set_enabled(editable);
+    _tbox->set_read_only(!editable);
     _tbox->signal_changed()->connect(std::bind(&TextFieldView::changed, this));
     _tbox->set_size(-1, 60);
   }
@@ -245,7 +250,7 @@ public:
   }
 
   virtual void set_value(const std::string &value, bool is_null) {
-    _tbox->set_value(value);
+    _tbox->set_value(is_null && !_editable ? "NULL" : value);
   }
 };
 
@@ -269,7 +274,7 @@ public:
     mforms::Button *b = mforms::manage(new mforms::Button());
     b->enable_internal_padding(false);
     b->signal_clicked()->connect(view_callback);
-    b->set_text("View...");
+    b->set_text(_("İncele…"));
     _box.add(b, false, true);
   }
 
@@ -298,6 +303,10 @@ class GeomFieldView : public ResultFormView::FieldView {
   }
 
   void update() {
+    if (_raw_data.empty()) {
+      _text.set_value("NULL");
+      return;
+    }
     std::string text;
     spatial::Importer importer;
     importer.import_from_mysql(_raw_data);
@@ -339,10 +348,16 @@ public:
   }
 
   virtual void set_value(const std::string &value, bool is_null) {
+    _raw_data = is_null ? "" : value;
+    _imageBox.show(!is_null);
+    _text.set_read_only(false);
+    if (is_null) {
+      _text.set_value("NULL");
+      _text.set_read_only(true);
+      return;
+    }
     _image.set_data(value);
     _srid.set_text("SRID: " + std::to_string(_image.getSrid()));
-    _text.set_read_only(false);
-    _raw_data = value;
     update();
     _text.set_read_only(true);
   }
@@ -381,12 +396,7 @@ static std::list<std::string> parse_enum_definition(const std::string &full_type
 //----------------------------------------------------------------------------------------------------------------------
 
 inline std::string format_label(const std::string &label) {
-  std::string flabel = label + ":";
-
-  if (g_ascii_isalpha(flabel[0]))
-    flabel = g_ascii_toupper(flabel[0]) + flabel.substr(1);
-
-  return flabel;
+  return label + ":";
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -424,16 +434,28 @@ void ResultFormView::navigate(mforms::ToolBarItem *item) {
   std::string name = item->getInternalName();
   Recordset::Ref rset(_rset.lock());
   if (rset) {
-    ssize_t row = rset->edited_field_row();
-    if (row < 0) // Useless. RowID is size_t and can never be 0.
+    const size_t count = rset->count();
+    if (count == 0)
       return;
+    RowId row = rset->edited_field_row();
+    if (row >= count)
+      row = 0;
 
     if (name == "delete") {
-      rset->delete_node(row);
+      if (_editable && row < rset->row_count())
+        rset->delete_node(row);
+    } else if (name == "insert") {
+      if (!_editable)
+        return;
+      // The last editable record is the existing insert sentinel. Selecting it
+      // does not create a row or execute SQL until the user edits/applies it.
+      row = count - 1;
+      rset->set_edited_field(row, 0);
+      if (rset->update_edited_field)
+        rset->update_edited_field();
     } else if (name == "back") {
-      row--;
-      if (row < 0)
-        row = 0;
+      if (row > 0)
+        --row;
       rset->set_edited_field(row, rset->edited_field_column());
       if (rset->update_edited_field)
         rset->update_edited_field();
@@ -443,14 +465,13 @@ void ResultFormView::navigate(mforms::ToolBarItem *item) {
       if (rset->update_edited_field)
         rset->update_edited_field();
     } else if (name == "next") {
-      row++;
-      if ((size_t)row >= rset->count())
-        row = rset->count() - 1;
+      if (row + 1 < rset->row_count())
+        ++row;
       rset->set_edited_field(row, rset->edited_field_column());
       if (rset->update_edited_field)
         rset->update_edited_field();
     } else if (name == "last") {
-      row = rset->count() - 1;
+      row = rset->row_count() > 0 ? rset->row_count() - 1 : 0;
       rset->set_edited_field(row, rset->edited_field_column());
       if (rset->update_edited_field)
         rset->update_edited_field();
@@ -462,6 +483,8 @@ void ResultFormView::navigate(mforms::ToolBarItem *item) {
 //----------------------------------------------------------------------------------------------------------------------
 
 void ResultFormView::update_value(int column, const std::string &value) {
+  if (_displaying_record || !_editable)
+    return;
   Recordset::Ref rset(_rset.lock());
   if (rset) {
     RowId row = rset->edited_field_row();
@@ -483,81 +506,92 @@ void ResultFormView::open_field_editor(int column, const std::string &type) {
 
 //----------------- ResultFormView -------------------------------------------------------------------------------------
 
-ResultFormView::ResultFormView(bool editable)
+ResultFormView::ResultFormView(bool editable, bool compact)
   : mforms::AppView(false, "Result Form View", "ResultFormView", false),
     _spanel(mforms::ScrollPanelDrawBackground),
     _tbar(mforms::SecondaryToolBar),
+    _empty_state(_("No rows to display.")),
     _editable(editable) {
   mforms::ToolBarItem *item;
   mforms::App *app = mforms::App::get();
 
   item = mforms::manage(new mforms::ToolBarItem(mforms::TitleItem));
-  item->set_text("Form Editor");
+  item->set_text(compact ? _("Cell details") : _("Row details"));
   _tbar.add_item(item);
   _tbar.add_separator_item();
 
   item = mforms::manage(new mforms::ToolBarItem(mforms::LabelItem));
-  item->set_text("Navigate:");
+  item->set_text(_("Row:"));
   _tbar.add_item(item);
 
+  if (!compact) {
   item = mforms::manage(new mforms::ToolBarItem(mforms::ActionItem));
-  item->set_name("First");
+  item->set_name("İlk satır");
+  item->set_text(_("İlk"));
   item->setInternalName("first");
-  item->set_tooltip("Go to the first row in the recordset.");
+  item->set_tooltip(_("İlk kayda git."));
   item->signal_activated()->connect(std::bind(&ResultFormView::navigate, this, item));
-  item->set_icon(app->get_resource_path("record_first.png"));
+  item->set_icon(app->get_resource_path("sdp_chevrons-left.png"));
   _tbar.add_item(item);
+  }
 
   item = mforms::manage(new mforms::ToolBarItem(mforms::ActionItem));
-  item->set_name("Back");
+  item->set_name("Önceki satır");
+  item->set_text(compact ? "" : _("Previous"));
   item->setInternalName("back");
-  item->set_tooltip("Go back one row in the recordset.");
+  item->set_tooltip(_("Önceki kayda git."));
   item->signal_activated()->connect(std::bind(&ResultFormView::navigate, this, item));
-  item->set_icon(app->get_resource_path("record_back.png"));
+  item->set_icon(app->get_resource_path("sdp_chevron-left.png"));
   _tbar.add_item(item);
 
   _label_item = mforms::manage(new mforms::ToolBarItem(mforms::LabelItem));
-  _label_item->set_name("Location");
+  _label_item->set_name("Satır konumu");
   _label_item->setInternalName("location");
   _tbar.add_item(_label_item);
 
   item = mforms::manage(new mforms::ToolBarItem(mforms::ActionItem));
-  item->set_name("Next");
+  item->set_name("Sonraki satır");
+  item->set_text(compact ? "" : _("Next"));
   item->setInternalName("next");
-  item->set_tooltip("Go next one row in the recordset.");
+  item->set_tooltip(_("Sonraki kayda git."));
   item->signal_activated()->connect(std::bind(&ResultFormView::navigate, this, item));
-  item->set_icon(app->get_resource_path("record_next.png"));
+  item->set_icon(app->get_resource_path("sdp_chevron-right.png"));
   _tbar.add_item(item);
 
+  if (!compact) {
   item = mforms::manage(new mforms::ToolBarItem(mforms::ActionItem));
-  item->set_name("Last");
+  item->set_name("Son satır");
+  item->set_text(_("Son"));
   item->setInternalName("last");
-  item->set_tooltip("Go to the last row in the recordset.");
+  item->set_tooltip(_("Son kayda git."));
   item->signal_activated()->connect(std::bind(&ResultFormView::navigate, this, item));
-  item->set_icon(app->get_resource_path("record_last.png"));
+  item->set_icon(app->get_resource_path("sdp_chevrons-right.png"));
   _tbar.add_item(item);
+  }
 
-  if (editable) {
+  if (editable && !compact) {
     _tbar.add_separator_item();
 
     item = mforms::manage(new mforms::ToolBarItem(mforms::LabelItem));
-    item->set_text("Edit:");
+    item->set_text(_("Düzenle:"));
     _tbar.add_item(item);
 
     item = mforms::manage(new mforms::ToolBarItem(mforms::ActionItem));
-    item->set_name("Delete");
+    item->set_name("Satırı sil");
+    item->set_text(_("Sil"));
     item->setInternalName("delete");
-    item->set_tooltip("Delete current row from the recordset.");
+    item->set_tooltip(_("Geçerli kaydı bekleyen değişikliklere silinmiş olarak ekle."));
     item->signal_activated()->connect(std::bind(&ResultFormView::navigate, this, item));
-    item->set_icon(app->get_resource_path("record_del.png"));
+    item->set_icon(app->get_resource_path("sdp_trash.png"));
     _tbar.add_item(item);
 
     item = mforms::manage(new mforms::ToolBarItem(mforms::ActionItem));
-    item->set_name("Last");
-    item->setInternalName("last");
-    item->set_tooltip("Add a new row to the recordset.");
+    item->set_name("Yeni satır");
+    item->set_text(_("Yeni satır"));
+    item->setInternalName("insert");
+    item->set_tooltip(_("Yeni kayıt için boş satırı göster."));
     item->signal_activated()->connect(std::bind(&ResultFormView::navigate, this, item));
-    item->set_icon(app->get_resource_path("record_add.png"));
+    item->set_icon(app->get_resource_path("sdp_plus.png"));
     _tbar.add_item(item);
   }
 
@@ -566,16 +600,19 @@ ResultFormView::ResultFormView(bool editable)
 
     _geom_type_item = item = mforms::manage(new mforms::ToolBarItem(mforms::SelectorItem), false);
     std::vector<std::string> options;
-    options.push_back("View Geometry as WKT");
-    options.push_back("View Geometry as GeoJSON");
-    options.push_back("View Geometry as GML");
-    options.push_back("View Geometry as KML");
+    options.push_back("Geometri - WKT");
+    options.push_back("Geometri - GeoJSON");
+    options.push_back("Geometri - GML");
+    options.push_back("Geometri - KML");
     item->set_selector_items(options);
     item->signal_activated()->connect(std::bind(&ResultFormView::geom_type_changed, this));
     _tbar.add_item(item);
   }
 
   add(&_tbar, false, true);
+  _empty_state.set_text_align(mforms::MiddleCenter);
+  add(&_empty_state, true, true);
+  _empty_state.show(false);
   _spanel.set_back_color("#ffffff");
 
   add(&_spanel, true, true);
@@ -592,6 +629,7 @@ ResultFormView::~ResultFormView() {
   if (_geom_type_item)
     _geom_type_item->release();
   _refresh_ui_connection.disconnect();
+  _selection_connection.disconnect();
   for (std::vector<FieldView *>::const_iterator i = _fields.begin(); i != _fields.end(); ++i)
     delete *i;
 }
@@ -612,7 +650,7 @@ void ResultFormView::geom_type_changed() {
 
 int ResultFormView::display_record(RowId row_id) {
   Recordset::Ref rset(_rset.lock());
-  if (rset)
+  if (rset && row_id < rset->count())
     rset->set_edited_field(row_id, 0);
   return display_record();
 }
@@ -620,22 +658,52 @@ int ResultFormView::display_record(RowId row_id) {
 //----------------------------------------------------------------------------------------------------------------------
 
 int ResultFormView::display_record() {
+  if (_displaying_record)
+    return 0;
+  _displaying_record = true;
+  base::SetFlagOnLeaveScope restore_display_flag(&_displaying_record, false);
   Recordset::Ref rset(_rset.lock());
   if (rset) {
+    const size_t count = rset->count();
+    const size_t records = rset->row_count();
+    const bool has_row = count > 0;
+    _empty_state.show(!has_row);
+    _spanel.show(has_row);
+    if (!has_row) {
+      _label_item->set_text(_("0 kayıt"));
+      for (const char *name : {"first", "back", "next", "last", "delete"}) {
+        if (auto item = _tbar.find_item(name))
+          item->set_enabled(false);
+      }
+      return 0;
+    }
+
+    RowId row = rset->edited_field_row();
+    if (row >= count) {
+      row = count - 1;
+      rset->set_edited_field(row, 0);
+    }
     unsigned int c = 0;
 
     for (std::vector<FieldView *>::const_iterator i = _fields.begin(); i != _fields.end(); ++i, ++c) {
       std::string value;
-      rset->get_raw_field(rset->edited_field_row(), c, value);
-      (*i)->set_value(value, rset->is_field_null(rset->edited_field_row(), c));
+      rset->get_raw_field(row, c, value);
+      const bool is_null = rset->is_field_null(row, c);
+      (*i)->value()->set_tooltip(is_null ? "SQL NULL" : "");
+      (*i)->set_value(value, is_null);
     }
 
-    _label_item->set_text(base::strfmt("%zi / %zi", rset->edited_field_row() + 1, rset->count()));
-    _tbar.find_item("first")->set_enabled(rset->edited_field_row() > 0);
-    _tbar.find_item("back")->set_enabled(rset->edited_field_row() > 0);
+    _label_item->set_text(row < records ? base::strfmt("%zi / %zi", row + 1, records)
+                                       : base::strfmt(_("New row - %zi records"), records));
+    if (auto item = _tbar.find_item("first"))
+      item->set_enabled(row > 0 && records > 0);
+    _tbar.find_item("back")->set_enabled(row > 0);
 
-    _tbar.find_item("next")->set_enabled(rset->edited_field_row() < rset->count() - 1);
-    _tbar.find_item("last")->set_enabled(rset->edited_field_row() < rset->count() - 1);
+    _tbar.find_item("next")->set_enabled(row < records && row + 1 < records);
+    if (auto item = _tbar.find_item("last"))
+      item->set_enabled(records > 0 && row != records - 1);
+    if (auto item = _tbar.find_item("delete"))
+      item->set_enabled(row < records);
   }
   return 0;
 }
@@ -675,7 +743,9 @@ void ResultFormView::init_for_resultset(Recordset::Ptr rset_ptr, SqlEditorForm *
   _rset = rset_ptr;
   if (rset) {
     _refresh_ui_connection.disconnect();
-    rset->refresh_ui_signal.connect([this]() { display_record(); });
+    _refresh_ui_connection = rset->refresh_ui_signal.connect([this]() { display_record(); });
+    _selection_connection.disconnect();
+    _selection_connection = rset->edited_field_changed_signal.connect([this]() { display_record(); });
 
     if (rset->edited_field_row() == (RowId)-1 && rset->count() > 0) {
       rset->set_edited_field(0, 0);
@@ -686,6 +756,13 @@ void ResultFormView::init_for_resultset(Recordset::Ptr rset_ptr, SqlEditorForm *
     Recordset_cdbc_storage::Ref storage(std::dynamic_pointer_cast<Recordset_cdbc_storage>(rset->data_storage()));
 
     _table.suspend_layout();
+
+    for (FieldView *field : _fields) {
+      _table.remove(field->label());
+      _table.remove(field->value());
+      delete field;
+    }
+    _fields.clear();
 
     std::vector<Recordset_cdbc_storage::FieldInfo> &field_info(storage->field_info());
     _table.set_row_count((int)field_info.size());

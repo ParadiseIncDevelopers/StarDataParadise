@@ -51,6 +51,8 @@ namespace MySQL.Controls
       TopTransparent, // Tabs standing on the content, like TopNormal. Different colors, though.
                       // Background of space not covered by a tab is transparent. Different outline too.
       Classic,       // Compact settings tabs with an underline for the selected page.
+      DocumentRail,  // Main documents on a flat petroleum rail, separate from the native title and menus.
+      QueryDocument, // Flat file tabs inside a connection, with a visible icon and close target.
     }
 
     public enum CloseButtonVisiblity
@@ -116,6 +118,17 @@ namespace MySQL.Controls
     private bool showCloseButton = true; // Central flag for close buttons. Can be overridden by each page.
     private bool showFocusState = true;
     private bool hideWhenEmpty = false;
+    private bool navigationLocked;
+
+    public bool NavigationLocked
+    {
+      get { return navigationLocked; }
+      set
+      {
+        navigationLocked = value;
+        if (value) { lastTabHit = -1; buttonHit = false; }
+      }
+    }
 
     // Painting/Layouting
     private TabStyleType tabStyle = TabStyleType.TopNormal;
@@ -196,7 +209,7 @@ namespace MySQL.Controls
     protected override void OnFontChanged(EventArgs e)
     {
       base.OnFontChanged(e);
-      if (tabStyle == TabStyleType.Classic && layoutInfo != null)
+      if ((tabStyle == TabStyleType.Classic || tabStyle == TabStyleType.DocumentRail || tabStyle == TabStyleType.QueryDocument) && layoutInfo != null)
       {
         AdjustLayoutInfo(null);
         Invalidate();
@@ -244,7 +257,7 @@ namespace MySQL.Controls
           // The "larger" value indicates the direction of the computation.
           // A 1 means from display rectangle to window rectangle. A 0 the other way around.
           int topOffset = 0;
-          if (tabStyle == TabStyleType.TopNormal || tabStyle == TabStyleType.TopTransparent || tabStyle == TabStyleType.Classic)
+          if (tabStyle == TabStyleType.TopNormal || tabStyle == TabStyleType.TopTransparent || tabStyle == TabStyleType.Classic || tabStyle == TabStyleType.DocumentRail || tabStyle == TabStyleType.QueryDocument)
             topOffset = ItemSize.Height;
           int bottomOffset = 0;
           if (tabStyle == TabStyleType.BottomNormal)
@@ -275,7 +288,7 @@ namespace MySQL.Controls
           switch ((SB) Win32.LoWord(m.WParam.ToInt32()))
           {
             case SB.THUMBPOSITION:
-              scrollOffset = -scrollScaleFactor * Win32.HiWord(m.WParam.ToInt32());
+              scrollOffset = ClampScrollOffset(-scrollScaleFactor * Win32.HiWord(m.WParam.ToInt32()));
               Invalidate();
               break;
           }
@@ -422,6 +435,9 @@ namespace MySQL.Controls
 			if (!Visible)
 				return;
 
+      // Native tab removal notifications arrive before TabCount changes. Clamp
+      // again against the final layout so a fitting tab cannot retain an old scroll.
+      scrollOffset = ClampScrollOffset(scrollOffset);
       g.SmoothingMode = SmoothingMode.AntiAlias;
 
       bool drawFocused = showFocusState && ControlUtilities.IsHierarchyFocused(this);
@@ -457,10 +473,16 @@ namespace MySQL.Controls
       else
         clientArea.Height -= Margin.Bottom;
 
-      using (SolidBrush brush = new SolidBrush(tabStyle == TabStyleType.Classic ? BackgroundColor : unselectedTabColor))
+      using (SolidBrush brush = new SolidBrush(tabStyle == TabStyleType.QueryDocument ? (SystemInformation.HighContrast ? SystemColors.Window : Color.FromArgb(231, 238, 239)) : tabStyle == TabStyleType.Classic || tabStyle == TabStyleType.DocumentRail ? BackgroundColor : unselectedTabColor))
         g.FillRectangle(brush, clientArea);
 
-      if (tabStyle == TabStyleType.Classic)
+      if (tabStyle == TabStyleType.DocumentRail)
+      {
+        using (Brush rail = new SolidBrush(SystemInformation.HighContrast ? SystemColors.Window : Color.FromArgb(4, 49, 51)))
+          g.FillRectangle(rail, Margin.Left, Margin.Top, ClientSize.Width - Margin.Horizontal, ItemSize.Height);
+      }
+
+      if (tabStyle == TabStyleType.Classic || tabStyle == TabStyleType.QueryDocument)
       {
         using (Pen rule = new Pen(SystemInformation.HighContrast ? SystemColors.WindowText : Color.FromArgb(163, 180, 188)))
           g.DrawLine(rule, Margin.Left, ItemSize.Height - 1, Width - Margin.Right, ItemSize.Height - 1);
@@ -524,6 +546,18 @@ namespace MySQL.Controls
     internal void DrawTab(Graphics g, int index, bool drawFocused)
     {
 	    RectangleF bounds = GetTabRect(index);
+
+      if (tabStyle == TabStyleType.DocumentRail)
+      {
+        DrawDocumentTab(g, index);
+        return;
+      }
+
+      if (tabStyle == TabStyleType.QueryDocument)
+      {
+        DrawQueryTab(g, index);
+        return;
+      }
 
       if (tabStyle == TabStyleType.Classic)
       {
@@ -783,6 +817,143 @@ namespace MySQL.Controls
       }
 		}
 
+    private void DrawQueryTab(Graphics g, int index)
+    {
+      Rectangle tab = GetTabRect(index);
+      TabPage page = TabPages[index];
+      bool selected = index == SelectedIndex;
+      bool highContrast = SystemInformation.HighContrast;
+      float scale = g.DpiX / 96f;
+      Color ink = highContrast ? SystemColors.WindowText : Color.FromArgb(16, 38, 41);
+      Color surface = highContrast ? SystemColors.Window : selected ? Color.White : Color.FromArgb(231, 238, 239);
+      using (Brush fill = new SolidBrush(surface))
+        g.FillRectangle(fill, tab);
+      using (Pen border = new Pen(highContrast ? SystemColors.WindowText : Color.FromArgb(163, 180, 188)))
+      {
+        g.DrawLine(border, tab.Left, tab.Top, tab.Right - 1, tab.Top);
+        g.DrawLine(border, tab.Left, tab.Top, tab.Left, tab.Bottom - 1);
+        g.DrawLine(border, tab.Right - 1, tab.Top, tab.Right - 1, tab.Bottom - 1);
+        if (!selected) g.DrawLine(border, tab.Left, tab.Bottom - 1, tab.Right - 1, tab.Bottom - 1);
+      }
+      int left = tab.Left + (int)Math.Round(10 * scale);
+      if (page.ImageIndex >= 0 && ImageList != null && page.ImageIndex < ImageList.Images.Count)
+      {
+        Size iconSize = ImageList.ImageSize;
+        g.DrawImage(ImageList.Images[page.ImageIndex], left, tab.Top + (tab.Height - iconSize.Height) / 2, iconSize.Width, iconSize.Height);
+        left += iconSize.Width + (int)Math.Round(7 * scale);
+      }
+      Rectangle close = GetTabButtonRect(index);
+      Rectangle text = new Rectangle(left, tab.Top, Math.Max(0, close.IsEmpty ? tab.Right - left - 8 : close.Left - left - 4), tab.Height);
+      TextRenderer.DrawText(g, page.Text, Font, text, ink, TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
+      if (!close.IsEmpty)
+      {
+        if (layoutInfo[index].isBusy)
+        {
+          Bitmap indicator = GetBusyIndicatorForStyle("blue");
+          ImageAnimator.UpdateFrames(indicator);
+          g.DrawImageUnscaled(indicator, close.Left + (close.Width - indicator.Width) / 2, close.Top + (close.Height - indicator.Height) / 2);
+        }
+        else
+        {
+          int half = Math.Max(3, (int)Math.Round(3 * scale));
+          int x = close.Left + close.Width / 2, y = close.Top + close.Height / 2;
+          using (Pen cross = new Pen(ink, Math.Max(1, scale)))
+          {
+            g.DrawLine(cross, x - half, y - half, x + half, y + half);
+            g.DrawLine(cross, x - half, y + half, x + half, y - half);
+          }
+        }
+      }
+      if (selected && Focused && ShowFocusCues)
+        ControlPaint.DrawFocusRectangle(g, Rectangle.Inflate(tab, -3, -3), ink, surface);
+    }
+
+    private void DrawDocumentTab(Graphics g, int index)
+    {
+      TabPage page = TabPages[index];
+      Rectangle tab = GetTabRect(index);
+      bool selected = index == SelectedIndex;
+      bool home = page.Text.Length == 0;
+      float scale = g.DpiX / 96f;
+      int inset = Math.Max(2, (int)Math.Round(3 * scale));
+      Rectangle face = Rectangle.Inflate(tab, -inset, -inset);
+      Color ink = SystemInformation.HighContrast ? (selected ? SystemColors.HighlightText : SystemColors.WindowText) :
+        (selected && !home ? Color.FromArgb(16, 38, 41) : Color.FromArgb(236, 244, 243));
+      if (selected && !home)
+      {
+        using (Brush fill = new SolidBrush(SystemInformation.HighContrast ? SystemColors.Highlight : Color.FromArgb(221, 235, 228)))
+          g.FillRectangle(fill, face);
+      }
+
+      int iconSize = Math.Max(16, (int)Math.Round(18 * scale));
+      Rectangle icon = new Rectangle(tab.Left + itemPadding.Left, tab.Top + (tab.Height - iconSize) / 2, iconSize, iconSize);
+      bool hasImage = page.ImageIndex >= 0 && ImageList != null && page.ImageIndex < ImageList.Images.Count;
+      if (home)
+      {
+        using (Pen pen = new Pen(ink, Math.Max(1, scale)))
+        {
+          int left = icon.Left + 2, right = icon.Right - 2, middle = (left + right) / 2;
+          g.DrawLines(pen, new Point[] { new Point(left, icon.Top + icon.Height / 2), new Point(middle, icon.Top + 2),
+            new Point(right, icon.Top + icon.Height / 2) });
+          g.DrawLines(pen, new Point[] { new Point(left + 2, icon.Top + icon.Height / 2 - 1), new Point(left + 2, icon.Bottom - 2),
+            new Point(middle - 2, icon.Bottom - 2), new Point(middle - 2, icon.Bottom - 7), new Point(middle + 2, icon.Bottom - 7),
+            new Point(middle + 2, icon.Bottom - 2), new Point(right - 2, icon.Bottom - 2), new Point(right - 2, icon.Top + icon.Height / 2 - 1) });
+        }
+      }
+      else if (hasImage)
+        g.DrawImage(ImageList.Images[page.ImageIndex], icon);
+      else
+      {
+        using (Pen pen = new Pen(ink, Math.Max(1, scale)))
+        {
+          if (page.Text.IndexOf("Taşıma", StringComparison.CurrentCultureIgnoreCase) >= 0)
+          {
+            g.DrawLine(pen, icon.Left + 2, icon.Top + 5, icon.Right - 2, icon.Top + 5);
+            g.DrawLine(pen, icon.Right - 6, icon.Top + 1, icon.Right - 2, icon.Top + 5);
+            g.DrawLine(pen, icon.Right - 6, icon.Top + 9, icon.Right - 2, icon.Top + 5);
+            g.DrawLine(pen, icon.Right - 2, icon.Bottom - 5, icon.Left + 2, icon.Bottom - 5);
+            g.DrawLine(pen, icon.Left + 6, icon.Bottom - 9, icon.Left + 2, icon.Bottom - 5);
+            g.DrawLine(pen, icon.Left + 6, icon.Bottom - 1, icon.Left + 2, icon.Bottom - 5);
+          }
+          else
+            g.DrawRectangle(pen, icon.Left + 3, icon.Top + 1, icon.Width - 6, icon.Height - 3);
+        }
+      }
+
+      Rectangle button = GetTabButtonRect(index);
+      Rectangle text = new Rectangle(icon.Right + (int)Math.Round(6 * scale), tab.Top,
+        Math.Max(0, tab.Right - itemPadding.Right - icon.Right - (int)Math.Round(6 * scale)), tab.Height);
+      if (!button.IsEmpty)
+        text.Width = Math.Max(0, button.Left - text.Left - (int)Math.Round(4 * scale));
+      using (Font font = new Font(Font, selected ? FontStyle.Bold : FontStyle.Regular))
+        TextRenderer.DrawText(g, page.Text, font, text, ink, TextFormatFlags.VerticalCenter |
+          TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+
+      if (!button.IsEmpty)
+      {
+        if (layoutInfo[index].isBusy)
+        {
+          Bitmap indicator = GetBusyIndicatorForStyle(selected ? "blue" : "white");
+          ImageAnimator.UpdateFrames(indicator);
+          g.DrawImage(indicator, button.Left + (button.Width - indicator.Width) / 2,
+            button.Top + (button.Height - indicator.Height) / 2, indicator.Width, indicator.Height);
+        }
+        else
+        {
+          int half = Math.Max(3, (int)Math.Round(4 * scale));
+          int x = button.Left + button.Width / 2, y = button.Top + button.Height / 2;
+          using (Pen pen = new Pen(ink, Math.Max(1, scale)))
+          {
+            g.DrawLine(pen, x - half, y - half, x + half, y + half);
+            g.DrawLine(pen, x - half, y + half, x + half, y - half);
+          }
+        }
+      }
+      if (selected && Focused && ShowFocusCues)
+        ControlPaint.DrawFocusRectangle(g, Rectangle.Inflate(face, -2, -2), ink,
+          SystemInformation.HighContrast ? SystemColors.Highlight : Color.FromArgb(221, 235, 228));
+    }
+
     /// <summary>
     /// Creates the outline of a tab depending on its style.
     /// </summary>
@@ -1012,6 +1183,7 @@ namespace MySQL.Controls
           Rectangle bounds = GetTabRect(TabCount - 1);
           if (bounds.Right < ClientSize.Width - Margin.Right - scrollerSpacing - rect.Width)
             scrollOffset += ClientSize.Width - Margin.Right - scrollerSpacing - rect.Width - bounds.Right;
+          scrollOffset = ClampScrollOffset(scrollOffset);
           Win32.SendMessage(scroller.Handle, (int)UDM.SETPOS32, IntPtr.Zero, new IntPtr(-scrollOffset / scrollScaleFactor));
 
           // Disable scroll acceleration by setting a single scroll increment.
@@ -1055,6 +1227,32 @@ namespace MySQL.Controls
         result += GetTabRect(i).Width;
 
       return result;
+    }
+
+    internal static int ClampTabScrollOffset(int requestedOffset, int totalTabWidth, int viewportWidth)
+    {
+      int minimumOffset = Math.Min(0, Math.Max(0, viewportWidth) - Math.Max(0, totalTabWidth));
+      return Math.Max(minimumOffset, Math.Min(0, requestedOffset));
+    }
+
+    private int GetTabViewportWidth(int totalTabWidth)
+    {
+      int width = Math.Max(0, ClientSize.Width - Margin.Horizontal);
+      // A hidden native scroller still has a nonzero client rectangle. Reserve
+      // its width only when the current tabs actually need to scroll.
+      if (totalTabWidth > width && scroller != null)
+      {
+        Win32.RECT rect = new Win32.RECT();
+        Win32.GetClientRect(scroller.Handle, ref rect);
+        width = Math.Max(0, width - rect.Width - scrollerSpacing);
+      }
+      return width;
+    }
+
+    private int ClampScrollOffset(int requestedOffset)
+    {
+      int totalTabWidth = GetTotalTabWidth();
+      return ClampTabScrollOffset(requestedOffset, totalTabWidth, GetTabViewportWidth(totalTabWidth));
     }
 
     #endregion
@@ -1163,7 +1361,7 @@ namespace MySQL.Controls
 		{
       base.OnSelectedIndexChanged(e);
 
-      if (tabStyle == TabStyleType.Classic)
+      if (tabStyle == TabStyleType.Classic || tabStyle == TabStyleType.DocumentRail || tabStyle == TabStyleType.QueryDocument)
         AdjustLayoutInfo(null);
 
       ScrollIntoView(SelectedIndex);
@@ -1176,8 +1374,19 @@ namespace MySQL.Controls
 			Invalidate();	// We need to update border and background colors.
 		}
 
+    protected override void OnSelecting(TabControlCancelEventArgs e)
+    {
+      if (navigationLocked && e.TabPageIndex != SelectedIndex)
+      {
+        e.Cancel = true;
+        return;
+      }
+      base.OnSelecting(e);
+    }
+
     override protected void OnMouseDown(MouseEventArgs e)
     {
+      if (navigationLocked) return;
       switch (e.Button)
       {
         case MouseButtons.Left:
@@ -1186,7 +1395,9 @@ namespace MySQL.Controls
           if (lastTabHit > -1)
           {
             lastClickPosition = e.Location;
-            if (SelectedIndex != lastTabHit)
+            if (tabStyle == TabStyleType.DocumentRail || tabStyle == TabStyleType.QueryDocument)
+              buttonHit = GetTabButtonRect(lastTabHit).Contains(e.Location);
+            if (SelectedIndex != lastTabHit && !((tabStyle == TabStyleType.DocumentRail || tabStyle == TabStyleType.QueryDocument) && buttonHit))
               SelectedIndex = lastTabHit;
             else
               buttonHit = GetTabButtonRect(lastTabHit).Contains(e.Location);
@@ -1201,6 +1412,7 @@ namespace MySQL.Controls
 
     protected override void OnMouseUp(MouseEventArgs e)
     {
+      if (navigationLocked) return;
       switch (e.Button)
       {
         case MouseButtons.Left:
@@ -1237,7 +1449,7 @@ namespace MySQL.Controls
       switch (e.Button)
       {
         case MouseButtons.Left:
-          if (lastTabHit > -1 && !buttonHit && CanReorderTabs &&
+          if (lastTabHit > -1 && !(tabStyle == TabStyleType.DocumentRail && lastTabHit == 0) && !buttonHit && CanReorderTabs &&
             (Math.Abs(lastClickPosition.X - e.Location.X) > 5 || Math.Abs(lastClickPosition.Y - e.Location.Y) > 5))
           {
             TabPage page = TabPages[lastTabHit];
@@ -1259,6 +1471,7 @@ namespace MySQL.Controls
 
     protected override void OnDragOver(DragEventArgs e)
     {
+      if (navigationLocked) { e.Effect = DragDropEffects.None; return; }
       // See if a tab page is being dragged.
       if (e.Data.GetData(typeof(TabPage)) == null)
       {
@@ -1277,7 +1490,7 @@ namespace MySQL.Controls
 
       // Hover over a tab?
       int hoverIndex = TabIndexFromPosition(PointToClient(new Point(e.X, e.Y)));
-      if (hoverIndex < 0)
+      if (hoverIndex < 0 || (tabStyle == TabStyleType.DocumentRail && (hoverIndex == 0 || dragTabIndex == 0)))
       {
         e.Effect = DragDropEffects.None;
         return;
@@ -1471,7 +1684,7 @@ namespace MySQL.Controls
 
           if (info.page.Text.Length > 0)
           {
-            if (tabStyle == TabStyleType.Classic)
+            if (tabStyle == TabStyleType.Classic || tabStyle == TabStyleType.DocumentRail || tabStyle == TabStyleType.QueryDocument)
             {
               // Use the same GDI metrics as DrawTab and reserve the selected weight.
               using (Font font = new Font(Font, FontStyle.Bold))
@@ -1501,10 +1714,14 @@ namespace MySQL.Controls
           }
           else
             buttonSize = new Size(darkCloseButton.Width, darkCloseButton.Height);
+          if (tabStyle == TabStyleType.DocumentRail || tabStyle == TabStyleType.QueryDocument)
+            buttonSize = new Size((int)Math.Round(26 * g.DpiX / 96f), (int)Math.Round(26 * g.DpiY / 96f));
           if (buttonSpaceNeeded)
             buttonPart = buttonSpacing + buttonSize.Width;
           int tabWidth = itemPadding.Horizontal + textWidth + buttonPart;
-          if ((info.page.ImageIndex >= 0) && (ImageList != null) && (ImageList.Images.Count > info.page.ImageIndex) &&
+          if (tabStyle == TabStyleType.DocumentRail)
+            tabWidth += (int)Math.Round(24 * g.DpiX / 96f);
+          else if ((info.page.ImageIndex >= 0) && (ImageList != null) && (ImageList.Images.Count > info.page.ImageIndex) &&
             (ImageList.Images[info.page.ImageIndex] != null))
           {
             tabWidth += ImageList.ImageSize.Width;
@@ -1653,26 +1870,24 @@ namespace MySQL.Controls
         return result;
       }
 
+      int previousOffset = scrollOffset;
+      scrollOffset = ClampScrollOffset(scrollOffset);
       Rectangle area = GetTabRect(index);
-      if (area.Left < 0)
+      int viewportWidth = GetTabViewportWidth(GetTotalTabWidth());
+      int rightBorder = Margin.Left + viewportWidth;
+      if (area.Left < Margin.Left || area.Width > viewportWidth)
       {
-        scrollOffset -= area.Left;
-        result = true;
+        // If one tab is wider than its viewport, keep the start of its title
+        // visible rather than aligning its tail to the right edge.
+        scrollOffset += Margin.Left - area.Left;
       }
-      else
+      else if (area.Right > rightBorder)
       {
-        Win32.RECT rect = new Win32.RECT();
-        if (scroller != null)
-          Win32.GetClientRect(scroller.Handle, ref rect);
-
-        int rightBorder = ClientSize.Width - Margin.Right - rect.Width - scrollerSpacing;
-        if (area.Right > rightBorder)
-        {
-          scrollOffset -= area.Right - rightBorder;
-          result = true;
-        }
+        scrollOffset -= area.Right - rightBorder;
       }
 
+      scrollOffset = ClampScrollOffset(scrollOffset);
+      result = scrollOffset != previousOffset;
       if (result && scroller != null)
         Win32.SendMessage(scroller.Handle, (int)UDM.SETPOS32, IntPtr.Zero, new IntPtr(-scrollOffset / scrollScaleFactor));
       return result;

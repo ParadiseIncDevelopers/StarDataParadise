@@ -41,6 +41,22 @@ using namespace grt;
 
 DEFAULT_LOG_DOMAIN("SqlEditorSchemaTree");
 
+namespace {
+  std::string info_html(const std::string &value) {
+    std::string escaped;
+    for (char c : value) {
+      switch (c) {
+        case '&': escaped += "&amp;"; break;
+        case '<': escaped += "&lt;"; break;
+        case '>': escaped += "&gt;"; break;
+        case '"': escaped += "&quot;"; break;
+        default: escaped += c;
+      }
+    }
+    return escaped;
+  }
+}
+
 const short LiveSchemaTree::COLUMN_DATA = 0x01;
 const short LiveSchemaTree::TRIGGER_DATA = 0x02;
 const short LiveSchemaTree::INDEX_DATA = 0x04;
@@ -63,22 +79,22 @@ const std::string LiveSchemaTree::INDEX_TAG = "_INDEX_";
 const std::string LiveSchemaTree::TRIGGER_TAG = "_TRIGGER_";
 const std::string LiveSchemaTree::FOREIGN_KEY_TAG = "_FOREIGN_KEY_";
 
-const std::string LiveSchemaTree::FETCHING_CAPTION = _("fetching...");
-const std::string LiveSchemaTree::ERROR_FETCHING_CAPTION = _("could not be fetched");
-const std::string LiveSchemaTree::TABLES_CAPTION = _("Tables");
-const std::string LiveSchemaTree::VIEWS_CAPTION = _("Views");
-const std::string LiveSchemaTree::PROCEDURES_CAPTION = _("Stored Procedures");
-const std::string LiveSchemaTree::FUNCTIONS_CAPTION = _("Functions");
+const std::string LiveSchemaTree::FETCHING_CAPTION = "Yükleniyor…";
+const std::string LiveSchemaTree::ERROR_FETCHING_CAPTION = "Yüklenemedi";
+const std::string LiveSchemaTree::TABLES_CAPTION = "Tablolar";
+const std::string LiveSchemaTree::VIEWS_CAPTION = "Görünümler";
+const std::string LiveSchemaTree::PROCEDURES_CAPTION = "Saklı Yordamlar";
+const std::string LiveSchemaTree::FUNCTIONS_CAPTION = "Fonksiyonlar";
 
-const std::string LiveSchemaTree::COLUMNS_CAPTION = _("Columns");
-const std::string LiveSchemaTree::INDEXES_CAPTION = _("Indexes");
-const std::string LiveSchemaTree::TRIGGERS_CAPTION = _("Triggers");
-const std::string LiveSchemaTree::FOREIGN_KEYS_CAPTION = _("Foreign Keys");
+const std::string LiveSchemaTree::COLUMNS_CAPTION = "Sütunlar";
+const std::string LiveSchemaTree::INDEXES_CAPTION = "İndeksler";
+const std::string LiveSchemaTree::TRIGGERS_CAPTION = "Tetikleyiciler";
+const std::string LiveSchemaTree::FOREIGN_KEYS_CAPTION = "Yabancı Anahtarlar";
 
 const std::string LiveSchemaTree::LST_INFO_BOX_DETAIL_ROW =
   "<tr>"
-  "<td style=\"border:none; padding-left: 15px;\">%s</td>"
-  "<td style=\"border:none; padding-left: 15px;\"><font color='#717171'>%s</font></td>"
+  "<td style=\"border:none; padding:4px 8px 4px 0;\">%s</td>"
+  "<td style=\"border:none; padding:4px 0; color:#60747c;\">%s</td>"
   "</tr>";
 
 const int LiveSchemaTree::TABLES_NODE_INDEX = 0;
@@ -109,8 +125,9 @@ std::string LiveSchemaTree::LSTData::get_details(bool full, const mforms::TreeNo
   if (full) {
     std::string owner_name = node->get_string(0);
 
-    ret_val = strfmt(_("<b>%s:</b> <font color='#148814'><b>%s</b></font><br><br>"), get_object_name().c_str(),
-                     owner_name.c_str());
+    ret_val = strfmt("<div style='font-size:9pt; color:#60747c;'>%s</div>"
+                     "<div style='font-size:11pt; font-weight:bold; margin:3px 0 10px 0;'>%s</div>",
+                     info_html(get_object_name()).c_str(), info_html(owner_name).c_str());
   } else
     ret_val = details;
 
@@ -138,17 +155,16 @@ std::string LiveSchemaTree::ColumnData::get_details(bool full, const mforms::Tre
   std::string ret_val("");
 
   if (details.empty()) {
-    std::string html_name = name;
+    std::string html_name = info_html(name);
     if (is_pk || is_idx) {
-      if (is_pk)
-        html_name = "<u>" + html_name + "</u>";
-
       html_name = "<b>" + html_name + "</b>";
     }
 
-    std::string html_type = type;
+    std::string html_type = info_html(type);
     if (is_pk)
-      html_type += " PK";
+      html_type += " - PK";
+    else if (is_fk)
+      html_type += " - FK";
 
     details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), html_name.c_str(), html_type.c_str());
   }
@@ -156,11 +172,11 @@ std::string LiveSchemaTree::ColumnData::get_details(bool full, const mforms::Tre
   if (full) {
     ret_val = LSTData::get_details(full, node);
     if (!charset_collation.empty()) {
-      ret_val += _("<b>Collation:</b>  ");
-      ret_val += charset_collation;
+      ret_val += std::string("<b>") + _("Collation") + ":</b> ";
+      ret_val += info_html(charset_collation);
       ret_val += "<br><br>";
     }
-    ret_val += _("<b>Definition:</b><table style=\"border: none; border-collapse: collapse;\">");
+    ret_val += std::string("<b>") + _("Definition") + "</b><table style=\"border: none; border-collapse: collapse; width:100%;\">";
     ret_val += details;
     ret_val += "</table><br><br>";
   } else
@@ -190,15 +206,15 @@ std::string LiveSchemaTree::FKData::get_details(bool full, const mforms::TreeNod
     std::string target =
       strfmt("%s (%s \xE2\x86\x92 %s)", referenced_table.c_str(), from_cols.c_str(), to_cols.c_str());
     details = "<table style=\"border: none; border-collapse: collapse;\">";
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "Target", target.c_str());
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "On Update", externalize_token(update_rule).c_str());
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "On Delete", externalize_token(delete_rule).c_str());
+    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("Target"), info_html(target).c_str());
+    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("On Update"), externalize_token(update_rule).c_str());
+    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("On Delete"), externalize_token(delete_rule).c_str());
     details += "</table>";
   }
 
   if (full) {
     ret_val = LSTData::get_details(full, node);
-    ret_val += _("<b>Definition:</b><br>");
+    ret_val += std::string("<b>") + _("Definition") + "</b><br>";
     ret_val += details;
   } else
     ret_val = details;
@@ -224,20 +240,21 @@ std::string LiveSchemaTree::IndexData::get_details(bool full, const mforms::Tree
 
   if (details.empty()) {
     details = "<table style=\"border: none; border-collapse: collapse;\">";
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "Type", externalize_token(type).c_str());
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "Unique", unique ? "Yes" : "No");
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "Visible", visible ? "Yes" : "No");
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "Columns", columns[0].c_str());
+    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("Type"), externalize_token(type).c_str());
+    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("Unique"), unique ? _("Yes") : _("No"));
+    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("Visible"), visible ? _("Yes") : _("No"));
+    if (!columns.empty())
+      details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("Columns"), info_html(columns[0]).c_str());
 
     for (std::size_t index = 1; index < columns.size(); index++)
-      details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "", columns[index].c_str());
+      details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "", info_html(columns[index]).c_str());
 
     details += "</table>";
   }
 
   if (full) {
     ret_val = LSTData::get_details(full, node);
-    ret_val += _("<b>Definition:</b><br>");
+    ret_val += std::string("<b>") + _("Definition") + "</b><br>";
     ret_val += details;
   } else
     ret_val = details;
@@ -261,14 +278,14 @@ std::string LiveSchemaTree::TriggerData::get_details(bool full, const mforms::Tr
 
   if (details.empty()) {
     details = "<table style=\"border: none; border-collapse: collapse;\">";
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "Event", externalize_token(event_manipulation).c_str());
-    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), "Timing", externalize_token(timing).c_str());
+    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("Event"), externalize_token(event_manipulation).c_str());
+    details += strfmt(LST_INFO_BOX_DETAIL_ROW.c_str(), _("Timing"), externalize_token(timing).c_str());
     details += "</table>";
   }
 
   if (full) {
     ret_val = LSTData::get_details(full, node);
-    ret_val += _("<b>Definition:</b><br>");
+    ret_val += std::string("<b>") + _("Definition") + "</b><br>";
     ret_val += details;
   } else
     ret_val = details;
@@ -308,7 +325,20 @@ std::string LiveSchemaTree::ViewData::get_details(bool full, const mforms::TreeN
   if (_loaded_mask & COLUMN_DATA) {
     int count = (get_type() == Table) ? node->get_child(TABLE_COLUMNS_NODE_INDEX)->count() : node->count();
     if (count) {
-      ret_val += _("<b>Columns:</b><table style=\"border: none; border-collapse: collapse;\">");
+      int primary_keys = 0;
+      int foreign_keys = 0;
+      for (int index = 0; index < count; ++index) {
+        auto column_node = get_type() == Table ? node->get_child(TABLE_COLUMNS_NODE_INDEX)->get_child(index) : node->get_child(index);
+        if (auto column = dynamic_cast<ColumnData *>(column_node->get_data())) {
+          primary_keys += column->is_pk ? 1 : 0;
+          foreign_keys += column->is_fk ? 1 : 0;
+        }
+      }
+      if (full)
+        ret_val += strfmt("<div style='color:#60747c; margin-bottom:8px;'>%s: %i - PK: %i - FK: %i</div>",
+                           _("Columns"), count, primary_keys, foreign_keys);
+      ret_val += std::string("<div style='font-weight:bold; margin-top:8px;'>") + _("Columns") +
+                 "</div><table style=\"border:none; border-collapse:collapse; width:100%;\">";
 
       for (int index = 0; index < count; index++) {
         ColumnData* pdata;
@@ -317,7 +347,8 @@ std::string LiveSchemaTree::ViewData::get_details(bool full, const mforms::TreeN
         else
           pdata = dynamic_cast<ColumnData*>(node->get_child(index)->get_data());
 
-        ret_val += pdata->get_details(false, node);
+        if (pdata)
+          ret_val += pdata->get_details(false, node);
       }
 
       ret_val += "</table><br><br>";
@@ -337,7 +368,7 @@ std::string LiveSchemaTree::TableData::get_details(bool full, const mforms::Tree
   if (_loaded_mask & FK_DATA) {
     int count = node->get_child(TABLE_FOREIGN_KEYS_NODE_INDEX)->count();
     if (count) {
-      ret_val += _("<div><b>Related Tables:</b></div>");
+      ret_val += std::string("<div><b>") + _("Related Tables") + "</b></div>";
 
       for (int index = 0; index < count; index++) {
         FKData* pdata =
@@ -444,35 +475,35 @@ LiveSchemaTree::LiveSchemaTree(MySQLVersion version)
   // Setup the schema node collection skeleton
   mforms::TreeNodeCollectionSkeleton schema_nodes(_icon_paths[Schema]);
 
-  mforms::TreeNodeSkeleton tables(TABLES_CAPTION, _icon_paths[TableCollection], TABLES_TAG);
+  mforms::TreeNodeSkeleton tables(_(TABLES_CAPTION), _icon_paths[TableCollection], TABLES_TAG);
   schema_nodes.children.push_back(tables);
 
-  mforms::TreeNodeSkeleton views(VIEWS_CAPTION, _icon_paths[ViewCollection], VIEWS_TAG);
+  mforms::TreeNodeSkeleton views(_(VIEWS_CAPTION), _icon_paths[ViewCollection], VIEWS_TAG);
   schema_nodes.children.push_back(views);
 
-  mforms::TreeNodeSkeleton procedures(PROCEDURES_CAPTION, _icon_paths[ProcedureCollection], PROCEDURES_TAG);
+  mforms::TreeNodeSkeleton procedures(_(PROCEDURES_CAPTION), _icon_paths[ProcedureCollection], PROCEDURES_TAG);
   schema_nodes.children.push_back(procedures);
 
-  mforms::TreeNodeSkeleton functions(FUNCTIONS_CAPTION, _icon_paths[FunctionCollection], FUNCTIONS_TAG);
+  mforms::TreeNodeSkeleton functions(_(FUNCTIONS_CAPTION), _icon_paths[FunctionCollection], FUNCTIONS_TAG);
   schema_nodes.children.push_back(functions);
   _node_collections[Schema] = schema_nodes;
 
   // Setup the table node collection skeleton
   mforms::TreeNodeCollectionSkeleton table_nodes(_icon_paths[Table]);
 
-  mforms::TreeNodeSkeleton columns(COLUMNS_CAPTION, _icon_paths[ColumnCollection], COLUMNS_TAG);
+  mforms::TreeNodeSkeleton columns(_(COLUMNS_CAPTION), _icon_paths[ColumnCollection], COLUMNS_TAG);
   table_nodes.children.push_back(columns);
 
-  mforms::TreeNodeSkeleton indexes(INDEXES_CAPTION, _icon_paths[IndexCollection], INDEXES_TAG);
+  mforms::TreeNodeSkeleton indexes(_(INDEXES_CAPTION), _icon_paths[IndexCollection], INDEXES_TAG);
   table_nodes.children.push_back(indexes);
 
-  mforms::TreeNodeSkeleton foreign_keys(FOREIGN_KEYS_CAPTION, _icon_paths[ForeignKeyCollection], FOREIGN_KEYS_TAG);
-  mforms::TreeNodeSkeleton fetching_fk(FETCHING_CAPTION, _icon_paths[ForeignKey], "");
+  mforms::TreeNodeSkeleton foreign_keys(_(FOREIGN_KEYS_CAPTION), _icon_paths[ForeignKeyCollection], FOREIGN_KEYS_TAG);
+  mforms::TreeNodeSkeleton fetching_fk(_(FETCHING_CAPTION), _icon_paths[ForeignKey], "");
   foreign_keys.children.push_back(fetching_fk);
   table_nodes.children.push_back(foreign_keys);
 
-  mforms::TreeNodeSkeleton triggers(TRIGGERS_CAPTION, _icon_paths[TriggerCollection], TRIGGERS_TAG);
-  mforms::TreeNodeSkeleton fetching_trigger(FETCHING_CAPTION, _icon_paths[Trigger], "");
+  mforms::TreeNodeSkeleton triggers(_(TRIGGERS_CAPTION), _icon_paths[TriggerCollection], TRIGGERS_TAG);
+  mforms::TreeNodeSkeleton fetching_trigger(_(FETCHING_CAPTION), _icon_paths[Trigger], "");
   triggers.children.push_back(fetching_trigger);
   table_nodes.children.push_back(triggers);
 
@@ -480,7 +511,7 @@ LiveSchemaTree::LiveSchemaTree(MySQLVersion version)
 
   // Setup the view node collection skeleton
   mforms::TreeNodeCollectionSkeleton view_nodes(_icon_paths[View]);
-  mforms::TreeNodeSkeleton fetching_view(FETCHING_CAPTION, _icon_paths[View], "");
+  mforms::TreeNodeSkeleton fetching_view(_(FETCHING_CAPTION), _icon_paths[View], "");
   view_nodes.children.push_back(fetching_view);
   _node_collections[View] = view_nodes;
 
@@ -625,7 +656,7 @@ bec::IconId LiveSchemaTree::get_node_icon(ObjectType type) {
       icon = bec::IconManager::get_instance()->get_icon_id("db.Routine.many.side.$.png", bec::Icon16);
       break;
     case FunctionCollection:
-      icon = bec::IconManager::get_instance()->get_icon_id("db.Routine.many.side.$.png", bec::Icon16);
+      icon = bec::IconManager::get_instance()->get_icon_id("sdp_function.png", bec::Icon16);
       break;
     case Table:
       icon = bec::IconManager::get_instance()->get_icon_id("db.Table.side.$.png", bec::Icon16);
@@ -637,7 +668,7 @@ bec::IconId LiveSchemaTree::get_node_icon(ObjectType type) {
       icon = bec::IconManager::get_instance()->get_icon_id("db.Routine.side.$.png", bec::Icon16);
       break;
     case Function:
-      icon = bec::IconManager::get_instance()->get_icon_id("grt_function.png", bec::Icon16);
+      icon = bec::IconManager::get_instance()->get_icon_id("sdp_function.png", bec::Icon16);
       break;
     case ColumnCollection:
       icon = bec::IconManager::get_instance()->get_icon_id("db.Column.many.side.$.png", bec::Icon16);
@@ -732,7 +763,7 @@ void LiveSchemaTree::update_change_data(mforms::TreeNodeRef parent, base::String
   mforms::TreeNodeRef node;
 
   int total_nodes = parent->count();
-  if (total_nodes == 1 && parent->get_child(0)->get_string(0) == FETCHING_CAPTION)
+  if (total_nodes == 1 && parent->get_child(0)->get_string(0) == _(FETCHING_CAPTION))
     to_remove.push_back(parent->get_child(0));
   else {
     for (int index = 0; index < total_nodes; index++) {
@@ -1121,17 +1152,17 @@ void LiveSchemaTree::schema_contents_arrived(const std::string& schema_name, bas
           if (!just_append)
             pdata->fetched = true;
 
-          tables_node->set_string(0, TABLES_CAPTION);
-          views_node->set_string(0, VIEWS_CAPTION);
-          procedures_node->set_string(0, PROCEDURES_CAPTION);
-          functions_node->set_string(0, FUNCTIONS_CAPTION);
+          tables_node->set_string(0, _(TABLES_CAPTION));
+          views_node->set_string(0, _(VIEWS_CAPTION));
+          procedures_node->set_string(0, _(PROCEDURES_CAPTION));
+          functions_node->set_string(0, _(FUNCTIONS_CAPTION));
         }
         // This section will be reached whenever there´s an exception loading the schema data
         else {
-          tables_node->set_string(0, TABLES_CAPTION + " " + ERROR_FETCHING_CAPTION);
-          views_node->set_string(0, VIEWS_CAPTION + " " + ERROR_FETCHING_CAPTION);
-          procedures_node->set_string(0, PROCEDURES_CAPTION + " " + ERROR_FETCHING_CAPTION);
-          functions_node->set_string(0, FUNCTIONS_CAPTION + " " + ERROR_FETCHING_CAPTION);
+          tables_node->set_string(0, _(TABLES_CAPTION) + " " + _(ERROR_FETCHING_CAPTION));
+          views_node->set_string(0, _(VIEWS_CAPTION) + " " + _(ERROR_FETCHING_CAPTION));
+          procedures_node->set_string(0, _(PROCEDURES_CAPTION) + " " + _(ERROR_FETCHING_CAPTION));
+          functions_node->set_string(0, _(FUNCTIONS_CAPTION) + " " + _(ERROR_FETCHING_CAPTION));
         }
 
         pdata->fetching = false;
@@ -1229,16 +1260,16 @@ void LiveSchemaTree::load_schema_content(mforms::TreeNodeRef& schema_node) {
     if (_base) {
       mforms::TreeNodeRef base_schema_node = _base->get_node_from_path(get_node_path(schema_node));
 
-      base_schema_node->get_child(TABLES_NODE_INDEX)->set_string(0, TABLES_CAPTION + " " + FETCHING_CAPTION);
-      base_schema_node->get_child(VIEWS_NODE_INDEX)->set_string(0, VIEWS_CAPTION + " " + FETCHING_CAPTION);
-      base_schema_node->get_child(PROCEDURES_NODE_INDEX)->set_string(0, PROCEDURES_CAPTION + " " + FETCHING_CAPTION);
-      base_schema_node->get_child(FUNCTIONS_NODE_INDEX)->set_string(0, FUNCTIONS_CAPTION + " " + FETCHING_CAPTION);
+      base_schema_node->get_child(TABLES_NODE_INDEX)->set_string(0, _(TABLES_CAPTION) + " " + _(FETCHING_CAPTION));
+      base_schema_node->get_child(VIEWS_NODE_INDEX)->set_string(0, _(VIEWS_CAPTION) + " " + _(FETCHING_CAPTION));
+      base_schema_node->get_child(PROCEDURES_NODE_INDEX)->set_string(0, _(PROCEDURES_CAPTION) + " " + _(FETCHING_CAPTION));
+      base_schema_node->get_child(FUNCTIONS_NODE_INDEX)->set_string(0, _(FUNCTIONS_CAPTION) + " " + _(FETCHING_CAPTION));
     }
 
-    schema_node->get_child(TABLES_NODE_INDEX)->set_string(0, TABLES_CAPTION + " " + FETCHING_CAPTION);
-    schema_node->get_child(VIEWS_NODE_INDEX)->set_string(0, VIEWS_CAPTION + " " + FETCHING_CAPTION);
-    schema_node->get_child(PROCEDURES_NODE_INDEX)->set_string(0, PROCEDURES_CAPTION + " " + FETCHING_CAPTION);
-    schema_node->get_child(FUNCTIONS_NODE_INDEX)->set_string(0, FUNCTIONS_CAPTION + " " + FETCHING_CAPTION);
+    schema_node->get_child(TABLES_NODE_INDEX)->set_string(0, _(TABLES_CAPTION) + " " + _(FETCHING_CAPTION));
+    schema_node->get_child(VIEWS_NODE_INDEX)->set_string(0, _(VIEWS_CAPTION) + " " + _(FETCHING_CAPTION));
+    schema_node->get_child(PROCEDURES_NODE_INDEX)->set_string(0, _(PROCEDURES_CAPTION) + " " + _(FETCHING_CAPTION));
+    schema_node->get_child(FUNCTIONS_NODE_INDEX)->set_string(0, _(FUNCTIONS_CAPTION) + " " + _(FETCHING_CAPTION));
 
     update_node_icon(schema_node);
 
@@ -1533,7 +1564,7 @@ bec::MenuItemList LiveSchemaTree::get_popup_items_for_nodes(const std::list<mfor
           if (limit_rows && (limit_rows_count <= 0))
             limit_rows = false;
           if (limit_rows)
-            caption += _(" - Limit ") + std::to_string(limit_rows_count);
+            caption = base::strfmt(_("Select Rows - Limit %s"), std::to_string(limit_rows_count).c_str());
         }
         view_item.caption = caption;
       }

@@ -43,6 +43,8 @@ DEFAULT_LOG_DOMAIN("home");
 using namespace base;
 using namespace mforms;
 
+ConnectionsSection *ConnectionsSection::opening_section = nullptr;
+
 namespace {
 constexpr double kConnectionActionWidth = 104;
 constexpr double kConnectionButtonWidth = kConnectionActionWidth - 8;
@@ -397,13 +399,15 @@ public:
     homeText(cr, title, row.left() + 36, narrow ? row.top() + 17 : baseline,
              profileWidth - 44, ink, true, 13, false, rowTextRole);
     if (connectionId.empty()) {
-      homeText(cr, is_movable() ? "Ba\xc4\x9f""lant\xc4\xb1"" grubu" : "\xc3\x9c""st klas\xc3\xb6""re d\xc3\xb6""n", hostX + 8, baseline,
+      homeText(cr, is_movable() ? _("Connection group") : _("Back to parent folder"), hostX + 8, baseline,
                row.width() - profileWidth - 100, ink, false, 13, false, rowTextRole);
     } else {
       homeText(cr, user, narrow ? row.left() + 36 : row.left() + profileWidth + 8,
                narrow ? row.top() + 35 : baseline, narrow ? profileWidth - 44 : userWidth - 16,
                narrow ? (dark ? "#B7C7C8" : "#4F5759") : ink, true, 13, false, rowTextRole);
-      homeText(cr, description, hostX + 8, baseline, usable - profileWidth - userWidth - 16, ink, true, 13, false, rowTextRole);
+      const bool opening = owner->_openingConnection && owner->_selectedEntry.get() == this;
+      const std::string hostText = opening ? (owner->_connectionCancelRequested ? _("Canceling...") : _("Connecting...")) : description;
+      homeText(cr, hostText, hostX + 8, baseline, usable - profileWidth - userWidth - 16, ink, !opening, 13, false, rowTextRole);
       if (showEnvironment)
         homeText(cr, environment.empty() ? "\xe2\x80\x94""" : environment, row.left() + usable + 8, baseline, 64, ink, false, 13, false, rowTextRole);
     }
@@ -640,18 +644,18 @@ public:
 //----------------- ConnectionsWelcomeScreen ---------------------------------------------------------------------------
 
 ConnectionsWelcomeScreen::ConnectionsWelcomeScreen(HomeScreen *owner) : _owner(owner), _closeIcon(nullptr) {
-  _closeHomeScreenButton.title = "Kar\xc5\x9f\xc4\xb1""lamay\xc4\xb1"" daralt";
+  _closeHomeScreenButton.title = _("Collapse welcome");
   _closeHomeScreenButton.description = _closeHomeScreenButton.title;
   _closeHomeScreenButton.defaultHandler = [this]() {
     _owner->trigger_callback(HomeScreenAction::CloseWelcomeMessage, base::any());
   };
-  _browseDocButton.title = "H\xc4\xb1""zl\xc4\xb1"" ba\xc5\x9f""lang\xc4\xb1\xc3\xa7""";
+  _browseDocButton.title = _("Quick start");
   _browseDocButton.description = _browseDocButton.title;
   _browseDocButton.defaultHandler = [this]() {
     _owner->trigger_callback(HomeScreenAction::ActionOpenDocs, base::any());
   };
-  _heading = "StarDataParadise\xe2\x80\x99""a ho\xc5\x9f"" geldiniz";
-  _content = {"Bir sunucuya ba\xc4\x9f""lan\xc4\xb1""n, \xc5\x9f""eman\xc4\xb1""z\xc4\xb1"" tasarlay\xc4\xb1""n veya verilerinizi ta\xc5\x9f\xc4\xb1""y\xc4\xb1""n."};
+  _heading = _("Welcome to StarDataParadise");
+  _content = {_("Connect to a server, design your schema, or migrate your data.")};
   for (auto button : {&_browseDocButton, &_closeHomeScreenButton}) {
     FocusableArea area;
     area.activate = button->defaultHandler;
@@ -984,7 +988,7 @@ ConnectionsSection::ConnectionsSection(HomeScreen *owner)
   _search_box.add(image, false, false);
 #endif
   _search_text.set_name("Search Text");
-  _search_text.set_placeholder_text("Ba\xc4\x9f""lant\xc4\xb1"" ara");
+  _search_text.set_placeholder_text(_("Search connections"));
   _search_text.set_bordered(false);
   _search_box.add(&_search_text, true, true);
   scoped_connect(_search_text.signal_changed(), std::bind(&ConnectionsSection::on_search_text_changed, this));
@@ -999,40 +1003,48 @@ ConnectionsSection::ConnectionsSection(HomeScreen *owner)
       _search_box.set_size(width, 26);
   });
 
-  _add_button.title = "Yeni ba\xc4\x9f""lant\xc4\xb1""";
-  _add_button.description = "Yeni ba\xc4\x9f""lant\xc4\xb1""";
+  _add_button.title = _("New connection");
+  _add_button.description = _("New connection");
   _add_button.defaultHandler = [this]() {
+    if (_openingConnection) return;
     _owner->trigger_callback(HomeScreenAction::ActionNewConnection, base::any());
   };
 
-  _manage_button.title = "Ba\xc4\x9f""lant\xc4\xb1""lar\xc4\xb1"" y\xc3\xb6""net";
-  _manage_button.description = "Ba\xc4\x9f""lant\xc4\xb1""lar\xc4\xb1"" y\xc3\xb6""net";
+  _manage_button.title = _("Manage connections");
+  _manage_button.description = _("Manage connections");
   _manage_button.defaultHandler = [this]() {
+    if (_openingConnection) return;
     _owner->trigger_callback(HomeScreenAction::ActionManageConnections, base::any());
   };
 
-  _rescanButton.title = "Yerel sunucular\xc4\xb1"" tara";
-  _rescanButton.description = "Yerel sunucular\xc4\xb1"" tara";
+  _rescanButton.title = _("Scan local servers");
+  _rescanButton.description = _("Scan local servers");
   _rescanButton.defaultHandler = [this]() {
+    if (_openingConnection) return;
     _owner->trigger_callback(HomeScreenAction::RescanLocalServers, base::any());
   };
   _on_migration = false;
-  _connectButton.title = "Ba\xc4\x9f""lan";
-  _connectButton.description = "Se\xc3\xa7""ili ba\xc4\x9f""lant\xc4\xb1""y\xc4\xb1"" a\xc3\xa7""";
-  _connectButton.defaultHandler = [this]() { openSelectedConnection(); };
-  _editButton.title = "Profili d\xc3\xbc""zenle";
+  _connectButton.title = _("Connect");
+  _connectButton.description = _("Open selected connection");
+  _connectButton.defaultHandler = [this]() {
+    if (_openingConnection) request_connection_cancel();
+    else openSelectedConnection();
+  };
+  _editButton.title = _("Edit profile");
   _editButton.description = _editButton.title;
   _editButton.defaultHandler = [this]() {
+    if (_openingConnection) return;
     if (_selectedEntry && !_selectedEntry->connectionId.empty())
       _owner->handleContextMenu(_selectedEntry->connectionId, "edit_connection");
   };
-  _testButton.title = "Ba\xc4\x9f""lant\xc4\xb1""y\xc4\xb1"" s\xc4\xb1""na";
+  _testButton.title = _("Test connection");
   _testButton.description = _testButton.title;
   _testButton.defaultHandler = [this]() {
+    if (_openingConnection) return;
     if (_selectedEntry && !_selectedEntry->connectionId.empty())
       _owner->handleContextMenu(_selectedEntry->connectionId, "test_connection");
   };
-  _clearButton.title = "Aramay\xc4\xb1"" temizle";
+  _clearButton.title = _("Clear search");
   _clearButton.description = _clearButton.title;
   _clearButton.defaultHandler = [this]() { _search_text.set_value(""); };
 
@@ -1306,18 +1318,18 @@ void ConnectionsSection::repaint(cairo_t *cr, int areax, int areay, int areaw, i
   _add_button.bounds = base::Rect(get_width() - 144, 4, 132, 26);
   _manage_button.bounds = base::Rect(get_width() - 282, 4, 130, 26);
   homeCommandIcon(cr, HomeCommandIcon::Add, _add_button.bounds.left() + 6, 9, accent);
-  homeText(cr, "Yeni ba\xc4\x9f""lant\xc4\xb1""", _add_button.bounds.left() + 28, 22, 100, accent);
-  homeText(cr, "Profilleri y\xc3\xb6""net", _manage_button.bounds.left() + 8, 22, 120, accent);
+  homeText(cr, _("New connection"), _add_button.bounds.left() + 28, 22, 100, accent);
+  homeText(cr, _("Manage profiles"), _manage_button.bounds.left() + 8, 22, 120, accent);
   homeRule(cr, 12, 33, width, dark);
   const bool narrow = get_width() < 720;
   const bool showEnvironment = get_width() >= 960;
   const double usable = std::max(200.0, width - kConnectionActionWidth - (showEnvironment ? 80 : 0));
   const double profileWidth = usable * (narrow ? 0.48 : 0.30);
   const double userWidth = narrow ? 0 : usable * 0.28;
-  homeText(cr, _active_folder ? "Profil / " + _active_folder->title : "Profil", 20, 51, profileWidth - 16, ink, false, 13, true);
-  if (!narrow) homeText(cr, "Kullan\xc4\xb1""c\xc4\xb1""", 20 + profileWidth, 51, userWidth - 16, ink, false, 13, true);
-  homeText(cr, "Sunucu", 20 + profileWidth + userWidth, 51, usable - profileWidth - userWidth - 16, ink, false, 13, true);
-  if (showEnvironment) homeText(cr, "Ortam", 20 + usable, 51, 64, ink, false, 13, true);
+  homeText(cr, _active_folder ? _("Profile - ") + _active_folder->title : _("Profile"), 20, 51, profileWidth - 16, ink, false, 13, true);
+  if (!narrow) homeText(cr, _("User"), 20 + profileWidth, 51, userWidth - 16, ink, false, 13, true);
+  homeText(cr, _("Server"), 20 + profileWidth + userWidth, 51, usable - profileWidth - userWidth - 16, ink, false, 13, true);
+  if (showEnvironment) homeText(cr, _("Environment"), 20 + usable, 51, 64, ink, false, 13, true);
   homeRule(cr, 12, 57, width, dark);
   const auto &connections = displayed_connections();
   _connectButton.bounds = _editButton.bounds = _testButton.bounds = _clearButton.bounds = _rescanButton.bounds = base::Rect();
@@ -1337,7 +1349,7 @@ void ConnectionsSection::repaint(cairo_t *cr, int areax, int areay, int areaw, i
       cairo_line_to(cr, b.left(), b.bottom());
       cairo_close_path(cr);
       cairo_fill(cr);
-      homeText(cr, _openingConnection ? "A\xc3\xa7\xc4\xb1""l\xc4\xb1""yor\xe2\x80\xa6""" : "Ba\xc4\x9f""lan", b.left() + 8, b.top() + 18, b.width() - (_openingConnection ? 16 : 34),
+      homeText(cr, _openingConnection ? _("Cancel") : _("Connect"), b.left() + 8, b.top() + 18, b.width() - (_openingConnection ? 16 : 34),
                dark ? "#102629" : "#FFFFFF", false, 13, true, base::SelectedControlTextColor);
       if (!_openingConnection) {
         // Draw the Enter mark directly: Cairo's toy font API has no fallback
@@ -1371,7 +1383,7 @@ void ConnectionsSection::repaint(cairo_t *cr, int areax, int areay, int areaw, i
   }
   double detailTop = CONNECTIONS_TOP_PADDING + static_cast<double>(connections.size()) * rowHeight(get_width()) + 8;
   if (connections.empty()) {
-    homeText(cr, _filtered ? "Araman\xc4\xb1""zla e\xc5\x9f""le\xc5\x9f""en ba\xc4\x9f""lant\xc4\xb1"" bulunamad\xc4\xb1""." : "Hen\xc3\xbc""z kay\xc4\xb1""tl\xc4\xb1"" ba\xc4\x9f""lant\xc4\xb1""n\xc4\xb1""z yok.",
+    homeText(cr, _filtered ? _("No connections match your search.") : _("You have no saved connections yet."),
              20, 87, width - 16, ink);
     _clearButton.bounds = _filtered ? base::Rect(12, 99, 138, 26) : base::Rect();
     _rescanButton.bounds = base::Rect(_filtered ? 160 : 12, 99, 166, 26);
@@ -1390,14 +1402,14 @@ void ConnectionsSection::repaint(cairo_t *cr, int areax, int areay, int areaw, i
     homeText(cr, _editButton.title, _editButton.bounds.left() + 28, detailTop + 22, 94, accent);
     homeText(cr, _testButton.title, _testButton.bounds.left() + 28, detailTop + 22, 98, accent);
     if (!showEnvironment && get_width() >= 650)
-      homeText(cr, _selectedEntry->environment.empty() ? "Ortam \xe2\x80\x94""" : _selectedEntry->environment,
+      homeText(cr, _selectedEntry->environment.empty() ? _("Environment -") : _selectedEntry->environment,
                _testButton.bounds.right() + 12, detailTop + 22, width - _testButton.bounds.right() - 12, muted);
   }
   const double footer = std::max(detailTop + 42, static_cast<double>(get_height() - 22));
   homeRule(cr, 0, footer, get_width(), dark);
-  homeText(cr, std::to_string(connections.size()) + (_active_folder ? " \xc3\xb6\xc4\x9f""e" : " kay\xc4\xb1""tl\xc4\xb1"" profil"),
+  homeText(cr, std::to_string(connections.size()) + (_active_folder ? _(" items") : _(" saved profiles")),
            12, footer + 16, 220, muted, false, 12);
-  homeText(cr, "\xe2\x86\x91"" \xe2\x86\x93"" Se\xc3\xa7""    Enter Ba\xc4\x9f""lan", get_width() - 198, footer + 16, 186, muted, false, 12);
+  homeText(cr, _("\xe2\x86\x91 \xe2\x86\x93 Select    Enter Connect"), get_width() - 198, footer + 16, 186, muted, false, 12);
   mforms::DrawBox::repaint(cr, areax, areay, areaw, areah);
 }
 
@@ -1411,7 +1423,7 @@ base::Size ConnectionsSection::getLayoutSize(base::Size proposedSize) {
 
 //----------------------------------------------------------------------------------------------------------------------
 
-const char* ConnectionsSection::getTitle() { return "Ba\xc4\x9f""lant\xc4\xb1""lar"; }
+const char* ConnectionsSection::getTitle() { return _("Connections"); }
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -1420,6 +1432,7 @@ int ConnectionsSection::rowHeight(int width) const {
 }
 
 void ConnectionsSection::selectEntry(const std::shared_ptr<ConnectionEntry> &entry) {
+  if (_openingConnection) return;
   _selectedEntry = entry;
   _selectedConnectionId = entry ? entry->connectionId : "";
   set_needs_repaint();
@@ -1429,19 +1442,42 @@ void ConnectionsSection::openSelectedConnection() {
   if (!_selectedEntry || _openingConnection) return;
   auto entry = _selectedEntry;
   _openingConnection = true;
+  _connectionCancelRequested = false;
+  opening_section = this;
+  _search_text.set_enabled(false);
+  _connectButton.title = _("Cancel");
   set_needs_repaint();
   try {
     entry->activate();
     _openingConnection = false;
   } catch (...) {
     _openingConnection = false;
+    opening_section = nullptr;
+    _connectionCancel = {};
+    _search_text.set_enabled(true);
+    _connectButton.title = _("Connect");
     set_needs_repaint();
     throw;
   }
+  opening_section = nullptr;
+  _connectionCancel = {};
+  _search_text.set_enabled(true);
+  _connectButton.title = _("Connect");
   set_needs_repaint();
 }
 
+void ConnectionsSection::request_connection_cancel() {
+  if (_openingConnection && !_connectionCancelRequested && _connectionCancel) {
+    _connectionCancelRequested = _connectionCancel();
+    set_needs_repaint();
+  }
+}
+
 bool ConnectionsSection::keyPress(KeyCode code, ModifierKey modifiers) {
+  if (_openingConnection) {
+    if (code == KeyReturn || code == KeyEnter) request_connection_cancel();
+    return true;
+  }
   const auto &entries = displayed_connections();
   if ((code == KeyUp || code == KeyDown) && !entries.empty()) {
     const auto current = std::find(entries.begin(), entries.end(), _selectedEntry);
@@ -1723,6 +1759,10 @@ bool ConnectionsSection::mouse_double_click(mforms::MouseButton button, int x, i
 //--------------------------------------------------------------------------------------------------
 
 bool ConnectionsSection::mouse_click(mforms::MouseButton button, int x, int y) {
+  if (_openingConnection) {
+    if (button == MouseButtonLeft && _connectButton.bounds.contains(x, y)) request_connection_cancel();
+    return true;
+  }
   _hot_entry = entry_from_point(x, y);
   if (button == MouseButtonLeft) {
     for (auto action : {&_add_button, &_manage_button, &_connectButton, &_editButton, &_testButton, &_clearButton, &_rescanButton}) {
@@ -1764,6 +1804,7 @@ bool ConnectionsSection::mouse_leave() {
 //------------------------------------------------------------------------------------------------
 
 bool ConnectionsSection::mouse_move(mforms::MouseButton button, int x, int y) {
+  if (_openingConnection) return false;
   std::shared_ptr<ConnectionEntry> entry = entry_from_point(x, y);
   bool was_on_migration = _on_migration;
   _on_migration = entry && entry->getMigrationButtonBounds().contains(x, y);
@@ -1858,7 +1899,7 @@ void ConnectionsSection::menu_open() {
 //------------------------------------------------------------------------------------------------
 
 std::string ConnectionsSection::getAccessibilityTitle() {
-  return "Ba\xc4\x9f""lant\xc4\xb1""lar";
+  return _("Connections");
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1946,6 +1987,7 @@ bool ConnectionsSection::do_tile_drag(ssize_t index, int x, int y) {
 mforms::DragOperation ConnectionsSection::drag_over(View *sender, base::Point p,
                                                     mforms::DragOperation allowedOperations,
                                                     const std::vector<std::string> &formats) {
+  if (_openingConnection) return mforms::DragOperationNone;
   if (allowedOperations == mforms::DragOperationNone)
     return allowedOperations;
 
@@ -2015,6 +2057,7 @@ mforms::DragOperation ConnectionsSection::drag_over(View *sender, base::Point p,
 mforms::DragOperation ConnectionsSection::files_dropped(View *sender, base::Point p,
                                                         mforms::DragOperation allowedOperations,
                                                         const std::vector<std::string> &file_names) {
+  if (_openingConnection) return mforms::DragOperationNone;
   std::shared_ptr<ConnectionEntry> entry = entry_from_point(static_cast<int>(p.x), static_cast<int>(p.y));
   if (!entry)
     return mforms::DragOperationNone;

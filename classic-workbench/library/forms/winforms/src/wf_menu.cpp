@@ -25,6 +25,7 @@
 #include "wf_base.h"
 #include "wf_view.h"
 #include "wf_menu.h"
+#include "base/string_utilities.h"
 
 using namespace System::ComponentModel;
 using namespace System::Windows::Forms;
@@ -95,7 +96,7 @@ void MenuWrapper::remove_item(mforms::Menu *backend, int i) {
 
 int MenuWrapper::add_item(mforms::Menu *backend, const std::string &caption, const std::string &action) {
   MformsMenuStrip ^ menu = MenuWrapper::GetManagedObject<MformsMenuStrip>(backend);
-  ToolStripItem ^ item = menu->Items->Add(CppStringToNative(caption));
+  ToolStripItem ^ item = menu->Items->Add(CppStringToNative(base::translate_ui(caption)));
   item->Click += gcnew System::EventHandler(menu, &MformsMenuStrip::ItemClick);
   item->Tag = CppStringToNative(action);
 
@@ -116,7 +117,7 @@ int MenuWrapper::add_submenu(mforms::Menu *backend, const std::string &caption, 
   ContextMenuStrip ^ menu = MenuWrapper::GetManagedObject<ContextMenuStrip>(backend);
   ContextMenuStrip ^ child_menu = MenuWrapper::GetManagedObject<ContextMenuStrip>(submenu);
 
-  ToolStripMenuItem ^ item = gcnew ToolStripMenuItem(CppStringToNative(caption));
+  ToolStripMenuItem ^ item = gcnew ToolStripMenuItem(CppStringToNative(base::translate_ui(caption)));
   menu->Items->Add(item);
   item->DropDown = child_menu;
 

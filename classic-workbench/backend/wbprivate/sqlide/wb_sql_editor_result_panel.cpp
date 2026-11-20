@@ -50,12 +50,12 @@
 #include "mforms/box.h"
 #include "mforms/table.h"
 #include "mforms/tabview.h"
-#include "mforms/tabswitcher.h"
 #include "mforms/toolbar.h"
 #include "mforms/scrollpanel.h"
 #include "mforms/menubar.h"
 #include "mforms/gridview.h"
 #include "mforms/imagebox.h"
+#include "mforms/splitter.h"
 
 #include "mforms/button.h"
 #include "mforms/selector.h"
@@ -67,40 +67,62 @@ using namespace base;
 
 DEFAULT_LOG_DOMAIN("SqlResult")
 
+namespace {
+  class ResultViewUpdateScope {
+    bool &_flag;
+    bool _previous;
+  public:
+    explicit ResultViewUpdateScope(bool &flag) : _flag(flag), _previous(flag) { _flag = true; }
+    ~ResultViewUpdateScope() { _flag = _previous; }
+  };
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 
 class SqlEditorResult::DockingDelegate : public mforms::TabViewDockingPoint {
-  mforms::TabSwitcher *_switcher;
-
+  SqlEditorResult *_owner;
 public:
-  DockingDelegate(mforms::TabView *tabview, mforms::TabSwitcher *switcher, const std::string &name)
-    : mforms::TabViewDockingPoint(tabview, name), _switcher(switcher) {
-  }
-
-  virtual void undock_view(AppView *view) {
-    for (int i = 0; i < view_count(); i++)
-      if (view_at_index(i) == view) {
-        _switcher->remove_item(i);
-        break;
-      }
-
-    mforms::TabViewDockingPoint::undock_view(view);
+  DockingDelegate(mforms::TabView *tabview, SqlEditorResult *owner, const std::string &name)
+    : mforms::TabViewDockingPoint(tabview, name), _owner(owner) {
   }
 
   virtual void dock_view(AppView *view, const std::string &icon, int arg2) {
+    ResultViewUpdateScope updating(_owner->_updating_views);
     mforms::TabViewDockingPoint::dock_view(view, icon, arg2);
-    _switcher->add_item(view->get_title(), "", icon, "");
+    update_caption(view, view->get_title());
+  }
+
+  virtual void undock_view(AppView *view) {
+    ResultViewUpdateScope updating(_owner->_updating_views);
+    mforms::TabViewDockingPoint::undock_view(view);
+  }
+
+  virtual void set_view_title(AppView *view, const std::string &title) {
+    update_caption(view, title);
+  }
+
+private:
+  void update_caption(AppView *view, const std::string &title) {
+    std::string caption = title;
+    const auto &identifier = view->identifier();
+    if (identifier == "result_grid") caption = _("Tablo");
+    else if (identifier == "form_result") caption = _("Form");
+    else if (identifier == "column_info") caption = _("Sütun türleri");
+    else if (identifier == "query_stats") caption = _("Sorgu ölçümleri");
+    else if (identifier == "execution_plan") caption = _("Sorgu planı");
+    else if (identifier == "spatial_result_view") caption = _("Mekânsal");
+    std::replace(caption.begin(), caption.end(), '\n', ' ');
+    mforms::TabViewDockingPoint::set_view_title(view, caption);
   }
 };
 
 //----------------------------------------------------------------------------------------------------------------------
 
 SqlEditorResult::SqlEditorResult(SqlEditorPanel *owner)
-  : mforms::AppView(true, "Query Result", "QueryResult", false),
+  : mforms::AppView(false, "Query Result", "QueryResult", false),
     _owner(owner),
-    _tabview(mforms::TabViewTabless),
-    _switcher(mforms::VerticalIconSwitcher),
-    _tabdock_delegate(new DockingDelegate(&_tabview, &_switcher, std::string("SqlResultPanel"))),
+    _tabview(mforms::TabViewClassic),
+    _tabdock_delegate(new DockingDelegate(&_tabview, this, std::string("SqlResultPanel"))),
     _tabdock(_tabdock_delegate, true),
     _pinned(false) {
 
@@ -122,13 +144,7 @@ SqlEditorResult::SqlEditorResult(SqlEditorPanel *owner)
 
   add(&_tabview, true, true);
 
-  _switcher.set_name("Resultset View Switcher");
-  _switcher.attach_to_tabview(&_tabview);
-  _switcher.set_collapsed(bec::GRTManager::get()->get_app_option_int("Recordset:SwitcherCollapsed", 0) != 0);
-
-  add(&_switcher, false, true);
-  _switcher.signal_changed()->connect(std::bind(&SqlEditorResult::switch_tab, this));
-  _switcher.signal_collapse_changed()->connect(std::bind(&SqlEditorResult::switcher_collapsed, this));
+  _tabview.set_name("Sonuç görünümü");
 
   // put a placeholder for the resultset, which will be replaced when a resultset is actually available
   _resultset_placeholder = mforms::manage(new mforms::AppView(false, "Result Grid Placeholder", "ResultGridPlaceholder", false));
@@ -147,6 +163,9 @@ SqlEditorResult::SqlEditorResult(SqlEditorPanel *owner)
 
   NotificationCenter::get()->add_observer(this, "GNColorsChanged");
   updateColors();
+  // Subscribe after the initial placeholder is docked. Programmatic replacement
+  // and closure are guarded so only a complete view can start lazy creation.
+  _view_changed_connection = _tabview.signal_tab_changed()->connect(std::bind(&SqlEditorResult::switch_tab, this));
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -173,6 +192,8 @@ void SqlEditorResult::updateColors() {
     _query_stats_panel->set_back_color(background);
   if (_form_result_view != nullptr)
     _form_result_view->updateColors();
+  if (_inline_form_view != nullptr)
+    _inline_form_view->updateColors();
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -239,6 +260,7 @@ void SqlEditorResult::update_selection_for_menu_extra(mforms::ContextMenu *menu,
 //----------------------------------------------------------------------------------------------------------------------
 
 void SqlEditorResult::set_recordset(Recordset::Ref rset) {
+  ResultViewUpdateScope updating(_updating_views);
   if (_resultset_placeholder) {
     _tabdock_delegate->undock_view(_resultset_placeholder);
     _resultset_placeholder = NULL;
@@ -271,12 +293,12 @@ void SqlEditorResult::set_recordset(Recordset::Ref rset) {
     ->connect(std::bind(&SqlEditorResult::reset_sorting, this));
 
   _grid_header_menu = new mforms::ContextMenu();
-  _grid_header_menu->add_item_with_title("Copy Field Name", std::bind(&SqlEditorResult::copy_column_name, this), "Copy Field Name", "");
-  _grid_header_menu->add_item_with_title("Copy All Field Names",
+  _grid_header_menu->add_item_with_title(_("Copy Field Name"), std::bind(&SqlEditorResult::copy_column_name, this), "Copy Field Name", "");
+  _grid_header_menu->add_item_with_title(_("Copy All Field Names"),
                                          std::bind(&SqlEditorResult::copy_all_column_names, this), "Copy All Field Names", "");
   _grid_header_menu->add_separator();
-  _grid_header_menu->add_item_with_title("Reset Sorting", std::bind(&SqlEditorResult::reset_sorting, this), "Reset Sorting", "");
-  _grid_header_menu->add_item_with_title("Reset Column Widths", std::bind(&SqlEditorResult::reset_column_widths, this), "Reset Column Widths", "");
+  _grid_header_menu->add_item_with_title(_("Reset Sorting"), std::bind(&SqlEditorResult::reset_sorting, this), "Reset Sorting", "");
+  _grid_header_menu->add_item_with_title(_("Reset Column Widths"), std::bind(&SqlEditorResult::reset_column_widths, this), "Reset Column Widths", "");
 
   
   std::string fontDescription = bec::GRTManager::get()->get_app_option_string("workbench.general.Resultset:Font");
@@ -284,6 +306,11 @@ void SqlEditorResult::set_recordset(Recordset::Ref rset) {
   float size = 0;
   bool bold, italic;
   base::parse_font_description(fontDescription, font, size, bold, italic);
+  if ((font == "Tahoma" || font == "Microsoft Sans Serif") && size <= 8.25f) {
+    fontDescription = "Segoe UI 9.75";
+    font = "Segoe UI";
+    size = 9.75f;
+  }
   rset->setFont(font, size);
   mforms::GridView *grid = mforms::manage(mforms::GridView::create(rset));
   {
@@ -294,7 +321,7 @@ void SqlEditorResult::set_recordset(Recordset::Ref rset) {
   dock_result_grid(grid);
 
   Recordset_cdbc_storage::Ref storage(std::dynamic_pointer_cast<Recordset_cdbc_storage>(rset->data_storage()));
-  rset->caption(strfmt("%s %i", (storage->table_name().empty() ? _("Result") : storage->table_name().c_str()),
+  rset->caption(strfmt("%s %i", (storage->table_name().empty() ? "Sonuç" : storage->table_name().c_str()),
                        ++_owner->_rs_sequence));
 
   bec::UIForm::scoped_connect(rset->get_context_menu()->signal_will_show(),
@@ -391,6 +418,7 @@ void SqlEditorResult::set_title(const std::string &title) {
 //----------------------------------------------------------------------------------------------------------------------
 
 bool SqlEditorResult::can_close() {
+  ResultViewUpdateScope updating(_updating_views);
   if (Recordset::Ref rs = recordset())
     if (!rs->can_close(true))
       return false;
@@ -404,29 +432,66 @@ bool SqlEditorResult::can_close() {
 //----------------------------------------------------------------------------------------------------------------------
 
 void SqlEditorResult::close() { // called by DockingPoint::close_view()
-  if (Recordset::Ref rs = recordset())
-    rs->close();
-  _tabdock.close_all_views();
+  {
+    ResultViewUpdateScope updating(_updating_views);
+    if (Recordset::Ref rs = recordset())
+      rs->close();
+    _tabdock.close_all_views();
+  }
 
+  // AppView::close may release this managed view. Finish the update guard first.
   mforms::AppView::close();
 }
 
 //----------------------------------------------------------------------------------------------------------------------
 
+void SqlEditorResult::show_execution_plan() {
+  {
+    ResultViewUpdateScope updating(_updating_views);
+    if (_resultset_placeholder && _rset.expired()) {
+      mforms::AppView *placeholder = _resultset_placeholder;
+      _resultset_placeholder = nullptr;
+      _tabdock.undock_view(placeholder);
+    }
+
+    mforms::AppView *plan = nullptr;
+    for (int i = 0; i < _tabdock_delegate->view_count(); ++i) {
+      mforms::AppView *view = _tabdock_delegate->view_at_index(i);
+      if (view && view->identifier() == "execution_plan") {
+        plan = view;
+        break;
+      }
+    }
+    if (!plan) {
+      create_execution_plan_placeholder();
+      plan = _execution_plan_placeholder;
+    }
+    _tabdock.select_view(plan);
+  }
+  // Use the same error/retry surface as a result's plan tab. Selecting the new
+  // tab above cannot start a second request while the placeholder is docked.
+  switch_tab();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
 void SqlEditorResult::switch_tab() {
+  if (_updating_views)
+    return;
+  ResultViewUpdateScope updating(_updating_views);
   mforms::AppView *tab = _tabdock.selected_view();
 
   if (tab) {
     if (tab->identifier() == "column_info" && !_column_info_created) {
-      _column_info_created = true;
       create_column_info_panel();
+      _column_info_created = true;
     } else if (tab->identifier() == "query_stats" && !_query_stats_created) {
-      _query_stats_created = true;
       create_query_stats_panel();
+      _query_stats_created = true;
     } else if (tab->identifier() == "form_result") {
       if (!_form_view_created) {
-        _form_view_created = true;
         _form_result_view->init_for_resultset(_rset, _owner->owner());
+        _form_view_created = true;
       }
       _form_result_view->display_record();
     } else if (tab->identifier() == "result_grid") {
@@ -437,63 +502,40 @@ void SqlEditorResult::switch_tab() {
       }
     } else if (tab->identifier() == "execution_plan") {
       if (_execution_plan_placeholder) {
-        _tabdock_delegate->undock_view(_execution_plan_placeholder);
-        _execution_plan_placeholder = NULL;
-
-        // if the explain tab is just a placeholder, execute visual explain, which will replace the tab when docking
+        // Keep the placeholder until a complete plan is docked. A denied or
+        // unsupported EXPLAIN must leave the tab available for retry.
         grt::BaseListRef args(true);
         args.ginsert(_owner->grtobj());
         args.ginsert(_grtobj);
         try {
           // run the visual explain plugin, so it will fill the result panel
           grt::GRT::get()->call_module_function("SQLIDEQueryAnalysis", "visualExplain", args);
+          for (int i = 0; i < _tabdock_delegate->view_count(); ++i) {
+            mforms::AppView *view = _tabdock_delegate->view_at_index(i);
+            if (view && view != _execution_plan_placeholder && view->identifier() == "execution_plan") {
+              _tabdock_delegate->undock_view(_execution_plan_placeholder);
+              _execution_plan_placeholder = nullptr;
+              _plan_status = nullptr;
+              _tabdock.select_view(view);
+              break;
+            }
+          }
         } catch (std::exception &exc) {
           logError("Error executing visual explain: %s\n", exc.what());
-          mforms::Utilities::show_error(
-            "Execution Plan", "An internal error occurred while building the execution plan, please file a bug report.",
-            "OK");
+          if (_plan_status)
+            _plan_status->set_text(std::string("Sorgu planı alınamadı. Yetkiyi ve bağlantıyı kontrol edip yeniden deneyin.\n\n") + exc.what());
         }
       }
     } else if (tab->identifier() == "spatial_result_view") {
       if (!_spatial_view_initialized) {
-        _spatial_view_initialized = true;
         _spatial_result_view->refresh_layers();
+        _spatial_view_initialized = true;
       }
       _spatial_result_view->activate();
     }
   }
 
   updateColors();
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-void SqlEditorResult::add_switch_toggle_toolbar_item(mforms::ToolBar *tbar) {
-  _collapse_toggled_sig.disconnect();
-  mforms::App *app = mforms::App::get();
-  tbar->add_item(mforms::manage(new mforms::ToolBarItem(mforms::ExpanderItem)));
-  mforms::ToolBarItem *item = mforms::manage(new mforms::ToolBarItem(mforms::ToggleItem));
-  item->set_name("Side Toggle");
-  item->setInternalName("sidetoggle");
-  item->set_icon(app->get_resource_path("output_type-toggle-on.png"));
-  item->set_alt_icon(app->get_resource_path("output_type-toggle-off.png"));
-  item->signal_activated()->connect(std::bind(&SqlEditorResult::toggle_switcher_collapsed, this));
-  item->set_checked(!_switcher.get_collapsed());
-  tbar->add_item(item);
-  _collapse_toggled_sig =
-    _collapse_toggled.connect(std::bind(&mforms::ToolBarItem::set_checked, item, std::placeholders::_1));
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-void SqlEditorResult::switcher_collapsed() {
-  bool state = _switcher.get_collapsed();
-  for (std::list<mforms::ToolBar *>::const_iterator it = _toolbars.begin(); it != _toolbars.end(); ++it) {
-    (*it)->find_item("sidetoggle")->set_checked(state);
-  }
-  relayout();
-
-  bec::GRTManager::get()->set_app_option("Recordset:SwitcherCollapsed", grt::IntegerRef(state ? 1 : 0));
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -544,14 +586,6 @@ void SqlEditorResult::show_import_recordset() {
   } catch (const std::exception &exc) {
     mforms::Utilities::show_error("Error importing recordset", exc.what(), "OK");
   }
-}
-
-//----------------------------------------------------------------------------------------------------------------------
-
-void SqlEditorResult::toggle_switcher_collapsed() {
-  bool flag = !_switcher.get_collapsed();
-  _switcher.set_collapsed(flag);
-  _collapse_toggled(flag);
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -677,12 +711,36 @@ void SqlEditorResult::dock_result_grid(mforms::GridView *view) {
     mforms::ToolBar *tbar = _rset.lock()->get_toolbar();
     tbar->set_name("Resultset Toolbar");
     tbar->setInternalName("resultset-toolbar");
-    _toolbars.push_back(tbar);
 
-    add_switch_toggle_toolbar_item(tbar);
 
+    auto rset = _rset.lock();
+    auto storage = std::dynamic_pointer_cast<Recordset_cdbc_storage>(rset->data_storage());
+    if (storage && !storage->table_name().empty()) {
+      _data_context = mforms::manage(new mforms::Box(true));
+      _data_context->set_padding(8);
+      _data_context->set_spacing(12);
+      auto table_icon = mforms::manage(new mforms::ImageBox());
+      table_icon->set_image(mforms::App::get()->get_resource_path("sdp_table.png"));
+      _data_context->add(table_icon, false, false);
+      auto object_name = mforms::manage(new mforms::Label(storage->schema_name() + " - " + storage->table_name()));
+      object_name->set_style(mforms::BoldStyle);
+      _data_context->add(object_name, true, true);
+      _data_row_count = mforms::manage(new mforms::Label());
+      _data_context->add(_data_row_count, false, true);
+      box->add(_data_context, false, true);
+      _data_context->show(false);
+      _data_splitter = mforms::manage(new mforms::Splitter(true));
+      _data_splitter->set_name("Data and cell details");
+      _data_splitter->add(view, 260, false);
+      _inline_form_view = mforms::manage(new ResultFormView(!rset->is_readonly(), true));
+      _inline_form_view->set_name("Cell details");
+      _inline_form_view->set_min_size(320, -1);
+      _data_splitter->add(_inline_form_view, 280, true);
+      _data_splitter->set_expanded(false, false);
+      box->add(_data_splitter, true, true);
+    } else
+      box->add(view, true, true);
     box->add(tbar, false, true);
-    box->add(view, true, true);
 
     box->set_title("Result\nGrid");
     box->set_identifier("result_grid");
@@ -693,7 +751,6 @@ void SqlEditorResult::dock_result_grid(mforms::GridView *view) {
     if (Recordset::Ref rset = _rset.lock())
       editable = !rset->is_readonly();
     _form_result_view = mforms::manage(new ResultFormView(editable));
-    add_switch_toggle_toolbar_item(_form_result_view->get_toolbar());
     _form_result_view->set_title("Form\nEditor");
     _form_result_view->set_identifier("form_result");
     _tabdock.dock_view(_form_result_view, "output_type-formeditor.png");
@@ -730,12 +787,47 @@ void SqlEditorResult::dock_result_grid(mforms::GridView *view) {
     }
   }
   if (!has_explain_tab) {
-    _execution_plan_placeholder = mforms::manage(new mforms::AppView(false, "Execution Plan", "ExecutionPlan", false));
-    _execution_plan_placeholder->set_title("Execution\nPlan");
-    _execution_plan_placeholder->set_identifier("execution_plan");
-    _tabdock.dock_view(_execution_plan_placeholder, "output_type-executionplan.png");
+    create_execution_plan_placeholder();
   }
-  _switcher.set_selected(0);
+  _tabview.set_active_tab(0);
+}
+
+void SqlEditorResult::show_data_details(bool enabled) {
+  if (!_data_splitter || !_inline_form_view)
+    return;
+  if (enabled && !_inline_form_created) {
+    _inline_form_view->init_for_resultset(_rset, _owner->owner());
+    _inline_form_created = true;
+  }
+  _data_splitter->set_expanded(false, enabled);
+  _data_context->show(enabled);
+  if (enabled) {
+    if (auto rset = _rset.lock())
+      _data_row_count->set_text(base::strfmt(_("%zi rows - %s"), rset->row_count(),
+          rset->is_readonly() ? _("Read only") : _("Editable")));
+    _data_splitter->set_divider_position(std::max(260, _data_splitter->get_width() - 340));
+    _inline_form_view->display_record();
+  }
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+void SqlEditorResult::create_execution_plan_placeholder() {
+  if (_execution_plan_placeholder)
+    return;
+  _execution_plan_placeholder = mforms::manage(new mforms::AppView(false, "Execution Plan", "ExecutionPlan", false));
+  _execution_plan_placeholder->set_title("Sorgu planı");
+  _execution_plan_placeholder->set_identifier("execution_plan");
+  _execution_plan_placeholder->set_padding(12);
+  _execution_plan_placeholder->set_spacing(8);
+  _plan_status = mforms::manage(new mforms::Label("Seçili sorgunun EXPLAIN planı alınır."));
+  _plan_status->set_wrap_text(true);
+  _execution_plan_placeholder->add(_plan_status, false, true);
+  mforms::Button *retry = mforms::manage(new mforms::Button());
+  retry->set_text(_("Planı yeniden al"));
+  retry->signal_clicked()->connect(std::bind(&SqlEditorResult::switch_tab, this));
+  _execution_plan_placeholder->add(retry, false, false);
+  _tabdock.dock_view(_execution_plan_placeholder, "output_type-executionplan.png");
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -762,7 +854,6 @@ void SqlEditorResult::create_spatial_view_panel_if_needed() {
         return;
       }
       _spatial_result_view = mforms::manage(new SpatialDataView(this));
-      add_switch_toggle_toolbar_item(_spatial_result_view->get_toolbar());
       mforms::AppView *box = mforms::manage(new mforms::AppView(false, "Spatial View", "SpatialView", false));
       box->set_title("Spatial\nView");
       box->set_identifier("spatial_result_view");
@@ -792,6 +883,7 @@ static std::string format_ps_time(std::int64_t t) {
 static mforms::Label *bold_label(const std::string text) {
   mforms::Label *l = mforms::manage(new mforms::Label(text));
   l->set_style(mforms::BoldStyle);
+  l->set_wrap_text(true);
   return l;
 }
 
@@ -834,13 +926,11 @@ void SqlEditorResult::create_column_info_panel() {
 
     mforms::Box *box = _column_info_box;
     mforms::ToolBar *tbar = mforms::manage(new mforms::ToolBar(mforms::SecondaryToolBar));
-    _toolbars.push_back(tbar);
     mforms::ToolBarItem *item;
     item = mforms::manage(new mforms::ToolBarItem(mforms::TitleItem));
-    item->set_text("Field Types");
+    item->set_text(_("Sütun türleri"));
     tbar->add_item(item);
 
-    add_switch_toggle_toolbar_item(tbar);
 
     box->add(tbar, false, true);
 
@@ -849,21 +939,21 @@ void SqlEditorResult::create_column_info_panel() {
         mforms::manage(new mforms::TreeView(mforms::TreeFlatList | mforms::TreeAltRowColors | mforms::TreeShowRowLines |
                                             mforms::TreeShowColumnLines | mforms::TreeNoBorder));
       tree->add_column(mforms::IntegerColumnType, "#", 50);
-      tree->add_column(mforms::StringColumnType, "Field", 130);
-      tree->add_column(mforms::StringColumnType, "Schema", 130);
-      tree->add_column(mforms::StringColumnType, "Table", 130);
-      tree->add_column(mforms::StringColumnType, "Type", 150);
-      tree->add_column(mforms::StringColumnType, "Character Set", 100);
-      tree->add_column(mforms::IntegerColumnType, "Display Size", 80);
-      tree->add_column(mforms::IntegerColumnType, "Precision", 80);
-      tree->add_column(mforms::IntegerColumnType, "Scale", 80);
+      tree->add_column(mforms::StringColumnType, "Sütun", 130);
+      tree->add_column(mforms::StringColumnType, "Şema", 130);
+      tree->add_column(mforms::StringColumnType, "Tablo", 130);
+      tree->add_column(mforms::StringColumnType, "Tür", 150);
+      tree->add_column(mforms::StringColumnType, "Karakter seti", 100);
+      tree->add_column(mforms::IntegerColumnType, "Görüntü boyutu", 100);
+      tree->add_column(mforms::IntegerColumnType, "Hassasiyet", 90);
+      tree->add_column(mforms::IntegerColumnType, "Ölçek", 80);
       tree->end_columns();
 
       tree->set_selection_mode(mforms::TreeSelectMultiple);
 
       _column_info_menu = new mforms::ContextMenu();
-      _column_info_menu->add_item_with_title("Copy", std::bind(&SqlEditorResult::copy_column_info, this, tree), "Copy", "");
-      _column_info_menu->add_item_with_title("Copy Name",
+      _column_info_menu->add_item_with_title(_("Kopyala"), std::bind(&SqlEditorResult::copy_column_info, this, tree), "Copy", "");
+      _column_info_menu->add_item_with_title(_("Sütun adını kopyala"),
                                              std::bind(&SqlEditorResult::copy_column_info_name, this, tree), "Copy Name", "");
       tree->set_context_menu(_column_info_menu);
 
@@ -883,6 +973,15 @@ void SqlEditorResult::create_column_info_panel() {
         node->set_int(8, iter->scale);
       }
       box->add(tree, true, true);
+    } else {
+      mforms::Label *status = mforms::manage(new mforms::Label(
+        "Bu sonuç için ayrıntılı sütun bilgisi toplanmadı. Tercihler > SQL düzenleyici bölümünde "
+        "sütun metadata bilgisini etkinleştirip sorguyu yeniden çalıştırın."));
+      status->set_wrap_text(true);
+      mforms::Box *empty_state = mforms::manage(new mforms::Box(false));
+      empty_state->set_padding(12);
+      empty_state->add(status, false, true);
+      box->add(empty_state, false, true);
     }
   }
 }
@@ -1034,32 +1133,35 @@ static std::string render_waits(std::vector<SqlEditorForm::PSWait> &waits) {
 void SqlEditorResult::create_query_stats_panel() {
   RETURN_IF_FAIL_TO_RETAIN_WEAK_PTR(Recordset, _rset, rs) {
     SqlEditorForm::RecordsetData *rsdata = dynamic_cast<SqlEditorForm::RecordsetData *>(rs->client_data());
+    if (!rsdata) {
+      _query_stats_box->add(mforms::manage(new mforms::Label("Bu sonuç için sorgu ölçümü bulunmuyor.")), false, true);
+      return;
+    }
     std::string info;
 
     _query_stats_panel = mforms::manage(new mforms::ScrollPanel());
     mforms::Table *table = mforms::manage(new mforms::Table());
-    table->set_padding(20);
+    table->set_padding(12);
     table->set_row_count(6);
     table->set_column_count(2);
     table->set_row_spacing(4);
 
     mforms::ToolBar *tbar = mforms::manage(new mforms::ToolBar(mforms::SecondaryToolBar));
-    _toolbars.push_back(tbar);
     mforms::ToolBarItem *item;
     item = mforms::manage(new mforms::ToolBarItem(mforms::TitleItem));
-    item->set_text("Query Statistics");
+    item->set_text(_("Sorgu ölçümleri"));
     tbar->add_item(item);
 
-    add_switch_toggle_toolbar_item(tbar);
 
     _query_stats_box->add(tbar, false, true);
 
     mforms::Box *box = mforms::manage(new mforms::Box(false));
-    box->set_padding(8);
+    box->set_padding(0);
+    box->set_spacing(6);
     // show basic stats
-    box->add(bold_label("Timing (as measured at client side):"), false, true);
+    box->add(bold_label("İstemci ölçümü"), false, true);
     info.clear();
-    info = strfmt("Execution time: %s\n", format_ps_time(std::int64_t(rsdata->duration * 1000000000000.0)).c_str());
+    info = strfmt("Sorgu süresi - %s\n", format_ps_time(std::int64_t(rsdata->duration * 1000000000000.0)).c_str());
     box->add(mforms::manage(new mforms::Label(info)), false, true);
 
     // if we're in a server with PS, show some extra PS goodies
@@ -1073,8 +1175,8 @@ void SqlEditorResult::create_query_stats_panel() {
       if (!rsdata->ps_stat_error.empty())
         box->add(bold_label(rsdata->ps_stat_error), false, true);
       else
-        box->add(bold_label("For more details, enable \"statement instrumentation\" for the Performance Schema and "
-                            "\"Query -> Collect Performance Schema Stats\"."),
+        box->add(bold_label("Sunucu ayrıntıları bu çalıştırmada toplanmadı. Performance Schema ölçümlerini ve "
+                            "Sorgu menüsündeki ölçüm toplama seçeneğini etkinleştirip sorguyu yeniden çalıştırın."),
                  false, true);
 
       table->add(box, 0, 1, 1, 2, mforms::HFillFlag | mforms::HExpandFlag | mforms::VFillFlag);

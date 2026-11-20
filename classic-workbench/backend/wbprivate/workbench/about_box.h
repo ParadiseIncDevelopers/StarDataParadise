@@ -27,28 +27,30 @@
 
 #include "wb_backend_public_interface.h"
 
-#include "mforms/popup.h"
+#include "mforms/form.h"
+#include "mforms/box.h"
+#include "mforms/tabview.h"
+#include "mforms/label.h"
+#include "mforms/textbox.h"
+#include "mforms/button.h"
+#include "mforms/imagebox.h"
 
 namespace wb {
   /**
-   * A simple about box popup.
+   * Local product, license and diagnostic information.
    */
-  class MYSQLWBBACKEND_PUBLIC_FUNC AboutBox : public mforms::Popup {
+  class MYSQLWBBACKEND_PUBLIC_FUNC AboutBox : public mforms::Form {
   private:
-    cairo_surface_t *_back_image;
-    cairo_surface_t *_brand_image;
-    float _scale_factor;
-    std::string _edition;
-
-  protected:
-    void repaint(cairo_t *cr, int x, int y, int w, int h);
-    bool mouse_up(mforms::MouseButton button, int x, int y);
-
-    static void closed();
+    mforms::Box _content, _heading, _title_box, _actions;
+    mforms::TabView _tabs;
+    mforms::ImageBox _logo;
+    mforms::Label _title, _version;
+    mforms::TextBox _product, _licenses, _diagnostics;
+    mforms::Button _copy, _logs, _license_folder, _close;
+    std::string _diagnostic_text;
 
   public:
     AboutBox(const std::string &edition);
-    ~AboutBox();
 
     static void show_about(const std::string &edition);
   };

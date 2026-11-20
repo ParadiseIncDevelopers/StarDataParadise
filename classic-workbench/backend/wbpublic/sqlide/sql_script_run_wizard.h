@@ -44,12 +44,20 @@ protected:
   virtual void enter(bool advancing);
   virtual bool advance();
   virtual std::string next_button_caption();
+  virtual std::string extra_button_caption();
+  virtual void extra_clicked();
 
   void option_changed();
 
 private:
   mforms::Box _box;
+  mforms::Box _preview_box;
+  mforms::Box _summary_box;
+  mforms::Label _operation_heading;
+  mforms::Label _target_heading;
   mforms::Label _page_heading;
+  mforms::Label _caution;
+  void set_script_text(const std::string &text);
   mforms::CodeEditor *_sql_editor;
   mforms::Selector *_algorithm_selector;
   mforms::Selector *_lock_selector;

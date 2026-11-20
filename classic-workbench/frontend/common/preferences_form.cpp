@@ -115,7 +115,7 @@ const std::string INVALID_VERSION_TOOLTIP =
 
 static mforms::Label *new_label(const std::string &text, const std::string &name, bool right_align = false, bool help = false) {
   mforms::Label *label = mforms::manage(new mforms::Label());
-  label->set_text(text);
+  label->set_text(_(text));
   label->set_name(name);
   if (right_align)
     label->set_text_align(mforms::MiddleRight);
@@ -139,12 +139,12 @@ class OptionTable : public mforms::Panel {
 public:
   OptionTable(PreferencesForm *owner, const std::string &title, bool help_column)
     : mforms::Panel(mforms::TitledBoxPanel), _owner(owner), _rows(0), _help_column(help_column) {
-    set_title(title);
+    set_title(_(title));
 
     add(&_table);
 
     _table.set_padding(8);
-    _table.set_row_spacing(12);
+    _table.set_row_spacing(6);
     _table.set_column_spacing(8);
 
     _table.set_column_count(_help_column ? 3 : 2);
@@ -174,7 +174,7 @@ public:
     _table.set_row_count(++_rows);
 
     mforms::TextEntry *entry = _owner->new_entry_option(option, false);
-    entry->set_tooltip(tooltip);
+    entry->set_tooltip(_(tooltip));
     entry->set_size(50, -1);
 
 #ifdef _MSC_VER
@@ -201,9 +201,9 @@ public:
     _table.set_row_count(++_rows);
 
     mforms::CheckBox *cb = _owner->new_checkbox_option(option);
-    cb->set_text(caption);
+    cb->set_text(_(caption));
     cb->set_name(name);
-    cb->set_tooltip(tooltip);
+    cb->set_tooltip(_(tooltip));
 
     _table.add(cb, 0, 3, _rows - 1, _rows, mforms::HFillFlag);
 
@@ -229,6 +229,7 @@ static void force_checkbox_on_toggle(mforms::CheckBox *value, mforms::CheckBox *
 PreferencesForm::PreferencesForm(const workbench_physical_ModelRef &model)
   : Form(NULL, mforms::FormResizable),
     _switcher(mforms::TreeNoHeader | mforms::TreeSidebar),
+    _sidebar(false),
     _hbox(true),
     _top_box(false),
     _bottom_box(true),
@@ -241,20 +242,26 @@ PreferencesForm::PreferencesForm(const workbench_physical_ModelRef &model)
   setInternalName("preferences");
 
   if (!model.is_valid())
-    set_title(_("Workbench Preferences"));
+    set_title("StarDataParadise Classic - Tercihler");
   else
-    set_title(_("Model Options"));
+    set_title("Şema modeli seçenekleri");
 
 #ifdef _MSC_VER
   set_back_color(base::Color::getApplicationColorAsString(base::AppColorMainBackground, false));
 #endif
 
-  _switcher.add_column(mforms::StringColumnType, "", 150);
+  _switcher.add_column(mforms::StringColumnType, "", 200);
   _switcher.end_columns();
   _switcher.signal_changed()->connect(std::bind(&PreferencesForm::switch_page, this));
 
-  _switcher.set_size(150, -1);
-  _hbox.add(&_switcher, false, true);
+  _sidebar.set_size(200, -1);
+  _sidebar.set_padding(8);
+  _sidebar.set_spacing(8);
+  _category_search.set_placeholder_text("Kategori ara");
+  _category_search.signal_changed()->connect(std::bind(&PreferencesForm::filter_pages, this));
+  _sidebar.add(&_category_search, false, true);
+  _sidebar.add(&_switcher, true, true);
+  _hbox.add(&_sidebar, false, true);
 
   _top_box.set_padding(12);
   _top_box.set_spacing(8);
@@ -270,10 +277,10 @@ PreferencesForm::PreferencesForm(const workbench_physical_ModelRef &model)
   scoped_connect(_ok_button.signal_clicked(), std::bind(&PreferencesForm::ok_clicked, this));
   scoped_connect(_cancel_button.signal_clicked(), std::bind(&PreferencesForm::cancel_clicked, this));
 
-  _cancel_button.set_text(_("Cancel"));
+  _cancel_button.set_text("Vazgeç");
   _cancel_button.enable_internal_padding(true);
 
-  _ok_button.set_text(_("OK"));
+  _ok_button.set_text("Uygula ve kapat");
   _ok_button.enable_internal_padding(true);
 
   mforms::Utilities::add_end_ok_cancel_buttons(&_button_box, &_ok_button, &_cancel_button);
@@ -293,23 +300,23 @@ PreferencesForm::PreferencesForm(const workbench_physical_ModelRef &model)
   mforms::TreeNodeRef node;
 
   if (!_model.is_valid()) {
-    add_page(NULL, _("General Editors"), create_general_editor_page());
+    add_page(NULL, _("General"), create_general_editor_page());
 
-    node = add_page(NULL, _("SQL Editor"), create_sqlide_page());
-    add_page(node, _("Query Editor"), create_editor_page());
-    add_page(node, _("Object Editors"), create_object_editor_page());
-    add_page(node, _("SQL Execution"), create_query_page());
+    node = add_page(NULL, _("SQL editor"), create_sqlide_page());
+    add_page(node, _("Query editor"), create_editor_page());
+    add_page(node, _("Object editors"), create_object_editor_page());
+    add_page(node, _("Query execution"), create_query_page());
     node->expand();
 
-    add_page(NULL, _("Administration"), create_admin_page());
+    add_page(NULL, _("Management"), create_admin_page());
   }
 
   if (_model.is_valid())
     node = NULL;
   else
-    node = add_page(NULL, _("Modeling"), create_model_page());
+    node = add_page(NULL, _("Schema modeling"), create_model_page());
   add_page(node, _("Defaults"), create_model_defaults_page());
-  add_page(node, _("MySQL"), create_mysql_page());
+  add_page(node, _("Database"), create_mysql_page());
   add_page(node, _("Diagram"), create_diagram_page());
   if (!_model.is_valid()) {
     add_page(node, _("Appearance"), create_appearance_page());
@@ -318,7 +325,7 @@ PreferencesForm::PreferencesForm(const workbench_physical_ModelRef &model)
 
   if (!_model.is_valid()) {
 #ifdef _MSC_VER
-    add_page(NULL, _("Fonts & Colors"), create_fonts_and_colors_page());
+    add_page(NULL, _("Fonts and colors"), create_fonts_and_colors_page());
 #else
     // Fonts only for now in Mac/Linux
     add_page(NULL, _("Fonts"), create_fonts_and_colors_page());
@@ -327,7 +334,7 @@ PreferencesForm::PreferencesForm(const workbench_physical_ModelRef &model)
   if (!_model.is_valid()) {
     add_page(NULL, _("SSH"), createSSHPage());
 
-    add_page(NULL, _("Others"), create_others_page());
+    add_page(NULL, _("Advanced"), create_others_page());
   }
 
   _hbox.add(&_top_box, true, true);
@@ -344,7 +351,7 @@ PreferencesForm::PreferencesForm(const workbench_physical_ModelRef &model)
 
   _switcher.select_node(_switcher.node_at_row(0));
 
-  set_size(800, 600);
+  set_size(920, 620);
   center();
 
   show_values();
@@ -363,6 +370,10 @@ mforms::TreeNodeRef PreferencesForm::add_page(mforms::TreeNodeRef parent, const 
                                               mforms::View *view) {
   mforms::TreeNodeRef node = parent ? parent->add_child() : _switcher.add_node();
   node->set_string(0, title);
+  int parent_index = parent ? std::stoi(parent->get_tag()) : -1;
+  std::string path = parent_index >= 0 ? _pages[parent_index].path + " / " + title : title;
+  node->set_tag(std::to_string(_pages.size()));
+  _pages.push_back({title, path, parent_index});
 
   mforms::ScrollPanel *scroll = mforms::manage(new mforms::ScrollPanel());
   scroll->set_autohide_scrollers(true);
@@ -407,9 +418,30 @@ void PreferencesForm::version_changed(mforms::TextEntry *entry) {
 //--------------------------------------------------------------------------------------------------
 
 void PreferencesForm::switch_page() {
-  int row = _switcher.get_selected_row();
-  if (row >= 0)
-    _tabview.set_active_tab(row);
+  auto selected = _switcher.get_selected_node();
+  if (selected && !selected->get_tag().empty())
+    _tabview.set_active_tab(std::stoi(selected->get_tag()));
+}
+
+void PreferencesForm::filter_pages() {
+  const auto filter = base::tolower(_category_search.get_string_value());
+  int active = _tabview.get_active_tab();
+  _switcher.clear();
+  std::vector<mforms::TreeNodeRef> nodes(_pages.size());
+  mforms::TreeNodeRef first, selected;
+  for (size_t index = 0; index < _pages.size(); ++index) {
+    const auto &page = _pages[index];
+    if (!filter.empty() && base::tolower(page.path).find(filter) == std::string::npos) continue;
+    auto parent = filter.empty() && page.parent >= 0 ? nodes[page.parent] : mforms::TreeNodeRef();
+    auto node = parent ? parent->add_child() : _switcher.add_node();
+    node->set_string(0, filter.empty() ? page.title : page.path);
+    node->set_tag(std::to_string(index));
+    nodes[index] = node;
+    if (parent) parent->expand();
+    if (!first) first = node;
+    if (static_cast<int>(index) == active) selected = node;
+  }
+  if (selected || first) _switcher.select_node(selected ? selected : first);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -864,6 +896,14 @@ mforms::View *PreferencesForm::create_general_editor_page() {
   mforms::Box *box = mforms::manage(new mforms::Box(false));
   box->set_name("General Editor");
   box->set_spacing(8);
+
+  if (!_model.is_valid()) {
+    OptionTable *language = mforms::manage(new OptionTable(this, _("Appearance"), true));
+    language->add_option(new_selector_option("workbench:UILanguage", "Türkçe:tr,English:en"),
+      _("Interface language"), "Interface language",
+      _("Restart StarDataParadise to apply the selected interface language."));
+    box->add(language, false, true);
+  }
 
   {
     mforms::Panel *frame = mforms::manage(new mforms::Panel(mforms::TitledBoxPanel));

@@ -412,15 +412,18 @@ public:
   }
 
   virtual grt::StringRef stringFieldValue(ssize_t column) {
-    if (column >= 0 && column < (ssize_t)column_by_name.size())
-      return grt::StringRef(recordset->getString((uint32_t)column + 1));
+    if (column >= 0 && column < (ssize_t)column_by_name.size()) {
+      const std::string value = recordset->getString((uint32_t)column + 1);
+      return recordset->wasNull() ? grt::StringRef() : grt::StringRef(value);
+    }
     throw std::invalid_argument(base::strfmt("invalid column %li for resultset", (long)column).c_str());
     return grt::StringRef(); // NULL
   }
 
   virtual grt::StringRef stringFieldValueByName(const std::string &column) {
     if (column_by_name.find(column) != column_by_name.end()) {
-      return grt::StringRef(recordset->getString((uint32_t)column_by_name[column]));
+      const std::string value = recordset->getString((uint32_t)column_by_name[column]);
+      return recordset->wasNull() ? grt::StringRef() : grt::StringRef(value);
     }
     throw std::invalid_argument(base::strfmt("invalid column %s for resultset", column.c_str()).c_str());
     return grt::StringRef(); // NULL

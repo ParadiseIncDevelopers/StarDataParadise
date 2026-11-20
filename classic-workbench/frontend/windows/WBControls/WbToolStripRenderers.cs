@@ -198,6 +198,23 @@ namespace MySQL.Controls
 
     protected override void OnRenderButtonBackground(ToolStripItemRenderEventArgs e)
     {
+      var button = e.Item as ToolStripButton;
+      if (button != null && e.Item.Name.StartsWith("workspace."))
+      {
+        bool highContrast = SystemInformation.HighContrast;
+        if (button.Checked || button.Selected)
+        {
+          using (var surface = new SolidBrush(highContrast ? SystemColors.Highlight : Color.FromArgb(221, 235, 228)))
+            e.Graphics.FillRectangle(surface, new Rectangle(Point.Empty, e.Item.Size));
+        }
+        if (button.Checked)
+        {
+          int thickness = System.Math.Max(1, (int)System.Math.Round(e.Graphics.DpiY / 48f));
+          using (var indicator = new SolidBrush(highContrast ? SystemColors.HighlightText : Color.FromArgb(9, 136, 116)))
+            e.Graphics.FillRectangle(indicator, 4, e.Item.Height - thickness, e.Item.Width - 8, thickness);
+        }
+        return;
+      }
       if (e.Item.BackgroundImage != null)
         e.Graphics.DrawImageUnscaledAndClipped(e.Item.BackgroundImage,
           new Rectangle(0, 0, e.Item.Width, e.Item.Height));
@@ -205,6 +222,68 @@ namespace MySQL.Controls
   }
 
   //------------------------------------------------------------------------------------------------
+
+  public class FlatQueryToolStripRenderer : ToolStripProfessionalRenderer
+  {
+    public FlatQueryToolStripRenderer() { RoundedEdges = false; }
+
+    protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
+    {
+      using (Brush fill = new SolidBrush(SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(231, 238, 239)))
+        e.Graphics.FillRectangle(fill, e.AffectedBounds);
+    }
+
+    protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
+    {
+      using (Pen line = new Pen(SystemInformation.HighContrast ? SystemColors.ControlDark : Color.FromArgb(163, 180, 188)))
+        e.Graphics.DrawLine(line, 0, e.ToolStrip.Height - 1, e.ToolStrip.Width, e.ToolStrip.Height - 1);
+    }
+
+    protected override void OnRenderSplitButtonBackground(ToolStripItemRenderEventArgs e)
+    {
+      if (e.Item.Name != "query.execute") { base.OnRenderSplitButtonBackground(e); return; }
+      Color fill = SystemInformation.HighContrast ? SystemColors.Highlight : !e.Item.Enabled ? Color.FromArgb(163, 180, 188) : e.Item.Pressed ? Color.FromArgb(3, 67, 65) : Color.FromArgb(4, 49, 51);
+      using (Brush surface = new SolidBrush(fill))
+        e.Graphics.FillRectangle(surface, new Rectangle(0, 0, e.Item.Width - 1, e.Item.Height - 1));
+      var split = e.Item as ToolStripSplitButton;
+      if (split != null)
+        using (Pen divider = new Pen(Color.FromArgb(91, 132, 133)))
+          e.Graphics.DrawLine(divider, split.DropDownButtonBounds.Left, 5, split.DropDownButtonBounds.Left, e.Item.Height - 6);
+    }
+
+    protected override void OnRenderButtonBackground(ToolStripItemRenderEventArgs e)
+    {
+      var button = e.Item as ToolStripButton;
+      Color background = SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(231, 238, 239);
+      if (button != null && button.Checked)
+        background = SystemInformation.HighContrast ? SystemColors.Highlight : Color.FromArgb(221, 235, 228);
+      else if (e.Item.Enabled && e.Item.Selected)
+        background = SystemInformation.HighContrast ? SystemColors.Highlight : Color.White;
+      using (Brush surface = new SolidBrush(background))
+        e.Graphics.FillRectangle(surface, new Rectangle(0, 0, e.Item.Width, e.Item.Height));
+      if (button != null && (button.Checked || button.Selected))
+        using (Pen outline = new Pen(SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(163, 180, 188)))
+          e.Graphics.DrawRectangle(outline, 0, 0, e.Item.Width - 1, e.Item.Height - 1);
+    }
+
+    protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
+    {
+      e.TextColor = !e.Item.Enabled ? SystemColors.GrayText : e.Item.Name == "query.execute" ? Color.White : SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(16, 38, 41);
+      base.OnRenderItemText(e);
+    }
+
+    protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
+    {
+      if (e.Item.Name == "query.execute") e.ArrowColor = Color.White;
+      base.OnRenderArrow(e);
+    }
+
+    protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
+    {
+      using (Pen line = new Pen(SystemInformation.HighContrast ? SystemColors.ControlDark : Color.FromArgb(163, 180, 188)))
+        e.Graphics.DrawLine(line, e.Item.Width / 2, 7, e.Item.Width / 2, e.Item.Height - 7);
+    }
+  }
 
   public class FlatSubToolStripRenderer : ToolStripRenderer
   {

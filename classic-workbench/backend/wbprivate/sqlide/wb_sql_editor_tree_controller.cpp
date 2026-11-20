@@ -211,12 +211,12 @@ void SqlEditorTreeController::finish_init() {
   _schema_side_bar->set_name("Schema Page");
 
   mforms::TaskSectionFlags flags = mforms::TaskSectionRefreshable;
-  _schema_side_bar->add_section("SchemaTree", "Schema Tree", _("SCHEMAS"), flags);
+  _schema_side_bar->add_section("SchemaTree", "Schema Tree", _("Schema Explorer"), flags);
 
-  _task_tabview->add_page(_admin_side_bar, _("Administration"));
+  _task_tabview->add_page(_admin_side_bar, _("Management"));
   _task_tabview->add_page(_schema_side_bar, _("Schemas"));
 
-  int i = (int)bec::GRTManager::get()->get_app_option_int("DbSqlEditor:ActiveTaskTab", 0);
+  int i = (int)bec::GRTManager::get()->get_app_option_int("DbSqlEditor:ActiveTaskTab", 1);
   if (i < 0)
     i = 0;
   else if (i >= 2)
@@ -237,22 +237,18 @@ void SqlEditorTreeController::finish_init() {
 #ifdef _MSC_VER
   mforms::Panel *panel;
   _side_splitter->set_back_color(base::Color::getApplicationColorAsString(AppColorMainBackground, false));
-  panel = mforms::manage(new mforms::Panel(mforms::StyledHeaderPanel));
-  panel->set_title("Navigator");
-  panel->add(_taskbar_box);
-  _taskbar_box->add(_task_tabview, true, true);
-  _side_splitter->add(panel, 200);
-#else
+#endif
+  // The schema section owns its title and refresh command. An outer Navigator
+  // header duplicated that title and consumed a second row above the search.
   _taskbar_box->add(_task_tabview, true, true);
   _side_splitter->add(_taskbar_box, 200);
-#endif
 
   _info_tabview = new mforms::TabView(mforms::TabViewSelectorSecondary);
   _info_tabview->set_name("Info View");
 
 #ifdef _MSC_VER
   panel = mforms::manage(new mforms::Panel(mforms::StyledHeaderPanel));
-  panel->set_title(_("Information"));
+  panel->set_title(_("Object information"));
   panel->add(_info_tabview);
   _side_splitter->add(panel, 200);
 #else
@@ -266,7 +262,7 @@ void SqlEditorTreeController::finish_init() {
   _session_info->set_padding(3, 3, 3, 3);
 #endif
 
-  _info_tabview->add_page(_object_info, _("Object Info"));
+  _info_tabview->add_page(_object_info, _("Object"));
   _info_tabview->add_page(_session_info, _("Session"));
 
   updateColors();
@@ -328,13 +324,12 @@ void SqlEditorTreeController::schema_row_selected() {
     if (nodes.empty() || nodes.size() > 1)
       textColor.alpha = 0.75;
 
-    details = "<html><body style='padding:15px; font-family:";
-    details += DEFAULT_FONT_FAMILY;
-    details += "; font-size: 9pt; color: " + textColor.to_html() + ";'>";
+    details = "<html><body style='margin:0; padding:10px; font-family:Segoe UI;";
+    details += " font-size:9.75pt; color:" + textColor.to_html() + ";'>";
     if (nodes.empty()) {
-      details += "<b>No object selected</b>";
+      details += std::string("<b>") + _("No object selected") + "</b>";
     } else if (nodes.size() > 1) {
-      details += "<b>Multiple selected objects</b>";
+      details += std::string("<b>") + _("Multiple selected objects") + "</b>";
     } else {
       // When there's a single node selected, gets the details and tells it to notify if changes in it occur.
       details += _schema_tree->get_field_description(nodes.front());
@@ -2091,7 +2086,7 @@ bool SqlEditorTreeController::apply_changes_to_object(bec::DBObjectEditorBE *obj
   RowId log_id = -1;
   if (!dry_run) {
     log_descr = strfmt(_("Apply changes to %s"), obj_editor->get_name().c_str());
-    log_id = _owner->add_log_message(DbSqlEditorLog::BusyMsg, "Applying object changes ...", log_descr, "");
+    log_id = _owner->add_log_message(DbSqlEditorLog::BusyMsg, _("Applying object changes ..."), log_descr, "");
   }
   try {
     if (!dry_run && obj_editor->has_editor() && obj_editor->get_sql_editor()->has_sql_errors()) {

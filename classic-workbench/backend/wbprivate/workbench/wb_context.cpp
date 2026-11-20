@@ -29,6 +29,8 @@
 #include <errno.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
 
 #include "sqlide/wb_sql_editor_form.h"
 
@@ -118,6 +120,30 @@ using namespace wb;
 using namespace base;
 
 static const char *argv0 = NULL;
+
+// Python modules contain class-level presentation strings and are imported
+// before the full GRT options merge. Read only the saved language early so
+// native, managed and Python controls all start with the same session locale.
+static std::string saved_ui_language(const std::string &path) {
+  gchar *contents = nullptr;
+  gsize size = 0;
+  if (!g_file_get_contents(path.c_str(), &contents, &size, nullptr)) return "tr";
+  std::unique_ptr<gchar, decltype(&g_free)> buffer(contents, &g_free);
+  if (size > 8 * 1024 * 1024) return "tr";
+  std::unique_ptr<xmlDoc, decltype(&xmlFreeDoc)> document(
+    xmlReadMemory(contents, static_cast<int>(size), nullptr, nullptr,
+      XML_PARSE_NONET | XML_PARSE_NOERROR | XML_PARSE_NOWARNING), &xmlFreeDoc);
+  if (!document) return "tr";
+  std::unique_ptr<xmlXPathContext, decltype(&xmlXPathFreeContext)> context(xmlXPathNewContext(document.get()), &xmlXPathFreeContext);
+  if (!context) return "tr";
+  std::unique_ptr<xmlXPathObject, decltype(&xmlXPathFreeObject)> values(
+    xmlXPathEvalExpression(BAD_CAST "//value[@key='workbench:UILanguage']", context.get()), &xmlXPathFreeObject);
+  if (!values || !values->nodesetval || values->nodesetval->nodeNr == 0) return "tr";
+  xmlChar *text = xmlNodeGetContent(values->nodesetval->nodeTab[0]);
+  const bool english = text && xmlStrEqual(text, BAD_CAST "en");
+  if (text) xmlFree(text);
+  return english ? "en" : "tr";
+}
 
 //----------------------------------------------------------------------
 
@@ -824,6 +850,8 @@ bool WBContext::init_(WBFrontendCallbacks *callbacks, WBOptions *options) {
   // Set options
   _datadir = options->basedir;
   _user_datadir = options->user_data_dir;
+  base::initialize_ui_language(base::makePath(_datadir, "locales"),
+    saved_ui_language(base::makePath(_user_datadir, OPTIONS_FILE_NAME)));
 
   std::string modules_path;
   std::string libraries_path;
@@ -1389,6 +1417,7 @@ static void set_default(grt::DictRef dict, const char *option, const std::string
  */
 void WBContext::set_default_options(grt::DictRef options) {
   set_default(options, "workbench:ForceSWRendering", 0);
+  set_default(options, "workbench:UILanguage", "tr");
   set_default(options, "workbench:OSSHideMissing", 0);
   set_default(options, "workbench:UndoEntries", DEFAULT_UNDO_STACK_SIZE);
   set_default(options, "workbench:AutoSaveModelInterval", AUTO_SAVE_MODEL_INTERVAL);
@@ -1748,6 +1777,9 @@ void WBContext::load_app_options(bool update) {
     // No config file, so maybe initial start. Set at least a default color scheme.
     base::Color::set_active_scheme(base::ColorSchemeStandard);
   }
+
+  base::initialize_ui_language(base::makePath(get_datadir(), "locales"),
+    get_root()->options()->options().get_string("workbench:UILanguage", "tr"));
 
   // commit options
   option_dict_changed();

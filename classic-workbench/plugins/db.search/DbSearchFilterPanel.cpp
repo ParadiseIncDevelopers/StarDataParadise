@@ -35,17 +35,17 @@ void update_numeric(mforms::TextEntry& te) {
 
 DBSearchFilterPanel::DBSearchFilterPanel()
   : Box(false), _search_box(true), _filter_tree(mforms::TreeNoHeader), _limits_box(true) {
-  set_spacing(12);
+  set_spacing(8);
 
   _search_box.set_spacing(8);
 
-  _search_text_label.set_text("Search for table fields that");
+  _search_text_label.set_text("Aranan değer:");
   _search_box.add(&_search_text_label, false, true);
 
-  _filter_selector.add_item("CONTAINS");
-  _filter_selector.add_item("Search using =");
-  _filter_selector.add_item("Search using LIKE");
-  _filter_selector.add_item("Search using REGEXP");
+  _filter_selector.add_item("İçerir");
+  _filter_selector.add_item("Eşittir (=)");
+  _filter_selector.add_item("LIKE");
+  _filter_selector.add_item("REGEXP");
 
 #ifdef _MSC_VER
   _filter_selector.set_size(150, -1);
@@ -58,14 +58,14 @@ DBSearchFilterPanel::DBSearchFilterPanel()
   add(&_search_box, false, true);
 
   _limits_box.set_spacing(4);
-  _limit_table_hint.set_text("Max. matches per table");
+  _limit_table_hint.set_text("Tablo başına sınır");
   _limit_table_hint.set_text_align(mforms::MiddleRight);
   _limits_box.add(&_limit_table_hint, false, true);
   _limits_box.add(&_limit_table, false, true);
   _limit_table.set_size(80, -1);
   _limit_table.set_value("100");
   _limit_table.signal_changed()->connect(std::bind(update_numeric, std::ref(_limit_table)));
-  _limit_total_hint.set_text("Max. total matches");
+  _limit_total_hint.set_text("Toplam sınır");
   _limit_total_hint.set_text_align(mforms::MiddleRight);
   _limit_total.set_size(80, -1);
   _limits_box.add(&_limit_total_hint, false, true);
@@ -73,15 +73,18 @@ DBSearchFilterPanel::DBSearchFilterPanel()
   _limit_total.signal_changed()->connect(std::bind(update_numeric, std::ref(_limit_total)));
   _limit_total.set_value("100000");
 
-  _search_all_type_check.set_text("Search columns of all types");
+  _search_all_type_check.set_text("Tüm veri türleri");
   _search_all_type_check.set_tooltip(
     "If checked, non-text type columns will be casted to CHAR to match. Otherwise, only text type (CHAR, VARCHAR, "
     "TEXT) will be searched.");
   _limits_box.add(&_search_all_type_check, false, true);
 
-  _search_button.set_text("Start Search");
+  _search_button.set_text("Ara");
   _search_button.set_size(120, -1);
   _limits_box.add(&_search_button, false, true);
+  _preview_button.set_text("SQL önizle…");
+  _preview_button.set_tooltip("Seçimin bir örnek tablosu için gerçek arama SQL'ini gösterir; aramayı çalıştırmaz.");
+  _limits_box.add(&_preview_button, false, true);
   add(&_limits_box, false, true);
   //  add(&_search_all_type_check, false, true);
   //  _exclude_check.set_text("Invert table selection (search all tables except selected)");
@@ -109,6 +112,7 @@ void DBSearchFilterPanel::cell_edited(mforms::TreeNodeRef node, int column, cons
 }
 
 void DBSearchFilterPanel::set_searching(bool flag) {
+  _preview_button.set_enabled(!flag);
   _search_text.set_enabled(!flag);
   _search_all_type_check.set_enabled(!flag);
   _exclude_check.set_enabled(!flag);
@@ -117,7 +121,7 @@ void DBSearchFilterPanel::set_searching(bool flag) {
   _limit_total.set_enabled(!flag);
 
   if (flag)
-    _search_button.set_text("Stop");
+    _search_button.set_text("Durdur");
   else
-    _search_button.set_text("Start Search");
+    _search_button.set_text("Ara");
 }

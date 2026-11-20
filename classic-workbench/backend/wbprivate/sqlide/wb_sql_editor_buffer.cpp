@@ -377,10 +377,11 @@ SqlEditorPanel *SqlEditorForm::add_sql_editor(bool scratch, bool start_collapsed
 
   _tabdock->dock_view(editor);
   _tabdock->select_view(editor);
-  if (!scratch)
-    editor->set_title(strfmt("SQL File %i", ++_sql_editors_serial));
-  else
-    editor->set_title(strfmt("Query %i", ++_scratch_editors_serial));
+  // Scratch and file-backed drafts share a display sequence so that the
+  // initial scratch page and the next New SQL command have distinct labels.
+  if (scratch)
+    ++_scratch_editors_serial;
+  editor->set_title(strfmt("Sorgu %i.sql", ++_sql_editors_serial));
 
   if (!_loading_workspace)
     auto_save();

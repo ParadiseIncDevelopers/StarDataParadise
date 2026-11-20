@@ -54,6 +54,14 @@ private:
   std::list<Option *> _options;
 
   mforms::TreeView _switcher;
+  mforms::Box _sidebar;
+  mforms::TextEntry _category_search;
+  struct PageEntry {
+    std::string title, path;
+    int parent;
+  };
+  std::vector<PageEntry> _pages;
+  void filter_pages();
 
   mforms::Box _hbox;
   mforms::Box _top_box;

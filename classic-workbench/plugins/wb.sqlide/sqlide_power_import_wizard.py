@@ -31,6 +31,7 @@ from mforms import newTreeView
 from mforms import FileChooser
 from sqlide_power_import_export_be import create_module
 from workbench.ui import WizardForm, WizardPage, WizardProgressPage
+from workbench.sdp_i18n import tr
 from datetime import datetime
 import operator
 from workbench.utils import Version
@@ -46,7 +47,7 @@ truncate_table = False
 
 def showPowerImport(editor, selection):
     importer = PowerImportWizard(editor, mforms.Form.main_form(), selection)
-    importer.set_title("Table Data Import")
+    importer.set_title(tr("CSV / JSON import"))
     importer.run()
 
 def handleContextMenu(name, sender, args):
@@ -71,7 +72,7 @@ def handleContextMenu(name, sender, args):
             return
 
     if user_selection:
-        item = mforms.newMenuItem("Table Data Import Wizard")
+        item = mforms.newMenuItem(tr("Table Data Import Wizard"))
         item.add_clicked_callback(lambda sender=sender : showPowerImport(sender, user_selection))
         menu.insert_item(4, item)
         if user_selection['table']:
@@ -79,8 +80,8 @@ def handleContextMenu(name, sender, args):
 
 class ResultsPage(WizardPage):
     def __init__(self, owner):
-        WizardPage.__init__(self, owner, "Import Results")
-        self.next_button.set_text('Finish')
+        WizardPage.__init__(self, owner, "Aktarım sonucu")
+        self.next_button.set_text("Bitir")
             
     def go_next(self):
         self.main.close()
@@ -153,7 +154,7 @@ class ImportProgressPage(WizardProgressPage):
 
 class ConfigurationPage(WizardPage):
     def __init__(self, owner):
-        WizardPage.__init__(self, owner, "Configure Import Settings", wide=True)
+        WizardPage.__init__(self, owner, "Alan eşleştirme", wide=True)
         
         self.last_analyze_status = False
         self.input_file_type = 'csv'
@@ -187,7 +188,7 @@ class ConfigurationPage(WizardPage):
         
     
     def create_ui(self):
-        self.set_spacing(16)
+        self.set_spacing(8)
         format_box = mforms.newBox(True)
         format_box.set_spacing(8)
         format_box.add(mforms.newLabel("Detected file format: %s" % self.input_file_type), False, True)
@@ -202,7 +203,7 @@ class ConfigurationPage(WizardPage):
 
         if len(self.active_module.options) != 0:
             self.optpanel = mforms.newPanel(mforms.TitledBoxPanel)
-            self.optpanel.set_title("Options:")
+            self.optpanel.set_title("Seçenekler")
             def set_text_entry(field, output):
                 txt = field.get_string_value().strip()
                 if len(txt) == 0:
@@ -250,7 +251,7 @@ class ConfigurationPage(WizardPage):
         if self.input_file_type == 'csv':
             # We show encoding box only for csv as json can be only utf-8, utf-16 according to rfc
             self.encoding_box = mforms.newBox(True)
-            self.encoding_box.set_spacing(16)
+            self.encoding_box.set_spacing(8)
             self.encoding_box.add(mforms.newLabel("Encoding: "), False, True)
             self.encoding_sel = mforms.newSelector()
             self.encoding_sel.set_size(250, -1)
@@ -264,19 +265,19 @@ class ConfigurationPage(WizardPage):
             self.content.add(self.encoding_box, False, True)
         
         self.table_preview_box = mforms.newBox(False)
-        self.table_preview_box.set_spacing(16)
+        self.table_preview_box.set_spacing(8)
         self.preview_table = None
         self.content.add(self.table_preview_box, True, True)
         
         self.column_caption = mforms.newPanel(mforms.BorderedPanel)
-        self.column_caption.set_title("Columns:")
+        self.column_caption.set_title("Sütunlar")
         self.column_caption.set_size(-1, 100)
         self.column_scroll = mforms.newScrollPanel(0)
         self.column_caption.add(self.column_scroll)
         self.table_preview_box.add(self.column_caption, True, True)
 
         extra_opts = mforms.newBox(False)
-        extra_opts.set_spacing(16)
+        extra_opts.set_spacing(8)
         
         self.ds_box = mforms.newBox(True)
         self.ds_box.set_spacing(8)
@@ -428,7 +429,7 @@ class ConfigurationPage(WizardPage):
         
         if self.preview_table is not None:
             self.column_scroll.remove()
-            self.table_preview_box.set_spacing(16)
+            self.table_preview_box.set_spacing(8)
             if self.treeview_preview is not None:
                 self.table_preview_box.remove(self.treeview_preview)
                 self.treeview_preview = None
@@ -562,7 +563,7 @@ class ConfigurationPage(WizardPage):
 
 class SelectDestinationPage(WizardPage):
     def __init__(self, owner):
-        WizardPage.__init__(self, owner, "Select Destination", wide=True)
+        WizardPage.__init__(self, owner, "Hedef tablo", wide=True)
         self.back_button.set_enabled(False)
         self.table_list = {}
         
@@ -616,7 +617,7 @@ class SelectDestinationPage(WizardPage):
                 self.destination_database_sel.set_selected(db_list.index(self.main.destination_table['schema']))
         
     def create_ui(self):
-        self.set_spacing(16)
+        self.set_spacing(8)
         
         label = mforms.newLabel("Select destination table and additional options.")
         label.set_style(mforms.BoldInfoCaptionStyle)
@@ -629,7 +630,7 @@ class SelectDestinationPage(WizardPage):
         existing_table_box = mforms.newBox(True)
         existing_table_box.set_spacing(8)
         self.existing_table_radio = mforms.newRadioButton(1)
-        self.existing_table_radio.set_text("Use existing table:")
+        self.existing_table_radio.set_text("Mevcut tablo:")
         self.existing_table_radio.add_clicked_callback(self.radio_click)
         if 'table' in self.main.destination_table and self.main.destination_table['table'] is not None:
             self.existing_table_radio.set_active(True)
@@ -643,7 +644,7 @@ class SelectDestinationPage(WizardPage):
         new_table_box = mforms.newBox(True)
         new_table_box.set_spacing(8)
         self.new_table_radio = mforms.newRadioButton(1)
-        self.new_table_radio.set_text("Create new table: ")
+        self.new_table_radio.set_text("Yeni tablo:")
         self.new_table_radio.add_clicked_callback(self.radio_click)
         if 'table' not in self.main.destination_table or self.main.destination_table['table'] is None:
             self.new_table_radio.set_active(True)
@@ -662,7 +663,7 @@ class SelectDestinationPage(WizardPage):
             truncate_table = sender.get_active()
  
         self.truncate_table_cb = mforms.newCheckBox()
-        self.truncate_table_cb.set_text("Truncate table before import")
+        self.truncate_table_cb.set_text("Aktarmadan önce tabloyu boşalt")
         self.truncate_table_cb.set_active(truncate_table)
         self.truncate_table_cb.add_clicked_callback(lambda sender = self.truncate_table_cb: set_trunc(sender))
         table_destination_box.add(self.truncate_table_cb, False, True)
@@ -672,7 +673,7 @@ class SelectDestinationPage(WizardPage):
             drop_table = sender.get_active()
             
         self.drop_table_cb = mforms.newCheckBox()
-        self.drop_table_cb.set_text("Drop table if exists")
+        self.drop_table_cb.set_text("Mevcut tabloyu kaldır")
         self.drop_table_cb.set_active(drop_table)
         self.drop_table_cb.add_clicked_callback(lambda sender = self.drop_table_cb: set_drop(sender))
         if self.existing_table_radio.get_active():
@@ -740,7 +741,7 @@ class SelectFileWizardPage(WizardPage):
         self.back_button.set_enabled(False)
 
     def create_ui(self):
-        self.set_spacing(16)
+        self.set_spacing(8)
 
         label = mforms.newLabel("Table Data Import allows you to easily import CSV, JSON datafiles.\nYou can also create destination table on the fly.")
         label.set_style(mforms.BoldInfoCaptionStyle)
@@ -750,14 +751,14 @@ class SelectFileWizardPage(WizardPage):
         entry_box = mforms.newBox(True)
         entry_box.set_spacing(5)
 
-        entry_box.add(mforms.newLabel("File Path:"), False, True)
+        entry_box.add(mforms.newLabel("Dosya:"), False, True)
 
         self.importfile_path = mforms.newTextEntry()
         entry_box.add(self.importfile_path, True, True)
         self.importfile_path.set_value(last_location)
 
         self.importfile_browse_btn = mforms.newButton()
-        self.importfile_browse_btn.set_text("Browse...")
+        self.importfile_browse_btn.set_text("Gözat…")
         self.importfile_browse_btn.set_name("Browse")
         self.importfile_browse_btn.add_clicked_callback(self.importfile_browse)
         entry_box.add(self.importfile_browse_btn, False, False)

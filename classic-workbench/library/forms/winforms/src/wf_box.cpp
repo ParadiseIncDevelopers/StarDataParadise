@@ -291,14 +291,11 @@ System::Drawing::Size HorizontalGtkBoxLayout::ComputeLayout(LayoutBox ^ box, Sys
       if (is<ComboBox>(entry->control))
         entry->bounds.Height++;
 
-      // Buttons have a very own understanding of their preferred size. Flat buttons always add 3 px padding
-      // in addition to their normal Padding. System buttons ignore the image in size calculations.
-      // We fix flat buttons for now as they can come with images only. Normal buttons usually have text.
+      // Keep the full native preferred size, including the flat button's border
+      // and text padding. Shrinking it clips translated labels at higher DPI.
       if (is<Button>(entry->control)) {
         Button ^ button = (Button ^)entry->control;
-        if (button->FlatStyle == FlatStyle::Flat)
-          entry->bounds = Drawing::Rectangle::Inflate(entry->bounds, -3, -3);
-        else {
+        if (button->FlatStyle != FlatStyle::Flat) {
           // If a smaller size than the preferred size is set for a button use this instead.
           if (button->MinimumSize.Height > 0 && button->MinimumSize.Height < control->PreferredSize.Height)
             entry->bounds.Height = button->MinimumSize.Height;

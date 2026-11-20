@@ -1,6 +1,6 @@
 # Classic çalışma alanı tasarım kuralları
 
-19 Kasım 2026. Bu belge bağlı SQL oturumunun çalışma alanını, menülerini, araç çubuklarını ve bunlardan açılan sayfa ailelerini kapsar. [41 sayfalık galeri](README.md), [sayfa davranışları](SAYFALAR.md) ve [komut envanteri](KOMUTLAR.md) birlikte okunur.
+19 Kasım 2026. Bu belge bağlı SQL oturumunun çalışma alanını, menülerini, araç çubuklarını ve bunlardan açılan sayfa ailelerini kapsar. [41 sayfalık galeri](README.md), [sayfa davranışları](SAYFALAR.md) ve [komut envanteri](KOMUTLAR.md) birlikte okunur. Kullanıcının son düzeltmesi aşağıdaki başlık sırasını ve düz kenar kuralını bütün görsellerin üzerinde geçerli kılar.
 
 ## Seçilen tasarımlar
 
@@ -9,14 +9,15 @@
 - Yeni bağlantı, profil yönetimi ve Veri Taşıma için önceki [tasarım ve uygulama kaydı](../baglanti-ve-tasima/UYGULAMA.md) referanstır.
 - Help menüsündeki dış bağlantı hedefleri, kullanıcının son isteğiyle sonraki aşamaya bırakıldı.
 
-Bu etapta üretilen sayfalar yerleşim ve etkileşim taslaklarıdır. Görsellerin metinleri, verileri, grafik değerleri, dosya yolları ve sürüm ayrıntıları temsili içeriktir. Kesin ölçüler aşağıdaki DIP değerlerinden, SQL ve veri ise mevcut native üretici ve modellerden gelir. Görsellerdeki kısayol ipuçları için mevcut komut kısayolu tablosu esas alınır.
+Galerideki sayfalar yerleşim ve etkileşim referanslarıdır. Görsellerin metinleri, verileri, grafik değerleri, dosya yolları ve sürüm ayrıntıları temsili içeriktir. Çalışan uygulamanın kaynak, derleme ve kabul kapsamı [uygulama kaydındadır](UYGULAMA.md). Kesin ölçüler aşağıdaki DIP değerlerinden, SQL ve veri ise mevcut native üretici ve modellerden gelir. Görsellerdeki kısayol ipuçları için mevcut komut kısayolu tablosu esas alınır.
 
 ## Pencere ve gezinme
 
 | Katman | İçerik | Yükseklik |
 | --- | --- | --- |
-| Uygulama başlığı ve menü | Ürün yıldızı/adı, Dosya, Düzenle, Görünüm, Bağlantı, Araçlar, Yardım, Windows pencere komutları | 32 DIP |
+| Uygulama başlığı | Ürün yıldızı/adı ve Windows pencere komutları | Native Windows ölçüsü |
 | Ana belge şeridi | Sabit ana sayfa, Veri Taşıma, bağlantı/model belgeleri | 32 DIP |
+| Menü | Dosya, Düzenle, Görünüm ve etkin belgenin mevcut komut grupları | 26 DIP, fonta göre esnek |
 | Etkin bağlantının alanları | SQL, Veri, Şema, Performans, Yönetim, Araçlar | 32 DIP |
 | Sayfanın komut satırı | Etkin sayfaya ait komutlar ve seçimler | 30–34 DIP |
 | İçerik | Nesne ağacı, düzenleyici, tablo, önizleme ve gerektiğinde ayrıntı çekmecesi | Esnek |
@@ -36,6 +37,8 @@ Uygulama menüsü dosya ve pencere işlemlerini yönetir. Bağlantı alanları e
 Ana sayfadaki EER girişinin önerilen etiketi **Şema modelleri**, makine öğrenmesi girişinin etiketi **CPU modelleri** olur. Bu adlar ilgili veri kaynağını açıklar. Tür eşleştirme, Veri Taşıma araçları içinden açılır. Harici yardımcı programın yolu kurulum ayarından çözülür.
 
 ## Renk ve tipografi
+
+İki ayrı başlık veya bilgi parçası ` - ` ile ayrılır. Görsel metin ayıracı olarak nokta veya orta nokta kullanılmaz.
 
 Önceki [ana sayfa paleti](../ANA_SAYFA.md) sürdürülür.
 
@@ -76,17 +79,19 @@ Font ölçümü, çizimi ve isabet alanı aynı DPI dönüşümünü kullanır. 
 | İkon ve yazı arası | 6 DIP |
 | İkon | 16 DIP, bölüm ikonunda 18 DIP |
 | Yalnız ikon hedefi | En az 26×26 DIP |
-| Sol gezgin | Başlangıç 200 DIP, boyutlandırılabilir |
-| Sağ ayrıntı/yardım çekmecesi | Başlangıç 280–320 DIP, açılıp kapanabilir |
+| Sol gezgin | Başlangıç 220 DIP, boyutlandırılabilir |
+| Sağ ayrıntı/yardım çekmecesi | Başlangıç 280 DIP, açılıp kapanabilir |
 | Tablo satırı | 28 DIP, çok satırlı içerikte esnek |
 | Sütun başlığı | 26 DIP |
 | İnce ayraç | 1 DIP |
 | Etkin alt sekme çizgisi | 2 DIP |
-| Köşe yarıçapı | 2 DIP |
+| Köşe yarıçapı | 0 DIP, düz dikdörtgen yüzeyler |
 
 Tablo hücreleri 8 DIP yatay iç boşluk taşır. Sayısal değerler sağa, metin sola hizalanır. Tam değer odakta veya araç ipucunda okunur. Başlık ve veri ortak sütun eksenindedir. Düzenlenen hücre, renge ek olarak köşe işareti ve bekleyen değişiklik özetiyle belirlenir.
 
 960×600 DIP çalışma alanında ana görev erişilebilir kalır. Yardım ve ayrıntı çekmeceleri dar görünümde kapanabilir. Araç çubuğu ikincil eylemleri açılır menüde toplanır. Ana eylem ve seçili nesne korunur. İçerik kaydırılırken aktarım/inceleme alt eylemleri görünür kalır. Metin büyütme, satır ve kontrol yüksekliğini içerikten üretir.
+
+Kalın renkli kenar şeridi, renkli tek kenarla çevrelenen bilgi/uyarı kartı ve kıvrımlı panel çerçevesi kullanılmaz. Uyarı; simge, kısa metin ve gerekirse ince nötr ayraçla gösterilir. Görsellerdeki eski amber sol kenar şeridi uygulanmaz. Seçim için düz yüzey ve ince alt çizgi kullanılabilir.
 
 ## Ana sekme şeridi
 
@@ -102,7 +107,7 @@ Seçilen satır `Bağlanıyor…` ve **Vazgeç** durumuna geçer. Avatar ve prof
 
 Her denemenin kimliği vardır. Tekrarlanan tıklama aynı denemeyi çoğaltmaz. İptal, SSH/TLS/parola istemi, hata ve pencere kapanışı native bağlantı yaşam döngüsüyle eşleşir. Geç dönen sonuç daha yeni denemenin veya kapatılmış pencerenin durumunu değiştirmez. Başarılı sonuç SQL sekmesini açar. Hata ilgili profile bağlı metin ve yeniden deneme eylemiyle gösterilir.
 
-Kaynaktaki `create_connected_editor`, `getTunnel`, `run_cancelable_task` ve `cancel_connect_editor` davranışları bu satır durumuna uyarlanır. Yeni satır görünümü için modal bekleme döngüsünün sahipliği ayrıca düzenlenmelidir. Bu tasarım etap kaydı, söz konusu async entegrasyonun çalıştığını iddia etmez.
+Kaynaktaki `create_connected_editor`, `getTunnel`, `run_cancelable_task` ve `cancel_connect_editor` davranışları satır durumuna uyarlandı. Bekleme döngüsü UI olaylarını işlerken yeni açma ve kapanışı denetler; iptalden sonra tamamlanan sonuç serbest bırakılır. İptal işbirliklidir ve mevcut bağlayıcı zaman aşımını bekleyebilir. Native derleme ve başarılı canlı TLS bağlantısı doğrulandı; bütün SSH/iptal yarışlarının canlı kabulü yapılmadı. Ayrıntılar [uygulama kaydındadır](UYGULAMA.md).
 
 ## Komut davranışları
 
@@ -127,7 +132,7 @@ Satır düzenleme, yetki değişikliği ve canlı değişken ayarı önizlemeler
 
 ## StarDataParadise araçları
 
-32–36 sayfaları Classic adaptör önerileridir. Kurulu yordamlar, UDF/worker, günlük ve araç yolları okunarak uygun girişler sunulur. Kullanıcı yetkisi, araç çıktısı ve hata durumu ilgili sağlayıcının mevcut sözleşmesinden gelir.
+32–36 sayfaları gerçek Classic adaptörlerine bağlandı. Kurulu yordamlar, UDF/worker, günlük ve araç yolları okunarak uygun girişler sunulur. Kullanıcı yetkisi, araç çıktısı ve hata durumu ilgili sağlayıcının mevcut sözleşmesinden gelir. Desteklenen eylemler, testler ve çalışma zamanı sınırları [araçlar kaydındadır](ARACLAR.md).
 
 | Yüzey | Kullanılacak mevcut kaynak | UI bağlama ihtiyacı |
 | --- | --- | --- |

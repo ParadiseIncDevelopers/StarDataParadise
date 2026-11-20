@@ -127,7 +127,7 @@ void DbSqlEditorHistory::EntriesModel::reset() {
   VarGridModel::reset();
 
   _readonly = true;
-  add_column("Date", std::string());
+  add_column(_("Date"), std::string());
 
   std::shared_ptr<sqlite::connection> data_swap_db = this->data_swap_db();
   Recordset_data_storage::create_data_swap_tables(data_swap_db.get(), _column_names, _column_types);
@@ -188,7 +188,7 @@ void DbSqlEditorHistory::EntriesModel::add_statements(const std::list<std::strin
 
   if (new_date) {
     refresh_ui();
-    _owner->current_entry((int)_row_count - 1);
+    _owner->current_entry(0); // insert_entry places the newest day at the front.
     _owner->update_timestamp(timestamp);
   }
 
@@ -325,7 +325,7 @@ void DbSqlEditorHistory::DetailsModel::reset() {
 
   _readonly = true;
 
-  add_column("Time", std::string());
+  add_column(_("Time"), std::string());
   add_column("SQL", std::string());
 
   std::shared_ptr<sqlite::connection> data_swap_db = this->data_swap_db();
@@ -335,17 +335,23 @@ void DbSqlEditorHistory::DetailsModel::reset() {
 }
 
 void DbSqlEditorHistory::DetailsModel::load(const std::string &storage_file_path) {
+  // A newly selected day has no file until its first statement is saved. It
+  // starts empty instead of retaining the previously displayed day's rows.
+  base::RecMutexLock data_mutex(_data_mutex);
+  _data.clear();
+  _row_count = 0;
+  _data_frame_end = 0;
+  _last_loaded_row = -1;
+  _last_timestamp = std::string("");
+  _last_statement = std::string("");
+
   if (base::file_exists(storage_file_path)) {
-    std::ifstream historyXml(storage_file_path);
+    std::ifstream historyXml(base::path_from_utf8(storage_file_path).c_str());
     if (historyXml.is_open()) {
       std::string line;
 
       // Skips the first line in the file as is the xml header
       std::getline(historyXml, line);
-      _row_count = 0;
-
-      base::RecMutexLock data_mutex(_data_mutex);
-      _data.clear();
       _data.reserve(_data.size() + _column_count);
       while (historyXml.good()) {
         std::getline(historyXml, line);
@@ -388,9 +394,10 @@ void DbSqlEditorHistory::DetailsModel::load(const std::string &storage_file_path
       _data_frame_end = _row_count;
 
       _last_loaded_row = (int)_row_count - 1;
+    } else {
+      logError("Can't open SQL history file %s\n", storage_file_path.c_str());
     }
-  } else
-    logError("Can't open SQL history file %s\n", storage_file_path.c_str());
+  }
 }
 
 std::string DbSqlEditorHistory::DetailsModel::storage_file_path() const {

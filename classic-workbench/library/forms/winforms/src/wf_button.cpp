@@ -81,13 +81,24 @@ bool ButtonWrapper::create(mforms::Button *backend, mforms::ButtonType btype) {
       break;
 
     case mforms::SmallButton:
-      button->FlatStyle = FlatStyle::System;
-      button->Font = gcnew Font(DEFAULT_FONT_FAMILY, 7, FontStyle::Regular, GraphicsUnit::Point);
-      button->Height = 15;
+      button->FlatStyle = FlatStyle::Flat;
+      button->FlatAppearance->BorderSize = 1;
+      button->Height = 24;
       break;
 
     default:
-      button->FlatStyle = FlatStyle::System;
+      button->FlatStyle = FlatStyle::Flat;
+      button->FlatAppearance->BorderSize = 1;
+      button->MinimumSize = Size(0, 26);
+  }
+
+  if (btype != mforms::AdminActionButton && !SystemInformation::HighContrast) {
+    button->UseVisualStyleBackColor = false;
+    button->BackColor = Color::FromArgb(237, 242, 244);
+    button->ForeColor = Color::FromArgb(16, 38, 41);
+    button->FlatAppearance->BorderColor = Color::FromArgb(163, 180, 188);
+    button->FlatAppearance->MouseOverBackColor = Color::FromArgb(221, 235, 228);
+    button->FlatAppearance->MouseDownBackColor = Color::FromArgb(195, 219, 209);
   }
 
   return true;
@@ -104,14 +115,11 @@ int ButtonWrapper::set_text(const std::string &text) {
 
   // Resize the button to fit its content.
   // Keep the button's width, though, if that is currently larger than the computed width.
-  Graphics ^ g = control->CreateGraphics();
-  SizeF size = g->MeasureString(control->Text, control->Font);
-  delete g;
-
-  if (std::ceill(size.Width) < control->Width)
-    size.Width = static_cast<float>(control->Width);
-  control->Width = static_cast<int>(std::ceill(size.Width));
-  return static_cast<int>(std::ceill(size.Height));
+  // WinForms includes the flat border, image and internal text padding in its
+  // preferred size. Measuring only the glyphs clipped translated captions.
+  Size preferred = control->GetPreferredSize(Size(0, 0));
+  control->Width = Math::Max(control->Width, preferred.Width);
+  return preferred.Height;
 }
 
 //-------------------------------------------------------------------------------------------------

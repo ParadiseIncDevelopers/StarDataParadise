@@ -73,10 +73,16 @@ xcopy /i /s /y /d %IMAGES_DIR%\icons\MySQLWorkbench.ico %TARGET_DIR%\images\icon
 xcopy /i /s /y /d %IMAGES_DIR%\icons\MySQLWorkbenchDoc.ico %TARGET_DIR%\. 1> nul 2> nul
 xcopy /i /s /y /d %IMAGES_DIR%\ui\*.png %TARGET_DIR%\images\ui\. 1> nul 2> nul
 xcopy /i /s /y /d %IMAGES_DIR%\ui\*.xpm %TARGET_DIR%\images\ui\. 1> nul 2> nul
+rem Keep the generated icon provenance and the original MIT attribution in native packages.
+copy /y "%IMAGES_DIR%\ui\sdp-tabler-icons.json" "%TARGET_DIR%\images\ui\." 1> nul 2> nul
+if not exist "%TARGET_DIR%\images\ui\tabler-source" mkdir "%TARGET_DIR%\images\ui\tabler-source"
+copy /y "%IMAGES_DIR%\ui\tabler-source\LICENSE.txt" "%TARGET_DIR%\images\ui\tabler-source\." 1> nul 2> nul
 xcopy /i /s /y /d %IMAGES_DIR%\home\*.png %TARGET_DIR%\images\home\. 1> nul 2> nul
 xcopy /i /s /y /d %IMAGES_DIR%\sql\*.png %TARGET_DIR%\images\sql\. 1> nul 2> nul
 
 echo Copy Resource files ..
+if not exist "%TARGET_DIR%\locales" mkdir "%TARGET_DIR%\locales"
+copy /y "%RES_DIR%\locales\tr*.json" "%TARGET_DIR%\locales\." 1> nul 2> nul
 if not exist %TARGET_DIR%\data mkdir %TARGET_DIR%\data
 xcopy /i /s /y /d %RES_DIR%\grtdata\*.xml %TARGET_DIR%\data\. 1> nul 2> nul
 xcopy /i /s /y /d %RES_DIR%\wbdata\*.xml %TARGET_DIR%\data\. 1> nul 2> nul

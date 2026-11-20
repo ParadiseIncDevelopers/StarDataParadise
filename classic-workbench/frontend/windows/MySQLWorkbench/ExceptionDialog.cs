@@ -23,6 +23,9 @@
  */
 
 using System;
+using System.Drawing;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using MySQL.Workbench;
 
@@ -32,40 +35,134 @@ namespace MySQL.GUI.Workbench
   {
     private static ExceptionDialog singleton = new ExceptionDialog();
 
-    private String errorInfo;
-
-    private WbContext wbContext;
+    private String errorInfo = String.Empty;
+    private bool detailsExpanded;
+    private bool updatingLayout;
 
     protected ExceptionDialog()
     {
       InitializeComponent();
+      Icon = (Icon)Properties.Resources.MySQLWorkbench.Clone();
+      string markPath = Path.Combine(Path.GetDirectoryName(typeof(ExceptionDialog).Assembly.Location), "images", "icons", "MySQLWorkbench-32.png");
+      if (File.Exists(markPath))
+        using (Image mark = Image.FromFile(markPath)) pictureBox1.Image = new Bitmap(mark);
+      else
+      {
+        pictureBox1.Visible = false;
+        headerLayout.ColumnStyles[0].Width = 0;
+      }
     }
 
     public static void Show(String message, String info, WbContext wbcontext)
     {
-      singleton.messageLabel.Text = message;
-      singleton.errorInfo = info;
-      singleton.wbContext = wbcontext;
-      singleton.ShowDialog();
+      if (singleton.IsDisposed)
+        singleton = new ExceptionDialog();
+      singleton.messageLabel.Text = message ?? String.Empty;
+      singleton.errorInfo = (message ?? String.Empty) + Environment.NewLine + Environment.NewLine + (info ?? String.Empty);
+      singleton.richTextBox1.Text = singleton.errorInfo;
+      singleton.copyStatusLabel.Text = String.Empty;
+      singleton.detailsExpanded = false;
+      singleton.UpdateDetails(true);
+      Form owner = Form.ActiveForm;
+      if (owner == singleton || owner == null || owner.IsDisposed)
+      {
+        owner = null;
+        foreach (Form candidate in Application.OpenForms)
+          if (candidate != singleton && candidate.Visible && !candidate.IsDisposed)
+          {
+            owner = candidate;
+            if (candidate is MainForm) break;
+          }
+      }
+      singleton.StartPosition = owner == null ? FormStartPosition.CenterScreen : FormStartPosition.CenterParent;
+      if (owner == null) singleton.ShowDialog();
+      else singleton.ShowDialog(owner);
     }
 
-    private void reportBugButton_Click(object sender, EventArgs e)
+    protected override void OnShown(EventArgs e)
     {
-      if (wbContext.is_commercial())
-        System.Diagnostics.Process.Start("http://support.oracle.com");
-      else
-        //wbContext.report_bug(errorInfo);
-        System.Diagnostics.Process.Start("http://bugs.mysql.com");
+      base.OnShown(e);
+      UpdateDetails(true);
+      closeButton.Focus();
+    }
+
+    protected override void OnResize(EventArgs e)
+    {
+      base.OnResize(e);
+      if (layout != null && IsHandleCreated)
+        UpdateDetails(false);
+    }
+
+    private void detailsButton_Click(object sender, EventArgs e)
+    {
+      detailsExpanded = !detailsExpanded;
+      UpdateDetails(true);
+      if (detailsExpanded)
+        richTextBox1.Focus();
+    }
+
+    private void UpdateDetails(bool resizeWindow)
+    {
+      if (updatingLayout || layout == null)
+        return;
+      updatingLayout = true;
+      try
+      {
+        float scale;
+        using (Graphics graphics = CreateGraphics())
+          scale = graphics.DpiY / 96.0f;
+        int width = Math.Max(120, ClientSize.Width - layout.Padding.Horizontal);
+        messageLabel.MaximumSize = new Size(width - messagePanel.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth, 0);
+        Size measured = TextRenderer.MeasureText(messageLabel.Text, messageLabel.Font,
+          new Size(messageLabel.MaximumSize.Width, Int32.MaxValue), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
+        int messageHeight = Math.Max((int)(36 * scale), Math.Min((int)(120 * scale), measured.Height + 4));
+        layout.RowStyles[1].Height = messageHeight + messagePanel.Margin.Vertical;
+        layout.RowStyles[4].Height = (int)(17 * scale);
+        richTextBox1.Visible = detailsExpanded;
+        layout.RowStyles[3].SizeType = detailsExpanded ? SizeType.Percent : SizeType.Absolute;
+        layout.RowStyles[3].Height = detailsExpanded ? 100 : 0;
+        detailsButton.Text = detailsExpanded ? "Ayrıntıları gizle" : "Teknik ayrıntıları göster";
+        detailsButton.AccessibleDescription = detailsExpanded ? "Teknik ayrıntılar açık" : "Teknik ayrıntılar kapalı";
+        int fixedHeight = layout.Padding.Vertical +
+          headerLayout.GetPreferredSize(new Size(width, 0)).Height + headerLayout.Margin.Vertical +
+          messageHeight + messagePanel.Margin.Vertical +
+          detailsButton.GetPreferredSize(Size.Empty).Height + detailsButton.Margin.Vertical +
+          (int)(17 * scale) + footerLayout.GetPreferredSize(new Size(width, 0)).Height;
+        int frameHeight = Height - ClientSize.Height;
+        Rectangle working = Screen.FromControl(this).WorkingArea;
+        MinimumSize = new Size(Math.Min((int)(520 * scale), working.Width),
+          Math.Min(fixedHeight + frameHeight + (detailsExpanded ? (int)(120 * scale) : 0), working.Height));
+        if (resizeWindow)
+          ClientSize = new Size(ClientSize.Width, Math.Min(fixedHeight + (detailsExpanded ? (int)(220 * scale) : 0), working.Height - frameHeight));
+      }
+      finally
+      {
+        updatingLayout = false;
+      }
     }
 
     private void copyInfoButton_Click(object sender, EventArgs e)
     {
-      Clipboard.SetText(errorInfo);
+      CopyDiagnosticInfo();
     }
 
     private void copyStackTraceToClipboardToolStripMenuItem_Click(object sender, EventArgs e)
     {
-      Clipboard.SetText(errorInfo);
+      CopyDiagnosticInfo();
+    }
+
+    private void CopyDiagnosticInfo()
+    {
+      try
+      {
+        if (errorInfo.Length > 0)
+          Clipboard.SetText(errorInfo);
+        copyStatusLabel.Text = "Kopyalandı";
+      }
+      catch (ExternalException)
+      {
+        copyStatusLabel.Text = "Panoya erişilemedi.";
+      }
     }
 
   }

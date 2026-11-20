@@ -56,6 +56,9 @@ public:
   }
   std::function<void()> rows_changed;
   boost::signals2::signal<void()> refresh_ui_signal;
+  // Selection changes update the inline row inspector without refreshing or
+  // mutating the resultset. This is separate from data refresh notifications.
+  boost::signals2::signal<void()> edited_field_changed_signal;
 
 protected:
   boost::signals2::scoped_connection _refresh_connection;

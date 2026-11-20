@@ -650,8 +650,11 @@ void VarGridModel::emit_partition_commands(sqlite::connection *data_swap_db, siz
 //--------------------------------------------------------------------------------------------------
 
 void VarGridModel::set_edited_field(RowId row_index, ColumnId col_index) {
+  if (_edited_field_row == row_index && _edited_field_col == col_index)
+    return;
   _edited_field_row = row_index;
   _edited_field_col = col_index;
+  edited_field_changed_signal();
 }
 
 //--------------------------------------------------------------------------------------------------

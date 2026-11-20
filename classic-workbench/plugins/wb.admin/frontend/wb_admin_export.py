@@ -463,7 +463,7 @@ class WbAdminSchemaListTab(mforms.Box):
         self.schema_list.set_name("Schema List")
         self.schema_list.set_min_size(-1, 150)
         self.schema_list.add_column(mforms.CheckColumnType, is_importing and "Import" or "Export", 40, True)
-        self.schema_list.add_column(mforms.IconColumnType, "Schema", 300, False)
+        self.schema_list.add_column(mforms.IconColumnType, "Şema", 300, False)
 
         self.schema_list.set_cell_edited_callback(self.schema_list_edit)
         self.schema_list.end_columns()
@@ -473,7 +473,7 @@ class WbAdminSchemaListTab(mforms.Box):
         self.table_list.set_name("Table List")
         self.table_list.set_min_size(-1, 150)
         self.table_list.add_column(mforms.CheckColumnType, is_importing and "Import" or "Export", 40, True)
-        self.table_list.add_column(mforms.IconColumnType, "Schema Objects", 300, False)
+        self.table_list.add_column(mforms.IconColumnType, "Nesneler", 300, False)
         self.table_list.end_columns()
         self.table_list.set_allow_sorting(True)
 
@@ -489,20 +489,20 @@ class WbAdminSchemaListTab(mforms.Box):
         optionspanel = newPanel(mforms.TitledBoxPanel)
         if is_importing:
             self.export_objects_panel = None
-            optionspanel.set_title("Import Options")
+            optionspanel.set_title("İçe aktarma seçenekleri")
             optionspanel.set_name("Import Options")
         else:
             self.export_objects_panel = newPanel(mforms.TitledBoxPanel)
-            self.export_objects_panel.set_title("Objects to Export")
+            self.export_objects_panel.set_title("Aktarılacak nesneler")
             self.export_objects_panel.set_name("Objects To Export")
-            optionspanel.set_title("Export Options")
+            optionspanel.set_title("Dışa aktarma seçenekleri")
             optionspanel.set_name("Export Options")
         optionsbox = newBox(False)
         optionsbox.set_padding(8)
         optionsbox.set_spacing(6)
 
         self.file_btn = newButton()
-        self.file_btn.set_text("...")
+        self.file_btn.set_text("Gözat…")
         self.file_btn.set_name("File Path Browse")
         self.file_btn.enable_internal_padding(False)
         self.file_btn.set_enabled(False)
@@ -510,13 +510,13 @@ class WbAdminSchemaListTab(mforms.Box):
         self._radio_group = mforms.RadioButton.new_id()
 
         if is_importing:
-            self.folderlabel = newLabel("Select the Dump Project Folder to import. You can do a selective restore.")
+            self.folderlabel = newLabel("Döküm klasöründen nesneleri seçerek aktarın.")
             self.folderradio = newRadioButton(self._radio_group)
             self.folderradio.set_name("Import From Dump Project Folder")
-            self.statlabel = newLabel("Press [Start Import] to start...")
+            self.statlabel = newLabel("Kaynak ve hedefi seçin.")
             self.statlabel.set_name("Press [Start Import] To Start")
             self.statlabel.set_name("Press Start Info")
-            self.filelabel = newLabel("Select the SQL/dump file to import. Please note that the whole file will be imported.")
+            self.filelabel = newLabel("Dosyanın tamamı aktarılır. Betikteki USE ve CREATE DATABASE hedef şemayı değiştirebilir.")
             self.filelabel.set_name("Select File to Import Info")
             self.single_transaction_check = None
             self.include_schema_check = None
@@ -525,11 +525,11 @@ class WbAdminSchemaListTab(mforms.Box):
             self.dump_routines_check = None
             self.dump_events_check = None
         else:
-            self.filelabel = newLabel("All selected database objects will be exported into a single, self-contained file.")
-            self.folderlabel = newLabel("Each table will be exported into a separate file. This allows a selective restore, but may be slower.")
+            self.filelabel = newLabel("Seçili nesneler tek SQL dosyasına yazılır.")
+            self.folderlabel = newLabel("Her tablo ayrı dosyaya yazılır. Nesneler ayrı ayrı geri yüklenebilir.")
             self.folderradio = newRadioButton(self._radio_group)
             self.folderradio.set_name("Export To Dump Project Folder")
-            self.statlabel = newLabel("Press [Start Export] to start...")
+            self.statlabel = newLabel("Nesneleri ve çıktı yolunu seçin.")
             self.statlabel.set_name("Press [Start Export] To Start")
             self.single_transaction_check = newCheckBox()
             self.single_transaction_check.set_name("Create Dump In A Single Transaction")
@@ -545,17 +545,18 @@ class WbAdminSchemaListTab(mforms.Box):
 
         self.filelabel.set_enabled(False)
         self.filelabel.set_style(mforms.SmallStyle)
+        self.filelabel.set_wrap_text(True)
 
         if is_importing:
             self.fileradio = newRadioButton(self._radio_group)
-            self.fileradio.set_text("Import from Self-Contained File")
+            self.fileradio.set_text("SQL dosyası")
             self.fileradio.set_name("Import From Self-Contained File")
         else:
             self.fileradio = newRadioButton(self._radio_group)
-            self.fileradio.set_text("Export to Self-Contained File")
+            self.fileradio.set_text("Tek SQL dosyası")
             self.fileradio.set_name("Export To Self-Contained File")
 
-        self.fileradio.set_size(260,-1)
+        self.fileradio.set_size(190,-1)
         self.fileradio.add_clicked_callback(self.set_save_option)
 
         file_path = newBox(True)
@@ -568,15 +569,16 @@ class WbAdminSchemaListTab(mforms.Box):
 
         self.folderradio.add_clicked_callback(self.set_save_option)
         self.folderradio.set_active(True)
-        self.folderradio.set_size(260,-1)
+        self.folderradio.set_size(190,-1)
         self.folderlabel.set_style(mforms.SmallStyle)
+        self.folderlabel.set_wrap_text(True)
 
         folder_path = newBox(True)
         folder_path.set_spacing(4)
         self.folder_te = newTextEntry()
         self.folder_te.set_name("Folder Path Entry")
         self.folder_btn = newButton()
-        self.folder_btn.set_text("...")
+        self.folder_btn.set_text("Gözat…")
         self.folder_btn.set_name("Folder Path Browse")
         self.folder_btn.enable_internal_padding(False)
         self.folder_btn.add_clicked_callback(self.open_folder_chooser)
@@ -588,7 +590,7 @@ class WbAdminSchemaListTab(mforms.Box):
         optionsbox.add(self.folderlabel, False, True)
         if is_importing:
             self.folder_load_btn = newButton()
-            self.folder_load_btn.set_text("Load Folder Contents")
+            self.folder_load_btn.set_text("Klasörü oku")
             self.folder_load_btn.set_name("Load Folder Contents")
             self.folder_load_btn.add_clicked_callback(self.refresh_table_list)
             tbox = newBox(True)
@@ -637,10 +639,10 @@ class WbAdminSchemaListTab(mforms.Box):
         
         selectionpanel = newPanel(mforms.TitledBoxPanel)
         if is_importing:
-            selectionpanel.set_title("Select Database Objects to Import (only available for Project Folders)")
+            selectionpanel.set_title("Klasörden aktarılacak nesneler")
             selectionpanel.set_name("Database Objects To Import")
         else:
-            selectionpanel.set_title("Tables to Export")
+            selectionpanel.set_title("Aktarılacak tablolar")
             selectionpanel.set_name("Tables To Export")
         selectionvbox = newBox(False)
         selectionvbox.set_padding(8)
@@ -655,7 +657,7 @@ class WbAdminSchemaListTab(mforms.Box):
 
         if not is_importing:
             self.refresh_button = newButton()
-            self.refresh_button.set_text("Refresh")
+            self.refresh_button.set_text("Yenile")
             self.refresh_button.set_name("Refresh")
             selectionbbox.add(self.refresh_button, False, True)
             self.refresh_button.add_clicked_callback(self.refresh_table_list)
@@ -664,12 +666,12 @@ class WbAdminSchemaListTab(mforms.Box):
         selectionbbox.add(self.select_summary_label, True, True)
 
         self.select_all_views_btn = newButton()
-        self.select_all_views_btn.set_text("Select Views")
+        self.select_all_views_btn.set_text("Görünümleri seç")
         self.select_all_views_btn.set_name("Select Views")
         self.select_all_views_btn.add_clicked_callback(self.select_all_views)
         self.select_all_views_btn.set_enabled(False)
         self.select_all_btn = newButton()
-        self.select_all_btn.set_text("Select Tables")
+        self.select_all_btn.set_text("Tabloları seç")
         self.select_all_btn.set_name("Select Tables")
         self.select_all_btn.add_clicked_callback(self.select_all_tables)
         self.select_all_btn.set_enabled(False)
@@ -704,7 +706,7 @@ class WbAdminSchemaListTab(mforms.Box):
             hbox.add(self.import_target_schema, True, True)
             b = newButton()
             b.set_name("New")
-            b.set_text("New...")
+            b.set_text("Yeni…")
             b.add_clicked_callback(self.new_target_schema)
 
             hbox.add(b, False, True)
@@ -731,28 +733,33 @@ class WbAdminSchemaListTab(mforms.Box):
 
         self.export_button = newButton()
         if is_importing:
+            self.preview_button = newButton()
+            self.preview_button.set_text("SQL önizle…")
+            self.preview_button.add_clicked_callback(self.preview_sql)
+            box.add(self.preview_button, False, True)
+        if is_importing:
             self.export_button.set_enabled(False)
         box.add_end(self.export_button, False, True)
         self.export_button.add_clicked_callback(self.start)
 
         if is_importing:
             self.file_btn.add_clicked_callback(lambda: self.open_file_chooser(mforms.OpenFile))
-            self.folderradio.set_text("Import from Dump Project Folder")
-            self.export_button.set_text("Start Import")
+            self.folderradio.set_text("Döküm klasörü")
+            self.export_button.set_text("İçe aktarmayı başlat")
             self.export_button.set_name("Start Import")
         else:
             self.file_btn.add_clicked_callback(lambda: self.open_file_chooser(mforms.SaveFile))
-            self.single_transaction_check.set_text("Create Dump in a Single Transaction (self-contained file only)")
+            self.single_transaction_check.set_text("Tek işlemde tutarlı döküm (tek dosya)")
             self.single_transaction_check.set_enabled(False)
             self.single_transaction_check.add_clicked_callback(self.single_transaction_clicked)
-            self.include_schema_check.set_text("Include Create Schema")
-            self.dump_triggers_check.set_text("Dump Triggers")
+            self.include_schema_check.set_text("CREATE SCHEMA ekle")
+            self.dump_triggers_check.set_text("Tetikleyiciler")
             #self.dump_view_check.set_text("Dump Views")
-            self.dump_routines_check.set_text("Dump Stored Procedures and Functions")
-            self.dump_events_check.set_text("Dump Events")
+            self.dump_routines_check.set_text("Yordamlar ve fonksiyonlar")
+            self.dump_events_check.set_text("Olaylar")
 
-            self.folderradio.set_text("Export to Dump Project Folder")
-            self.export_button.set_text("Start Export")
+            self.folderradio.set_text("Döküm klasörü")
+            self.export_button.set_text("Dışa aktarmayı başlat")
             self.export_button.set_name("Start Export")
 
         self.resume_layout()
@@ -981,7 +988,7 @@ class WbAdminImportTab(WbAdminSchemaListTab):
     def __init__(self, owner, server_profile, progress_tab):
         WbAdminSchemaListTab.__init__(self, owner, server_profile, progress_tab, True)
         self.table_list_model = TableListModel()
-        self.export_button.set_text("Start Import")
+        self.export_button.set_text("İçe aktarmayı başlat")
         self.tables_paths = {}
         self.views_paths = {}
         self._update_schema_list_tm = None
@@ -989,6 +996,61 @@ class WbAdminImportTab(WbAdminSchemaListTab):
         
         self.folder_te.set_value(self.get_default_dump_folder())
         self.file_te.set_value(os.path.join(self.get_default_dump_folder(), "export.sql"))
+
+    def preview_sql(self):
+        """Inspect the selected dump files without invoking the import worker."""
+        if self.fileradio.get_active():
+            paths = [self.file_te.get_string_value()]
+        else:
+            paths = sorted({self.tables_paths.get(key) or self.views_paths.get(key)
+                            for key in self.table_list_model.get_full_selection()}
+                           - {None})
+        paths = [path for path in paths if path and os.path.isfile(path)]
+        if not paths:
+            Utilities.show_message("SQL önizlemesi", "Bir SQL dosyası seçin veya klasörü okuyup nesneleri işaretleyin.", "Kapat", "", "")
+            return
+
+        form = mforms.Form(mforms.Form.main_form(), mforms.FormNormal)
+        form.set_title("SQL içe aktarma önizlemesi")
+        box = newBox(False)
+        box.set_padding(12)
+        box.set_spacing(8)
+        form.set_content(box)
+        target = self.import_target_schema.get_string_value() or "Betikte belirtilen şema"
+        box.add(newLabel("Hedef: %s - %s" % (self.owner.editor.connection.name, target)), False, True)
+        chooser = newSelector()
+        chooser.add_items(paths)
+        box.add(chooser, False, True)
+        sql = mforms.CodeEditor()
+        sql.set_language(mforms.LanguageMySQL)
+        sql.set_read_only(True)
+        box.add(sql, True, True)
+        info = newLabel("İlk 64 KiB gösterilir. USE ve CREATE DATABASE ifadeleri hedef şemayı değiştirebilir.")
+        info.set_wrap_text(True)
+        box.add(info, False, True)
+
+        def load_preview():
+            try:
+                with open(chooser.get_string_value(), "rb") as stream:
+                    text = stream.read(65536).decode("utf-8-sig", errors="replace")
+                sql.set_read_only(False)
+                sql.set_text(text.encode("utf-8"))
+                sql.set_read_only(True)
+            except OSError as exc:
+                Utilities.show_error("SQL dosyası okunamadı", str(exc), "Kapat", "", "")
+
+        chooser.add_changed_callback(load_preview)
+        chooser.set_selected(0)
+        load_preview()
+        close = newButton()
+        close.set_text("Kapat")
+        footer = newBox(True)
+        footer.add_end(close, False, True)
+        box.add(footer, False, True)
+        close.add_clicked_callback(form.close)
+        form.set_size(800, 560)
+        form.center()
+        form.run_modal(close, close)
 
     def new_target_schema(self):
         ret, name = Utilities.request_input("Create Schema", "Name of schema to create:", "newschema")
@@ -2182,9 +2244,9 @@ class WbAdminProgressTab(mforms.Box):
         self.statlabel = newLabel("")
         statusbox.set_size(400, -1)
         if is_export:
-            self.hintlabel = newLabel("Press [Start Export] to start...")
+            self.hintlabel = newLabel("Nesneleri ve çıktı yolunu seçin.")
         else:
-            self.hintlabel = newLabel("Press [Start Import] to start...")
+            self.hintlabel = newLabel("Kaynak ve hedefi seçin.")
         self.hintlabel.set_name("Press to Start")
         statusbox.add(self.hintlabel, False, True)
         statusbox.add(self.dump_progressbar, False, True)
@@ -2212,10 +2274,10 @@ class WbAdminProgressTab(mforms.Box):
 
         self.export_button = newButton()
         if is_export:
-            self.export_button.set_text("Start Export")
+            self.export_button.set_text("Dışa aktarmayı başlat")
             self.export_button.set_name("Start Export")
         else:
-            self.export_button.set_text("Start Import")
+            self.export_button.set_text("İçe aktarmayı başlat")
             self.export_button.set_name("Start Import")
             self.export_button.set_enabled(False)
 
@@ -2361,7 +2423,7 @@ class WbAdminExport(WbAdminTabBase):
         
         self.options_tab.add_clicked_callback_to_checkbox("Show Internal Schemas", self.show_internal_schemas_changed)
 
-        self.tabview.add_page(self.progress_tab, "Export Progress")
+        self.tabview.add_page(self.progress_tab, "Aktarım ilerlemesi")
 
         self.tabview.show(True)
         self.recall_options()
@@ -2471,9 +2533,9 @@ class WbAdminImport(WbAdminTabBase):
 
         self.progress_tab = WbAdminProgressTab(self, False)
         self.import_tab = WbAdminImportTab(self, self.instance_info, self.progress_tab)
-        self.tabview.add_page(self.import_tab, "Import from Disk")
+        self.tabview.add_page(self.import_tab, "SQL içe aktarma")
 
-        self.tabview.add_page(self.progress_tab, "Import Progress")
+        self.tabview.add_page(self.progress_tab, "Aktarım ilerlemesi")
         self.tabview.show(True)
 
         return self.tabview

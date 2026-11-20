@@ -2,11 +2,15 @@
 
 Bağlı SQL çalışma alanı ve buradan açılan yüzeyler için 41 ayrı sayfa/durum taslağı. 19 Kasım 2026.
 
-**Seçilen yön** · [Sekmeler 3](referanslar/onayli-sekmeler-3.png) ve [bağlantı beklemesi 1](referanslar/onayli-baglanti-beklemesi-1.png). Yeni sayfalarda aynı açık tema, profil avatarı ve kompakt kontrol ölçüleri kullanılır.
+**Çalışan Classic uygulaması:** [uygulama kaydı](UYGULAMA.md), [tamamlanan Veri/Şema ve yönetim kabulü](VERI-SEMA-YONETIM.md), [beş ürün aracının kapsamı](ARACLAR.md). Güncel çıktı `out/classic-data-schema-delivery/StarDataParadise.exe`; derleme [Build-Workspace.ps1](../../Build-Workspace.ps1) ile yapılır. Derlemeler, 66 Python sınaması, 21 derlenmiş kontrol, Türkçe/İngilizce yeniden açılış, veri/DDL akışları ve QA temizliği geçti. [21 son native görüntü](VERI-SEMA-YONETIM.md#canli-kabul-goruntuleri) gerçek kabul kanıtıdır. Aşağıdaki 41 görsel tasarım referanslarıdır.
 
-[Her sayfanın görseli ve davranışı](SAYFALAR.md) · [Yerleşim ve bileşen kuralları](KURALLAR.md) · [Komut envanteri](KOMUTLAR.md) · [Canlı inceleme ve sınırlar](INCELEME.md) · [Paket denetimi](DOGRULAMA.md)
+[Son çalışan Veri ekranı](uygulama/veri-sema-yonetim/14-son-uygulama.jpg), gerçek tablonun sekiz satırını ve seçili sekizinci kaydı gösterir. [Önceki görsel uyum etabı](UYGULAMA.md#gorsel-uyum) ve [önceki SQL ekranı](uygulama/fidelity/sql-final.jpg) tarihsel kabul kaydında korunur.
 
-Görsellerdeki veri, ölçüm, yol, revizyon, sürüm ayrıntısı ve kod örnekleri temsili yerleşim içeriğidir. Uygulama davranışı için sayfa notları ve mevcut kaynak işlevleri esas alınır. Sayfa 32–36, belgelenmiş araçlara Classic arayüz adaptörü önerir. Help dış bağlantıları sonraki aşamaya bırakılmıştır.
+**Seçilen yön** - [Sekmeler 3](referanslar/onayli-sekmeler-3.png) ve [bağlantı beklemesi 1](referanslar/onayli-baglanti-beklemesi-1.png). Yeni sayfalarda aynı açık tema, profil avatarı ve kompakt kontrol ölçüleri kullanılır.
+
+[Her sayfanın görseli ve davranışı](SAYFALAR.md) - [Yerleşim ve bileşen kuralları](KURALLAR.md) - [Komut envanteri](KOMUTLAR.md) - [Canlı inceleme ve sınırlar](INCELEME.md) - [Paket denetimi](DOGRULAMA.md)
+
+Görsellerdeki veri, ölçüm, yol, revizyon, sürüm ayrıntısı ve kod örnekleri temsili yerleşim içeriğidir. Uygulama davranışı için uygulama kaydı ve mevcut kaynak işlevleri esas alınır. Sayfa 32–36 için gerçek Classic adaptörleri eklenmiştir; kurulum ve çalışma zamanı sınırları araçlar kaydındadır. Help dış bağlantıları sonraki aşamaya bırakılmıştır.
 
 ## SQL ve veri
 
@@ -64,7 +68,7 @@ Görsellerdeki veri, ölçüm, yol, revizyon, sürüm ayrıntısı ve kod örnek
 | 25 | [Betikler ve eklentiler](gorseller/25-betikler.png) | Çalıştır |
 | 31 | [Yardım ve ürün bilgisi](gorseller/31-yardim-hakkinda.png) | Sürüm bilgisini kopyala |
 
-## StarDataParadise entegrasyon önerileri
+## StarDataParadise araçlarının tasarım referansları
 
 | Sayfa | Görsel | Ana eylem |
 | --- | --- | --- |

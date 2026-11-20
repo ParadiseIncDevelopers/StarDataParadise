@@ -28,12 +28,118 @@ from mforms import IconStringColumnType, StringColumnType, LongIntegerColumnType
 from workbench.notifications import NotificationCenter
 from wb_admin_utils import make_panel_header
 from workbench.utils import human_size, Version
+from workbench.sdp_i18n import tr
+
+
+def quote_identifier(value):
+    return "`%s`" % str(value).replace("`", "``")
+
+
+class SelectedTablePreview(mforms.Box):
+    """Read-only metadata beside the schema's table list."""
+    def __init__(self, editor):
+        mforms.Box.__init__(self, False)
+        self.set_managed()
+        self.set_release_on_add()
+        self.editor = editor
+        self.schema = None
+        self.table = None
+        self.set_padding(8)
+        self.set_spacing(8)
+        self.heading = mforms.newLabel(tr("Select a table"))
+        self.heading.set_style(mforms.BoldStyle)
+        self.add(self.heading, False, True)
+        self.note = mforms.newLabel(tr("Select a table to inspect its columns, indexes and SQL definition."))
+        self.note.set_wrap_text(True)
+        self.add(self.note, False, True)
+        self.tabs = mforms.newTabView(mforms.TabViewClassic)
+        self.add(self.tabs, True, True)
+        self.columns = self._tree([(tr("Column"), 150), (tr("Type"), 140), (tr("Nullable"), 120), (tr("Key"), 70)])
+        self.indexes = self._tree([(tr("Index"), 140), (tr("Column"), 150), (tr("Unique"), 80), (tr("Order"), 70)])
+        self.tabs.add_page(self.columns, tr("Columns"))
+        self.tabs.add_page(self.indexes, tr("Indexes"))
+        self.definition = mforms.CodeEditor()
+        self.definition.set_language(mforms.LanguageMySQL)
+        self.definition.set_read_only(True)
+        self.tabs.add_page(self.definition, tr("DDL"))
+        self.edit = mforms.newButton()
+        self.edit.set_text(tr("Edit definition"))
+        self.edit.set_enabled(False)
+        self.edit.add_clicked_callback(self.edit_definition)
+        actions = mforms.newBox(True)
+        actions.add_end(self.edit, False, False)
+        self.add(actions, False, True)
+
+    def _tree(self, columns):
+        tree = mforms.newTreeView(mforms.TreeFlatList | mforms.TreeAltRowColors | mforms.TreeShowColumnLines)
+        tree.set_row_height(26)
+        for caption, width in columns:
+            tree.add_column(mforms.StringColumnType, caption, width, False)
+        tree.end_columns()
+        return tree
+
+    def _rows(self, sql, read_row):
+        result = None
+        try:
+            result = self.editor.executeManagementQuery(sql, 0)
+            if result and result.goToFirstRow():
+                while True:
+                    read_row(result)
+                    if not result.nextRow():
+                        break
+        finally:
+            if result:
+                result.reset_references()
+
+    def show_tables(self, schema, tables):
+        self.columns.clear()
+        self.indexes.clear()
+        self.definition.set_read_only(False)
+        self.definition.set_value("")
+        self.definition.set_read_only(True)
+        self.schema = schema
+        self.table = tables[0][0] if tables else None
+        self.edit.set_enabled(bool(self.table))
+        if not self.table:
+            self.heading.set_text(tr("Select a table"))
+            self.note.set_text(tr("Select a table to inspect its columns, indexes and SQL definition."))
+            return
+        self.heading.set_text(self.table)
+        self.note.set_text(tr("Read-only metadata from the current server."))
+        name = "%s.%s" % (quote_identifier(schema), quote_identifier(self.table))
+        try:
+            def column_row(result):
+                node = self.columns.add_node()
+                for index, field in enumerate(("Field", "Type", "Null", "Key")):
+                    value = result.stringFieldValueByName(field)
+                    if field == "Null":
+                        value = tr("Yes") if value == "YES" else tr("No")
+                    node.set_string(index, value)
+            self._rows("SHOW FULL COLUMNS FROM " + name, column_row)
+            def index_row(result):
+                node = self.indexes.add_node()
+                node.set_string(0, result.stringFieldValueByName("Key_name"))
+                node.set_string(1, result.stringFieldValueByName("Column_name"))
+                node.set_string(2, tr("Yes") if result.stringFieldValueByName("Non_unique") == "0" else tr("No"))
+                node.set_string(3, result.stringFieldValueByName("Seq_in_index"))
+            self._rows("SHOW INDEX FROM " + name, index_row)
+            def ddl_row(result):
+                self.definition.set_read_only(False)
+                self.definition.set_value(result.stringFieldValue(1))
+                self.definition.set_read_only(True)
+            self._rows("SHOW CREATE TABLE " + name, ddl_row)
+        except Exception as error:
+            self.note.set_text(tr("Metadata could not be read: %s") % error)
+
+    def edit_definition(self):
+        if self.schema is not None and self.table is not None:
+            self.editor.alterLiveObject("db.Table", self.schema, self.table)
 
 def show_schema_manager(editor, selection, table_maintenance=False):
     try:
         editor.executeManagementQuery("select 1", 0)
     except grt.DBError as e:
-        mforms.Utilities.show_error("Schema Inspector", "Can not launch the Schema Inspector because the server is unreacheble.", "OK", "", "")
+        mforms.Utilities.show_error(tr("Schema Inspector"), tr("Can not launch the Schema Inspector because the server is unreacheble."), tr("OK"), "", "")
         log_error("Can not launch the Schema Inspector because the server is unreacheble.\n")
         return False
     
@@ -63,7 +169,7 @@ def handleLiveTreeContextMenu(name, sender, args):
             return
 
     if schemas_selected:
-        item = mforms.newMenuItem("Schema Inspector")
+        item = mforms.newMenuItem(tr("Schema Inspector"))
         item.add_clicked_callback(lambda: show_schema_manager(sender, schemas_selected))
         menu.insert_item(2, item)
 
@@ -77,25 +183,30 @@ class MaintenanceResultForm(mforms.Form):
         self.set_content(self.box)
 
         self.tree = mforms.newTreeView(mforms.TreeFlatList|mforms.TreeAltRowColors|mforms.TreeShowColumnLines)
+
+        self.tree.set_row_height(26)
+
+        self.tree.set_font("Segoe UI 10")
         self.tree.set_selection_mode(mforms.TreeSelectMultiple)
+        self.tree.set_row_height(26)
         self.box.add(self.tree, True, True)
-        self.tree.add_column(mforms.StringColumnType, "Table", 200, False)
+        self.tree.add_column(mforms.StringColumnType, tr("Table"), 200, False)
         if checksum:
-            self.tree.add_column(mforms.StringColumnType, "Checksum", 100, False)
+            self.tree.add_column(mforms.StringColumnType, tr("Checksum"), 100, False)
         else:
-            self.tree.add_column(mforms.StringColumnType, "Operation", 80, False)
-            self.tree.add_column(mforms.IconStringColumnType, "Message", 400, False)
+            self.tree.add_column(mforms.StringColumnType, tr("Action"), 80, False)
+            self.tree.add_column(mforms.IconStringColumnType, tr("Message"), 400, False)
         self.tree.end_columns()
 
         self._checksum = checksum
 
         app = mforms.App.get()
         icon_path = {
-            'status': app.get_resource_path('mini_ok.png'),
-            'error': app.get_resource_path('mini_error.png'),
+            'status': app.get_resource_path('sdp_check.png'),
+            'error': app.get_resource_path('sdp_alert-circle.png'),
             'info': '',
-            'note': app.get_resource_path('mini_notice.png'),
-            'warning': app.get_resource_path('mini_warning.png'),
+            'note': app.get_resource_path('sdp_message.png'),
+            'warning': app.get_resource_path('sdp_alert-circle.png'),
         }
 
         ok = results.goToFirstRow()
@@ -116,11 +227,11 @@ class MaintenanceResultForm(mforms.Form):
 
         copy = mforms.newButton()
         copy.add_clicked_callback(self.copy_to_clipboard)
-        copy.set_text("Copy to Clipboard")
+        copy.set_text(tr("Copy"))
         bbox.add(copy, False, True)
 
         self.ok = mforms.newButton()
-        self.ok.set_text("OK")
+        self.ok.set_text(tr("OK"))
         self.ok.add_clicked_callback(self.close)
         bbox.add_end(self.ok, False, True)
 
@@ -141,8 +252,40 @@ class MaintenanceResultForm(mforms.Form):
         self.run_modal(self.ok, None)
 
 
-def do_table_maintenance(editor, action, selection):
+def review_maintenance_sql(editor, query):
+    form = mforms.Form(mforms.Form.main_form(), mforms.FormNormal)
+    form.set_title(tr("Table maintenance - SQL review"))
+    box = mforms.newBox(False)
+    box.set_padding(12)
+    box.set_spacing(8)
+    form.set_content(box)
+    box.add(mforms.newLabel(tr("Connection: %s") % editor.connection.name), False, True)
+    code = mforms.CodeEditor()
+    code.set_language(mforms.LanguageMySQL)
+    code.set_text(query.encode("utf-8"))
+    code.set_read_only(True)
+    box.add(code, True, True)
+    note = mforms.newLabel(tr("The selected maintenance action may lock the table. Results come from the server."))
+    note.set_wrap_text(True)
+    box.add(note, False, True)
+    footer = mforms.newBox(True)
+    footer.set_spacing(8)
+    apply = mforms.newButton()
+    apply.set_text(tr("Apply"))
+    cancel = mforms.newButton()
+    cancel.set_text(tr("Cancel"))
+    footer.add_end(apply, False, True)
+    footer.add_end(cancel, False, True)
+    box.add(footer, False, True)
+    form.set_size(760, 460)
+    form.center()
+    return form.run_modal(apply, cancel)
+
+
+def do_table_maintenance(editor, action, selection, reviewed=False):
     query = action % ", ".join(selection)
+    if not reviewed and not review_maintenance_sql(editor, query + ";"):
+        return
     result = editor.executeManagementQuery(query, 1)
 
     form = MaintenanceResultForm(result, action.startswith("CHECKSUM"))
@@ -184,6 +327,10 @@ class ObjectManager(mforms.Box):
         self.main.set_spacing(8)
 
         self.tree = mforms.newTreeView(mforms.TreeFlatList|mforms.TreeAltRowColors|mforms.TreeShowColumnLines)
+
+        self.tree.set_row_height(26)
+
+        self.tree.set_font("Segoe UI 10")
         self.tree.set_selection_mode(mforms.TreeSelectMultiple)
         
         #Check if there is method to load the columns, if not, skip.
@@ -203,14 +350,19 @@ class ObjectManager(mforms.Box):
         self.tree.add_activated_callback(self.on_activate)
         self.tree.set_context_menu(self.menu)
 
-        self.icon_path = mforms.App.get().get_resource_path(self.klass+".16x16.png")
+        icons = {"db.Table": "sdp_table.png", "db.Column": "sdp_columns.png", "db.Index": "sdp_key.png",
+                 "db.View": "sdp_table.png", "db.Trigger": "sdp_bolt.png", "db.Procedure": "sdp_code.png",
+                 "db.Function": "sdp_function.png", "db.Event": "sdp_clock.png", "db.Grants": "sdp_key.png",
+                 "db.Constraints": "sdp_link.png", "db.Partitions": "sdp_columns-3.png"}
+        self.icon_path = mforms.App.get().get_resource_path(icons.get(self.klass, "sdp_file-code.png"))
         self.bad_icon_path = mforms.App.get().get_resource_path(self.bad_icon_path)
 
         self.row_count = mforms.newLabel("")
         self.row_count.set_text("");
         
         self.refresh_btn = mforms.newButton()
-        self.refresh_btn.set_text("Refresh")
+        self.refresh_btn.set_text(tr("Refresh"))
+        self.refresh_btn.set_min_size(100, -1)
         self.refresh_btn.add_clicked_callback(self.refresh)
 
         self.bbox = mforms.newBox(True)
@@ -236,7 +388,7 @@ class ObjectManager(mforms.Box):
         self.error_body.set_text(msg)
 
     def refresh_row_count(self):
-        self.row_count.set_text("Count: %d" % self.tree.count())
+        self.row_count.set_text(tr("Count: %d") % self.tree.count())
 
     def on_activate(self, node, col):
         from sqlide_tableman_ext import show_table_inspector
@@ -298,7 +450,7 @@ class ObjectManager(mforms.Box):
                 separator.set_name("Bottom Plugins Separator")
                 separator.setInternalName("bottom_plugins_separator")
                 self.menu.add_item(separator)
-                self.menu.add_item_with_title("Refresh", self.refresh, "Refresh", "refresh")
+                self.menu.add_item_with_title(tr("Refresh"), self.refresh, "Refresh", "refresh")
 
                 args = grt.Dict()
                 args["selection"] = selection
@@ -322,9 +474,9 @@ class ObjectManager(mforms.Box):
             rset = self.editor.executeManagementQuery(query, 0)
         except grt.DBError as e:
             if e.args[1] == 1044 or e.args[1] == 1142:
-                mforms.Utilities.show_error("Access Error", "The current user does not have enough privileges to execute %s.\n\n%s"%(query, e.args[0]), "OK", "", "")
+                mforms.Utilities.show_error(tr("Access Error"), tr("The current user does not have enough privileges to execute %s.\n\n%s")%(query, e.args[0]), tr("OK"), "", "")
             else:
-                mforms.Utilities.show_error("MySQL Error", "An error occurred retrieving information about the schema.\nQuery: %s\nError: %s"%(query, e.args[0]), "OK", "", "")
+                mforms.Utilities.show_error(tr("SQL error"), tr("An error occurred retrieving information about the schema.\nQuery: %s\nError: %s")%(query, e.args[0]), tr("OK"), "", "")
             return
         ok = rset.goToFirstRow()
         while ok:
@@ -385,7 +537,7 @@ class ObjectManager(mforms.Box):
 
 
 class TableManager(ObjectManager):
-    caption = "Tables"
+    caption = tr("Tables")
     klass = "db.Table"
     node_name = "tables"
     icon_column = 0
@@ -394,23 +546,23 @@ class TableManager(ObjectManager):
 
     show_query = "show table status from `%(schema)s` where Comment <> 'VIEW'"
     name_column = 0
-    columns = [("Name", IconStringColumnType, "Name", 180, None),
-               ("Engine", StringColumnType, "Engine", 60, None),
-               ("Version", StringColumnType, "Version", 50, None),
-               ("Row_format", StringColumnType, "Row Format", 100, None),
-               ("Rows", LongIntegerColumnType, "Rows", 80, None),
-               ("Avg_row_length", LongIntegerColumnType, "Avg Row Length", 100, None),
-               ({'field' : "Data_length", 'format_func' : lambda x: human_size(int(x)) if x else ""}, NumberWithUnitColumnType, "Data Length", 100, None),
-               ({'field' : "Max_data_length", 'format_func' : lambda x: human_size(int(x)) if x else ""}, NumberWithUnitColumnType, "Max Data Length", 100, None),
-               ({'field' : "Index_length", 'format_func' : lambda x: human_size(int(x)) if x else ""}, NumberWithUnitColumnType, "Index Length", 100, None),
-               ({'field' : "Data_free", 'format_func' : lambda x: human_size(int(x)) if x else ""}, NumberWithUnitColumnType, "Data Free", 80, None),
-               ("Auto_increment", LongIntegerColumnType, "Auto Increment", 80, None),
-               ("Create_time", StringColumnType, "Create Time", 150, None),
-               ("Update_time", StringColumnType, "Update Time", 150, None),
-               ("Check_time", StringColumnType, "Check Time", 150, None),
-               ("Collation", StringColumnType, "Collation", 100, None),
-               ("Checksum", StringColumnType, "Checksum", 80, None),
-               ("Comment", StringColumnType, "Comment", 500, None)
+    columns = [("Name", IconStringColumnType, tr("Name"), 180, None),
+               ("Engine", StringColumnType, tr("Engine"), 60, None),
+               ("Version", StringColumnType, tr("Version"), 50, None),
+               ("Row_format", StringColumnType, tr("Row Format"), 100, None),
+               ("Rows", LongIntegerColumnType, tr("Rows"), 80, None),
+               ("Avg_row_length", LongIntegerColumnType, tr("Avg Row Length"), 100, None),
+               ({'field' : "Data_length", 'format_func' : lambda x: human_size(int(x)) if x else ""}, NumberWithUnitColumnType, tr("Data Length"), 100, None),
+               ({'field' : "Max_data_length", 'format_func' : lambda x: human_size(int(x)) if x else ""}, NumberWithUnitColumnType, tr("Max Data Length"), 100, None),
+               ({'field' : "Index_length", 'format_func' : lambda x: human_size(int(x)) if x else ""}, NumberWithUnitColumnType, tr("Index Length"), 100, None),
+               ({'field' : "Data_free", 'format_func' : lambda x: human_size(int(x)) if x else ""}, NumberWithUnitColumnType, tr("Data Free"), 80, None),
+               ("Auto_increment", LongIntegerColumnType, tr("Auto Increment"), 80, None),
+               ("Create_time", StringColumnType, tr("Create Time"), 150, None),
+               ("Update_time", StringColumnType, tr("Update Time"), 150, None),
+               ("Check_time", StringColumnType, tr("Check Time"), 150, None),
+               ("Collation", StringColumnType, tr("Collation"), 100, None),
+               ("Checksum", StringColumnType, tr("Checksum"), 80, None),
+               ("Comment", StringColumnType, tr("Comment"), 500, None)
                ]
 
     def is_row_corrupted(self, rset):
@@ -447,14 +599,20 @@ class TableMaintenancePanel(mforms.Box):
         self.editor = editor
 
         self.set_spacing(8)
-        self.set_padding(12)
+        self.set_padding(8)
 
-        heading = mforms.newLabel("Table Maintenance Operations")
-        heading.set_style(mforms.BigStyle)
+        heading = mforms.newLabel(tr("Table maintenance"))
+        heading.set_style(mforms.BoldStyle)
         self.add(heading, False, True)
 
-        help = mforms.newLabel("Select tables and click the operation you want to perform.\nNOTE: Some commands may require locking tables until completion,\nwhich may take a long time for large tables.")
+        help = mforms.newLabel(tr("Select tables and click the operation you want to perform.\nNOTE: Some commands may require locking tables until completion,\nwhich may take a long time for large tables."))
         self.add(help, False, True)
+
+        self.operation_selector = mforms.newSelector()
+        self.operation_selector.add_items(["ANALYZE", "OPTIMIZE", "CHECK", "CHECKSUM"])
+        self.operation_selector.set_selected(0)
+        self.add(self.operation_selector, False, True)
+        self._operation_groups = []
 
         self.scroll = mforms.newScrollPanel(0)
         self.add(self.scroll, True, True)
@@ -466,15 +624,20 @@ class TableMaintenancePanel(mforms.Box):
         self._buttons = []
 
         def make_command_box(callable, title, desc, tooltip, options = None, extra_options = None):
-            l = mforms.newLabel(title)
+            content = mforms.newBox(False)
+            content.set_spacing(8)
+            self.content.add(content, False, True)
+            self._operation_groups.append(content)
+            l = mforms.newLabel(title.strip())
             l.set_style(mforms.BoldStyle)
-            self.content.add(l, False, True)
+            content.add(l, False, True)
 
             l = mforms.newLabel(desc)
-            self.content.add(l, False, True)
+            l.set_wrap_text(True)
+            content.add(l, False, True)
 
             if extra_options:
-                self.content.add(extra_options, False, True)
+                content.add(extra_options, False, True)
 
             hb = mforms.newBox(True)
             hb.set_spacing(12)
@@ -489,15 +652,15 @@ class TableMaintenancePanel(mforms.Box):
 
             btn = mforms.newButton()
             btn.add_clicked_callback(callable)
-            btn.set_text(title.strip())
+            btn.set_text(tr("Review SQL…"))
             hb.add_end(btn, False, True)
 
             self._buttons.append(btn)
 
-            self.content.add(hb, False, True)
+            content.add(hb, False, True)
 
         self.analyze_local = mforms.newCheckBox()
-        self.analyze_local.set_text("Don't write to BINLOG (local)")
+        self.analyze_local.set_text(tr("Don't write to BINLOG (local)"))
 
         make_command_box(self.analyze_table, "Analyze Table",
                          """Analyzes and stores the key distribution for a table.
@@ -513,7 +676,7 @@ MySQL uses the stored key distribution to decide the order in which tables shoul
             extra_options.set_spacing(4)
 
             self.optimize_ft_only = mforms.newCheckBox()
-            self.optimize_ft_only.set_text("Optimize FULLTEXT only")
+            self.optimize_ft_only.set_text(tr("Optimize FULLTEXT only"))
             self.optimize_ft_only.add_clicked_callback(self.optimize_ft_only_toggled)
             extra_options.add(self.optimize_ft_only, False, True)
 
@@ -521,7 +684,7 @@ MySQL uses the stored key distribution to decide the order in which tables shoul
             l.set_size(20, -1)
             extra_options.add(l, False, True)
 
-            extra_options.add(mforms.newLabel("Number of words to optimize per run:"), False, True)
+            extra_options.add(mforms.newLabel(tr("Number of words to optimize per run:")), False, True)
             self.optimize_ft_numwords = mforms.newTextEntry()
             self.optimize_ft_numwords.set_size(50, -1)
             self.optimize_ft_numwords.set_enabled(False)
@@ -535,7 +698,7 @@ MySQL uses the stored key distribution to decide the order in which tables shoul
             self.optimize_ft_only = None
 
         self.optimize_local = mforms.newCheckBox()
-        self.optimize_local.set_text("Don't write to BINLOG (local)")
+        self.optimize_local.set_text(tr("Don't write to BINLOG (local)"))
 
         make_command_box(self.optimize_table, "\n\n"+"Optimize Table",
                          """Reorganizes the physical storage of table data and associated index data, 
@@ -554,10 +717,10 @@ Use OPTIMIZE TABLE in these cases, depending on the type of table:
         self.check_scan_opt.add_items(["", "Quick", "Medium", "Extended", "For Upgrade"])
 
         self.check_fast_opt = mforms.newCheckBox()
-        self.check_fast_opt.set_text("Fast")
+        self.check_fast_opt.set_text(tr("Fast"))
 
         self.check_changed_opt = mforms.newCheckBox()
-        self.check_changed_opt.set_text("Changed")
+        self.check_changed_opt.set_text(tr("Changed"))
 
         options = [self.check_scan_opt, self.check_fast_opt, self.check_changed_opt]
 
@@ -581,11 +744,19 @@ Check Options:
 #                             """)
 
         self.checksum_quick = mforms.newCheckBox()
-        self.checksum_quick.set_text("Quick (if supported)")
+        self.checksum_quick.set_text(tr("Quick (if supported)"))
         options = [self.checksum_quick]
         make_command_box(self.checksum_table, "\n\n"+"Checksum Table",
                          """CHECKSUM TABLE reports a checksum for the contents of a table.""",
                          """You can use this statement to verify that the contents are the same before and after a backup, rollback, or other operation that is intended to put the data back to a known state.""", options)
+
+        self.operation_selector.add_changed_callback(self.operation_changed)
+        self.operation_changed()
+
+    def operation_changed(self):
+        selected = self.operation_selector.get_selected_index()
+        for index, group in enumerate(self._operation_groups):
+            group.show(index == selected)
 
     def optimize_ft_only_toggled(self):
         self.optimize_ft_numwords.set_enabled(self.optimize_ft_only.get_active())
@@ -596,20 +767,34 @@ Check Options:
         do_table_maintenance(self.editor, "ANALYZE%s TABLE %%s" % local, self.table_list)
 
     def optimize_table(self):
+        local = " NO_WRITE_TO_BINLOG" if self.optimize_local.get_active() else ""
+        action = "OPTIMIZE%s TABLE %%s" % local
+        query = action % ", ".join(self.table_list)
+        setup = None
+        restore = None
         if self.optimize_ft_only:
             old_value = None
             res = self.editor.executeManagementQuery("SELECT @@innodb_optimize_fulltext_only", 0)
             if res and res.goToFirstRow():
-                old_value = res.stringFieldValue(0) != "OFF"
-            command = "SET GLOBAL innodb_optimize_fulltext_only=%s, innodb_ft_num_word_optimize=%s" % ("1" if self.optimize_ft_only.get_active() else "0", self.optimize_ft_numwords.get_string_value())
-            self.editor.executeManagementCommand(command, 1)
+                old_value = res.stringFieldValue(0).strip().upper() in ("ON", "1")
+            words = self.optimize_ft_numwords.get_string_value()
+            if not words.isdigit():
+                mforms.Utilities.show_error(tr("Invalid value"), tr("The word limit must be an integer."), tr("Close"), "", "")
+                return
+            setup = "SET GLOBAL innodb_optimize_fulltext_only=%s, innodb_ft_num_word_optimize=%s" % ("1" if self.optimize_ft_only.get_active() else "0", words)
+            if old_value is not None:
+                restore = "SET GLOBAL innodb_optimize_fulltext_only=%s" % ("1" if old_value else "0")
 
-        local = " NO_WRITE_TO_BINLOG" if self.optimize_local.get_active() else ""
-        do_table_maintenance(self.editor, "OPTIMIZE%s TABLE %%s" % local, self.table_list)
-
-        if self.optimize_ft_only and old_value is not None:
-            command = "SET GLOBAL innodb_optimize_fulltext_only=%s" % old_value
-            self.editor.executeManagementCommand(command, 1)
+        script = ";\n".join(statement for statement in (setup, query, restore) if statement) + ";"
+        if not review_maintenance_sql(self.editor, script):
+            return
+        if setup:
+            self.editor.executeManagementCommand(setup, 1)
+        try:
+            do_table_maintenance(self.editor, action, self.table_list, reviewed=True)
+        finally:
+            if restore:
+                self.editor.executeManagementCommand(restore, 1)
 
 
     def check_table(self):
@@ -624,7 +809,7 @@ Check Options:
 
 
     def show_tables(self, schema, tables):
-        self.table_list = ["`%s`.`%s`" % (schema, table) for table, engine in tables]
+        self.table_list = ["`%s`.`%s`" % (schema.replace("`", "``"), table.replace("`", "``")) for table, engine in tables]
         for b in self._buttons:
             b.set_enabled(len(self.table_list) > 0)
 
@@ -638,7 +823,7 @@ class TableManagerParent(mforms.Splitter):
         self.schema = schema
         self.editor = editor
         self.summary_view = TableManager(editor, schema)
-        self.add(self.summary_view, 100, True)
+        self.add(self.summary_view, 380, True)
 
         self.node_name = self.summary_view.node_name
         self.caption = self.summary_view.caption
@@ -646,22 +831,24 @@ class TableManagerParent(mforms.Splitter):
         self.summary_view.tree.add_changed_callback(self.table_selection_changed)
 
         self.goback_btn = mforms.newButton()
-        self.goback_btn.set_text("< Summary List")
+        self.goback_btn.set_text(tr("Summary list"))
         self.goback_btn.add_clicked_callback(self.switch_back)
         self.summary_view.bbox.add(self.goback_btn, False, True)
         self.goback_btn.show(False)
 
         self.inspect_btn = mforms.newButton()
-        self.inspect_btn.set_text("Inspect Table")
+        self.inspect_btn.set_text(tr("Inspect Table"))
         self.inspect_btn.add_clicked_callback(self.summary_view.inspect_table)
         self.summary_view.bbox.add_end(self.inspect_btn, False, True)
 
         self.maintenance_btn = mforms.newButton()
-        self.maintenance_btn.set_text("Maintenance >")
+        self.maintenance_btn.set_text(tr("Maintenance"))
         self.maintenance_btn.add_clicked_callback(self.switch_maintenance)
         self.summary_view.bbox.add(self.maintenance_btn, False, True)
 
-        self.right_view = None
+        self.right_view = SelectedTablePreview(self.editor)
+        self.add(self.right_view, 360)
+        self.set_divider_position(640)
 
     @property
     def table_names(self):
@@ -669,12 +856,20 @@ class TableManagerParent(mforms.Splitter):
 
     def refresh(self):
         self.summary_view.refresh()
+        if self.summary_view.tree.count():
+            self.summary_view.tree.select_node(self.summary_view.tree.node_at_row(0))
+        self.table_selection_changed()
 
 
     def switch_back(self):
         if self.right_view:
             self.remove(self.right_view)
             self.right_view = None
+
+        self.right_view = SelectedTablePreview(self.editor)
+        self.add(self.right_view, 360)
+        self.set_divider_position(640)
+        self.table_selection_changed()
 
         self.summary_view.refresh_btn.show(True)
         self.maintenance_btn.show(True)
@@ -683,6 +878,8 @@ class TableManagerParent(mforms.Splitter):
 
 
     def switch_maintenance(self):
+        if self.right_view:
+            self.remove(self.right_view)
         self.right_view = TableMaintenancePanel(self.editor)
         self.add(self.right_view)
         self.relayout()
@@ -709,7 +906,7 @@ class TableManagerParent(mforms.Splitter):
             self.right_view.show_tables(self.schema, self.selected_tables())
 
 class ColumnManager(ObjectManager):
-    caption = "Columns"
+    caption = tr("Columns")
     klass = "db.Column"
     node_name = "columns"
     filter = None
@@ -717,21 +914,21 @@ class ColumnManager(ObjectManager):
     icon_column = 1
     name_column = 1
     parent_name_column = 0
-    columns = [("TABLE_NAME", StringColumnType, "Table", 150, None),
-               ("COLUMN_NAME", IconStringColumnType, "Column", 150, None),
-               ("COLUMN_TYPE", StringColumnType, "Type", 120, None),
-               ("COLUMN_DEFAULT", StringColumnType, "Default Value", 120, None),
-               ("IS_NULLABLE", StringColumnType, "Nullable", 50, None),
-               ("CHARACTER_SET_NAME", StringColumnType, "Character Set", 80, None),
-               ("COLLATION_NAME", StringColumnType, "Collation", 100, None),
-               ("PRIVILEGES", StringColumnType, "Privileges", 200, None),
-               ("EXTRA", StringColumnType, "Extra", 100, None),
-               ("COLUMN_COMMENT", StringColumnType, "Comments", 200, None)]
+    columns = [("TABLE_NAME", StringColumnType, tr("Table"), 150, None),
+               ("COLUMN_NAME", IconStringColumnType, tr("Column"), 150, None),
+               ("COLUMN_TYPE", StringColumnType, tr("Type"), 120, None),
+               ("COLUMN_DEFAULT", StringColumnType, tr("Default Value"), 120, None),
+               ("IS_NULLABLE", StringColumnType, tr("Nullable"), 50, None),
+               ("CHARACTER_SET_NAME", StringColumnType, tr("Character Set"), 80, None),
+               ("COLLATION_NAME", StringColumnType, tr("Collation"), 100, None),
+               ("PRIVILEGES", StringColumnType, tr("Privileges"), 200, None),
+               ("EXTRA", StringColumnType, tr("Extra"), 100, None),
+               ("COLUMN_COMMENT", StringColumnType, tr("Comments"), 200, None)]
     #actions = [("Manage Indexes", "manage")]
 
 
 class IndexManager(ObjectManager):
-    caption = "Indexes"
+    caption = tr("Indexes")
     klass = "db.Index"
     node_name = "indexes"
     filter = None
@@ -739,19 +936,19 @@ class IndexManager(ObjectManager):
     parent_name_column = 0
     name_column = 1
     icon_column = 0
-    columns = [("Table", IconStringColumnType, "Table", 200, None),
-               ("Key_name", IconStringColumnType, "Name", 200, None),
-               ({'field' : "Non_unique", 'format_func' : lambda val: "Yes" if val != "1" else "No"}, StringColumnType, "Unique", 50, None),
-               ("Index_type", StringColumnType, "Index Type", 50, None),
-               ("Index_comment", StringColumnType, "Index Comment", 200, "5.5"),
-               ("Column_name", StringColumnType, "Column", 100, None),
-               ("Seq_in_index", IntegerColumnType, "Seq in Index", 100, None),
-               ("Packed", StringColumnType, "Packed", 50, None),
-               ("Collation", StringColumnType, "Collation", 50, None),
-               ("Cardinality", StringColumnType, "Cardinality", 50, None),
-               ("Sub_part", StringColumnType, "Sub part", 50, None),
-               ("Null", StringColumnType, "NULL", 50, None),
-               ("Comment", StringColumnType, "Comment", 200, None)]
+    columns = [("Table", IconStringColumnType, tr("Table"), 200, None),
+               ("Key_name", IconStringColumnType, tr("Name"), 200, None),
+               ({'field' : "Non_unique", 'format_func' : lambda val: tr("Yes") if val != "1" else tr("No")}, StringColumnType, tr("Unique"), 50, None),
+               ("Index_type", StringColumnType, tr("Index Type"), 50, None),
+               ("Index_comment", StringColumnType, tr("Index Comment"), 200, "5.5"),
+               ("Column_name", StringColumnType, tr("Column"), 100, None),
+               ("Seq_in_index", IntegerColumnType, tr("Seq in Index"), 100, None),
+               ("Packed", StringColumnType, tr("Packed"), 50, None),
+               ("Collation", StringColumnType, tr("Collation"), 50, None),
+               ("Cardinality", StringColumnType, tr("Cardinality"), 50, None),
+               ("Sub_part", StringColumnType, tr("Sub part"), 50, None),
+               ("Null", StringColumnType, tr("NULL"), 50, None),
+               ("Comment", StringColumnType, tr("Comment"), 200, None)]
     
     #actions = [("Manage Indexes", "manage")]
 
@@ -810,31 +1007,31 @@ class IndexManager(ObjectManager):
 
 
 class GrantsManager(ObjectManager):
-    caption = "Grants"
+    caption = tr("Privileges")
     klass = "db.Grants"
     node_name = "table_privileges"
     name_column = 0
-    columns = [("Host", IconStringColumnType, "Host", 100, None),
-           ("User", StringColumnType, "User", 100, None),
-           ("Db", StringColumnType, "Scope", 100, None),
-           ("Select_priv", StringColumnType, "Select", 50, None),
-           ("Insert_priv", StringColumnType, "Insert", 50, None),
-           ("Update_priv", StringColumnType, "Update", 50, None),
-           ("Delete_priv", StringColumnType, "Delete", 50, None),
-           ("Create_priv", StringColumnType, "Create", 50, None),
-           ("Drop_priv", StringColumnType, "Drop", 50, None),
-           ("Grant_priv", StringColumnType, "Grant", 50, None),
-           ("References_priv", StringColumnType, "References", 50, None),
-           ("Index_priv", StringColumnType, "Index", 50, None),
-           ("Alter_priv", StringColumnType, "Alter", 50, None),
-           ("Create_tmp_table_priv", StringColumnType, "Create tmp table", 50, None),
-           ("Lock_tables_priv", StringColumnType, "Lock Tables", 50, None),
-           ("Create_view_priv", StringColumnType, "Create View", 50, None),
-           ("Create_routine_priv", StringColumnType, "Create Routine", 50, None),
-           ("Alter_routine_priv", StringColumnType, "Alter Routine", 50, None),
-           ("Execute_priv", StringColumnType, "Execute", 50, None),
-           ("Event_priv", StringColumnType, "Event", 50, None),
-           ("Trigger_priv", StringColumnType, "Trigger", 50, None),
+    columns = [("Host", IconStringColumnType, tr("Host"), 100, None),
+           ("User", StringColumnType, tr("User"), 100, None),
+           ("Db", StringColumnType, tr("Scope"), 100, None),
+           ("Select_priv", StringColumnType, tr("Select"), 50, None),
+           ("Insert_priv", StringColumnType, tr("Insert"), 50, None),
+           ("Update_priv", StringColumnType, tr("Update"), 50, None),
+           ("Delete_priv", StringColumnType, tr("Delete"), 50, None),
+           ("Create_priv", StringColumnType, tr("Create"), 50, None),
+           ("Drop_priv", StringColumnType, tr("Drop"), 50, None),
+           ("Grant_priv", StringColumnType, tr("Grant"), 50, None),
+           ("References_priv", StringColumnType, tr("References"), 50, None),
+           ("Index_priv", StringColumnType, tr("Index"), 50, None),
+           ("Alter_priv", StringColumnType, tr("Alter"), 50, None),
+           ("Create_tmp_table_priv", StringColumnType, tr("Create tmp table"), 50, None),
+           ("Lock_tables_priv", StringColumnType, tr("Lock Tables"), 50, None),
+           ("Create_view_priv", StringColumnType, tr("Create View"), 50, None),
+           ("Create_routine_priv", StringColumnType, tr("Create Routine"), 50, None),
+           ("Alter_routine_priv", StringColumnType, tr("Alter Routine"), 50, None),
+           ("Execute_priv", StringColumnType, tr("Execute"), 50, None),
+           ("Event_priv", StringColumnType, tr("Event"), 50, None),
+           ("Trigger_priv", StringColumnType, tr("Trigger"), 50, None),
            ]
 
     def get_query(self):
@@ -875,58 +1072,58 @@ class GrantsManager(ObjectManager):
 
 
 class ViewManager(ObjectManager):
-    caption = "Views"
+    caption = tr("Views")
     klass = "db.View"
     node_name = "views"
     filter = None
     show_query = "show table status from `%(schema)s` where Comment = 'VIEW'"
     name_column = 0
     icon_column = 0
-    columns = [(0, IconStringColumnType, "Name", 400, None)]
+    columns = [(0, IconStringColumnType, tr("Name"), 400, None)]
 
 
 class TriggerManager(ObjectManager):
-    caption = "Triggers"
+    caption = tr("Triggers")
     klass = "db.Trigger"
     node_name = "triggers"
     show_query = "show triggers from `%(schema)s`"
     name_column = 0
     icon_column = 0
-    columns = [("Trigger", IconStringColumnType, "Name", 200, None),
-               ("Event", StringColumnType, "Event", 100, None),
-               ("Table", StringColumnType, "Table", 100, None),
-               ("Timing", StringColumnType, "Timing", 100, None),
-               ("Created", StringColumnType, "Created", 100, None),
-               ("sql_mode", StringColumnType, "SQL Mode", 100, None),
-               ("Definer", StringColumnType, "Definer", 100, None),
-               ("character_set_client", StringColumnType, "Client Character Set", 100, None),
-               ("collation_connection", StringColumnType, "Connection Collation", 100, None),
-               ("Database Collation", StringColumnType, "Database Collation", 100, None),
+    columns = [("Trigger", IconStringColumnType, tr("Name"), 200, None),
+               ("Event", StringColumnType, tr("Event"), 100, None),
+               ("Table", StringColumnType, tr("Table"), 100, None),
+               ("Timing", StringColumnType, tr("Timing"), 100, None),
+               ("Created", StringColumnType, tr("Created"), 100, None),
+               ("sql_mode", StringColumnType, tr("SQL Mode"), 100, None),
+               ("Definer", StringColumnType, tr("Definer"), 100, None),
+               ("character_set_client", StringColumnType, tr("Client Character Set"), 100, None),
+               ("collation_connection", StringColumnType, tr("Connection Collation"), 100, None),
+               ("Database Collation", StringColumnType, tr("Database Collation"), 100, None),
                ]
 
 
 class ProcedureManager(ObjectManager):
-    caption = "Stored Procedures"
+    caption = tr("Procedures")
     klass = "db.StoredProcedure"
     node_name = "storedProcedures"
     show_query = "show procedure status where Db = '%(schema)s'"
     name_column = 0
     icon_column = 0
-    columns = [("Name", IconStringColumnType, "Name", 200, None),
-               ("Type", StringColumnType, "Type", 100, None),
-               ("Definer", StringColumnType, "Definer", 100, None),
-               ("Modified", StringColumnType, "Modified", 100, None),
-               ("Created", StringColumnType, "Created", 100, None),
-               ("Security_type", StringColumnType, "Security Type", 100, None),
-               ("character_set_client", StringColumnType, "Client Character Set", 100, None),
-               ("collation_connection", StringColumnType, "Connection Collation", 100, None),
-               ("Database Collation", StringColumnType, "Database Collation", 100, None),
-               ("Comment", StringColumnType, "Comment", 400, None),
+    columns = [("Name", IconStringColumnType, tr("Name"), 200, None),
+               ("Type", StringColumnType, tr("Type"), 100, None),
+               ("Definer", StringColumnType, tr("Definer"), 100, None),
+               ("Modified", StringColumnType, tr("Modified"), 100, None),
+               ("Created", StringColumnType, tr("Created"), 100, None),
+               ("Security_type", StringColumnType, tr("Security Type"), 100, None),
+               ("character_set_client", StringColumnType, tr("Client Character Set"), 100, None),
+               ("collation_connection", StringColumnType, tr("Connection Collation"), 100, None),
+               ("Database Collation", StringColumnType, tr("Database Collation"), 100, None),
+               ("Comment", StringColumnType, tr("Comment"), 400, None),
                ]
 
 
 class FunctionManager(ObjectManager):
-    caption = "Functions"
+    caption = tr("Functions")
     klass = "db.Function"
     node_name = "functions"
     show_query = "show function status where Db = '%(schema)s'"
@@ -936,30 +1133,30 @@ class FunctionManager(ObjectManager):
 
 
 class EventManager(ObjectManager):
-    caption = "Events"
+    caption = tr("Events")
     klass = "GrtObject"
     node_name = "events"
     show_query = "show events from `%(schema)s`"
     name_column = 0
     icon_column = 0
-    columns = [("Name", IconStringColumnType, "Name", 200, None),
-               ("Definer", StringColumnType, "Row Format", 100, None),
-               ("Time zone", StringColumnType, "Time Zone", 100, None),
-               ("Type", StringColumnType, "Type", 100, None),
-               ("Execute at", StringColumnType, "Execute at", 100, None),
-               ("Interval value", StringColumnType, "Interval value", 100, None),
-               ("Interval field", StringColumnType, "Interval field", 100, None),
-               ("Starts", StringColumnType, "Starts", 100, None),
-               ("Ends", StringColumnType, "Ends", 100, None),
-               ("Status", StringColumnType, "Status", 100, None),
-               ("Originator", StringColumnType, "Originator", 100, None),
-               ("character_set_client", StringColumnType, "Client Character Set", 100, None),
-               ("collation_connection", StringColumnType, "Connection Collation", 100, None),
-               ("Database Collation", StringColumnType, "Database Collation", 100, None)
+    columns = [("Name", IconStringColumnType, tr("Name"), 200, None),
+               ("Definer", StringColumnType, tr("Row Format"), 100, None),
+               ("Time zone", StringColumnType, tr("Time Zone"), 100, None),
+               ("Type", StringColumnType, tr("Type"), 100, None),
+               ("Execute at", StringColumnType, tr("Execute at"), 100, None),
+               ("Interval value", StringColumnType, tr("Interval value"), 100, None),
+               ("Interval field", StringColumnType, tr("Interval field"), 100, None),
+               ("Starts", StringColumnType, tr("Starts"), 100, None),
+               ("Ends", StringColumnType, tr("Ends"), 100, None),
+               ("Status", StringColumnType, tr("Status"), 100, None),
+               ("Originator", StringColumnType, tr("Originator"), 100, None),
+               ("character_set_client", StringColumnType, tr("Client Character Set"), 100, None),
+               ("collation_connection", StringColumnType, tr("Connection Collation"), 100, None),
+               ("Database Collation", StringColumnType, tr("Database Collation"), 100, None)
                ]
 
 class SchemaInfoPanel(mforms.Box):
-    caption = "Info"
+    caption = tr("General")
     node_name = "informations"
     def __init__(self, editor, schema):
         mforms.Box.__init__(self, False)
@@ -982,35 +1179,35 @@ class SchemaInfoPanel(mforms.Box):
 
         self.panel_header_box = mforms.newBox(True)
         self.panel_header_box.set_padding(10)
-        self.panel_header_box.add(make_panel_header("db.Schema.32x32.png", self.editor.connection.name, "%s" % (schema)), False, True)
+        self.panel_header_box.add(make_panel_header("sdp_database@2x.png", self.editor.connection.name, "%s" % (schema)), False, True)
         
         self.add(self.panel_header_box, False, True)
 
-        self.table.add(make_title("Schema Details"), 0, 2, 0, 1, mforms.HFillFlag)
+        self.table.add(make_title(tr("Schema Details")), 0, 2, 0, 1, mforms.HFillFlag)
 
-        self.table.add(mforms.newLabel("Default collation:"),              0, 1, 3, 4, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Default collation:")),              0, 1, 3, 4, mforms.HFillFlag)
         self.col_default_collation_name = mforms.newLabel("")
         self.col_default_collation_name.set_style(mforms.BoldStyle)
         self.table.add(self.col_default_collation_name,                    1, 2, 3, 4, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Default characterset:"),           0, 1, 4, 5, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Default character set:")),           0, 1, 4, 5, mforms.HFillFlag)
         self.col_default_character_set_name = mforms.newLabel("")
         self.col_default_character_set_name.set_style(mforms.BoldStyle)
         self.table.add(self.col_default_character_set_name,                1, 2, 4, 5, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Table count:"),                    0, 1, 5, 6, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Table count:")),                    0, 1, 5, 6, mforms.HFillFlag)
         self.table_count = mforms.newLabel("")
         self.table_count.set_style(mforms.BoldStyle)
         self.table.add(self.table_count,                                   1, 2, 5, 6, mforms.HFillFlag|mforms.HExpandFlag)
         
-        self.table.add(mforms.newLabel("Database size (rough estimate):"), 0, 1, 6, 7, mforms.HFillFlag)
+        self.table.add(mforms.newLabel(tr("Estimated schema size:")), 0, 1, 6, 7, mforms.HFillFlag)
         self.database_size = mforms.newLabel("")
         self.database_size.set_style(mforms.BoldStyle)
         self.table.add(self.database_size,                                 1, 2, 6, 7, mforms.HFillFlag|mforms.HExpandFlag)
 
         tbox = mforms.Box(False)
-        tbox.set_spacing(15)
-        tbox.set_padding(15)
+        tbox.set_spacing(8)
+        tbox.set_padding(12)
         tbox.add(self.table, True, True)
         
         self.add(tbox, False, True)
@@ -1044,11 +1241,22 @@ class SchemaInfoPanel(mforms.Box):
 
 class SchemaManager(mforms.AppView):
     def __init__(self, editor, schema_name):
-        mforms.AppView.__init__(self, False, "Schema Inspector", "schema_inspector", False)
+        mforms.AppView.__init__(self, False, tr("Schema Inspector"), "schema_inspector", False)
 
         self.editor = editor
 
-        self.tabview = mforms.newTabView()
+        heading = mforms.newBox(True)
+        heading.set_padding(8)
+        heading.set_spacing(8)
+        heading.add(make_panel_header("sdp_database@2x.png", editor.connection.name, schema_name), True, True)
+        refresh = mforms.newButton()
+        refresh.set_text(tr("Refresh"))
+        refresh.set_min_size(100, -1)
+        refresh.add_clicked_callback(self.refresh)
+        heading.add_end(refresh, False, True)
+        self.add(heading, False, True)
+
+        self.tabview = mforms.newTabView(mforms.TabViewClassic)
         self.add(self.tabview, True, True)
 
         self.pages = []

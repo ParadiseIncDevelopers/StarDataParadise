@@ -25,7 +25,7 @@
 # import the mforms module for GUI stuff
 import mforms
 import grt
-from workbench.utils import get_exe_path
+from workbench.utils import get_exe_path as default_exe_path
 from workbench.utils import Version
 
 
@@ -40,6 +40,12 @@ from mforms import FileChooser
 from datetime import datetime
 
 from workbench.log import log_error, log_debug, log_info
+
+
+def get_exe_path(name):
+    directory = grt.root.wb.options.options.get("SdpSpatial:ToolDirectory", "")
+    candidate = os.path.join(directory, name) if directory else ""
+    return candidate if candidate and os.path.isfile(candidate) else default_exe_path(name)
 
 def showImporter(editor, schema):
     importer = SpatialImporterWizard(editor)
@@ -62,7 +68,7 @@ def handleContextMenu(name, sender, args):
         else:
             return
 
-    item = mforms.newMenuItem("Load Spatial Data")
+    item = mforms.newMenuItem("Mekânsal veri aktarımı")
     item.add_clicked_callback(lambda sender=sender : showImporter(sender, schemas_selected))
     
     menu.insert_item(0, item)
@@ -261,7 +267,7 @@ class SelectFileWizardPage(WizardPage):
     def __init__(self, owner):
         WizardPage.__init__(self, owner, "Select File to Import", wide=True)
 
-        self.schema_label = mforms.newLabel("Target schema: ")
+        self.schema_label = mforms.newLabel("Hedef şema:")
 
         self.back_button.set_enabled(False)
         self.ogrinfo_missing = True
@@ -269,20 +275,20 @@ class SelectFileWizardPage(WizardPage):
 
 
     def create_ui(self):
-        self.set_spacing(16)
+        self.set_spacing(8)
 
         self.content.add(self.schema_label, False, True)
 
         entry_box = mforms.newBox(True)
         entry_box.set_spacing(5)
 
-        entry_box.add(mforms.newLabel("File Path:"), False, True)
+        entry_box.add(mforms.newLabel("Dosya:"), False, True)
 
         self.shapefile_path = mforms.newTextEntry()
         entry_box.add(self.shapefile_path, True, True)
 
         self.shapefile_browse_btn = newButton()
-        self.shapefile_browse_btn.set_text("Browse...")
+        self.shapefile_browse_btn.set_text("Gözat…")
         self.shapefile_browse_btn.set_name("Browse")
         self.shapefile_browse_btn.add_clicked_callback(self.shapefile_browse)
         entry_box.add(self.shapefile_browse_btn, False, True)
@@ -294,15 +300,27 @@ A new table with the imported fields will be created in the selected schema,
 unless the append or update options are specified.""")
         self.content.add(label, False, True)
 
+        tools = mforms.newBox(True)
+        tools.set_spacing(8)
+        tools.add(mforms.newLabel("GDAL araç dizini:"), False, True)
+        self.tool_directory = mforms.newTextEntry()
+        self.tool_directory.set_value(grt.root.wb.options.options.get("SdpSpatial:ToolDirectory", ""))
+        tools.add(self.tool_directory, True, True)
+        browse_tools = newButton()
+        browse_tools.set_text("Gözat…")
+        browse_tools.add_clicked_callback(self.choose_tool_directory)
+        tools.add(browse_tools, False, True)
+        self.content.add(tools, False, True)
+
         self.ogrinfo_box = mforms.newBox(True)
         self.ogrinfo_box.set_spacing(8)
         self.ogrinfo_icon = mforms.newImageBox()
         self.ogrinfo_icon.set_image("task_unchecked%s.png" % os_icon_suffix)
         self.ogrinfo_box.add(self.ogrinfo_icon, False, True)
-        ogrinfo_label = mforms.newLabel("Check if ogrinfo tool is present.")
+        ogrinfo_label = mforms.newLabel("ogrinfo aracı")
         self.ogrinfo_box.add(ogrinfo_label, True, True)
         self.content.add(self.ogrinfo_box, False, True)
-        self.ogrinfo_missing_lbl = mforms.newLabel("ogrinfo executable wasn't found. Please check if it's available in the PATH.")
+        self.ogrinfo_missing_lbl = mforms.newLabel("ogrinfo bulunamadı. Kurulu GDAL araçlarının yolunu denetleyin.")
         self.ogrinfo_missing_lbl.show(False)
         self.content.add(self.ogrinfo_missing_lbl, False, True)
     
@@ -311,10 +329,10 @@ unless the append or update options are specified.""")
         self.ogr2ogr_icon = mforms.newImageBox()
         self.ogr2ogr_icon.set_image("task_unchecked%s.png" % os_icon_suffix)
         self.ogr2ogr_box.add(self.ogr2ogr_icon, False, True)
-        ogr2ogr_label = mforms.newLabel("Check if ogr2ogr tool is present.")
+        ogr2ogr_label = mforms.newLabel("ogr2ogr aracı")
         self.ogr2ogr_box.add(ogr2ogr_label, True, True)
         self.content.add(self.ogr2ogr_box, False, True)
-        self.ogr2ogr_missing_lbl = mforms.newLabel("ogr2ogr executable wasn't find. Please check if it's available in the PATH.")
+        self.ogr2ogr_missing_lbl = mforms.newLabel("ogr2ogr bulunamadı. Kurulu GDAL araçlarının yolunu denetleyin.")
         self.ogr2ogr_missing_lbl.show(False)
         self.content.add(self.ogr2ogr_missing_lbl, False, True)
         
@@ -326,7 +344,7 @@ unless the append or update options are specified.""")
         self.dbf_icon = mforms.newImageBox()
         self.dbf_icon.set_image("task_unchecked%s.png" % os_icon_suffix)
         self.dbf_box.add(self.dbf_icon, False, True)
-        dbf_label = mforms.newLabel("Check if dbf file is present.")
+        dbf_label = mforms.newLabel("DBF dosyası")
         self.dbf_box.add(dbf_label, True, True)
         self.dbf_box.show(True)
          
@@ -337,7 +355,7 @@ unless the append or update options are specified.""")
         self.proj_icon = mforms.newImageBox()
         self.proj_icon.set_image("task_unchecked%s.png" % os_icon_suffix)
         self.proj_box.add(self.proj_icon, False, True)
-        proj_label = mforms.newLabel("Check if prj file is present.")
+        proj_label = mforms.newLabel("PRJ dosyası")
         self.proj_box.add(proj_label, True, True)
         self.proj_box.show(True)
          
@@ -346,11 +364,27 @@ unless the append or update options are specified.""")
         self.warning_srs = mforms.newLabel("")
         self.content.add(self.warning_srs, False, True)
         self.check_ogr_executables()
+        self.tool_directory.add_changed_callback(self.tool_directory_changed)
+
+    def choose_tool_directory(self):
+        chooser = FileChooser(mforms.OpenDirectory)
+        chooser.set_title("GDAL araç dizini")
+        chooser.set_directory(self.tool_directory.get_string_value())
+        if chooser.run_modal():
+            self.tool_directory.set_value(chooser.get_path())
+
+    def tool_directory_changed(self):
+        grt.root.wb.options.options["SdpSpatial:ToolDirectory"] = self.tool_directory.get_string_value()
+        self.check_ogr_executables()
 
     def go_cancel(self):
         self.main.cancel()
 
     def check_ogr_executables(self):
+        self.ogrinfo_missing = not bool(get_exe_path("ogrinfo.exe" if sys.platform.lower() == "win32" else "ogrinfo"))
+        self.ogr2ogr_missing = not bool(get_exe_path("ogr2ogr.exe" if sys.platform.lower() == "win32" else "ogr2ogr"))
+        self.ogrinfo_missing_lbl.show(self.ogrinfo_missing)
+        self.ogr2ogr_missing_lbl.show(self.ogr2ogr_missing)
         if get_exe_path("ogrinfo.exe" if sys.platform.lower() == "win32" else "ogrinfo"):
             self.ogrinfo_missing = False
             self.ogrinfo_icon.set_image("task_checked%s.png" % os_icon_suffix)
@@ -402,7 +436,7 @@ def small_label(text):
 
 class ContentPreviewPage(WizardPage):
     def __init__(self, owner):
-        WizardPage.__init__(self, owner, "Import Options", wide=True)
+        WizardPage.__init__(self, owner, "İçe aktarma seçenekleri", wide=True)
         self.layer_name = None
         self.column_list = []
         self.support_spatial_index = Version.fromgrt(owner.editor.serverVersion).is_supported_mysql_version_at_least(5, 7, 5)
@@ -472,10 +506,10 @@ class ContentPreviewPage(WizardPage):
         return fields
 
     def create_ui(self):
-        self.set_spacing(16)        
+        self.set_spacing(8)
         layer_box = mforms.newBox(True)
         layer_box.set_spacing(8)
-        layer_heading = mforms.newLabel("Layer name:")
+        layer_heading = mforms.newLabel("Katman:")
         layer_box.add(layer_heading, False, True)
         self.layer_name_lbl = mforms.newLabel("")
         layer_box.add(self.layer_name_lbl, False, True)
@@ -492,7 +526,7 @@ class ContentPreviewPage(WizardPage):
         entry_box = mforms.newBox(True)
         entry_box.set_spacing(12)
 
-        entry_box.add(mforms.newLabel("Destination table:"), False, True)
+        entry_box.add(mforms.newLabel("Hedef tablo:"), False, True)
 
         self.table_name = mforms.newTextEntry()
         entry_box.add(self.table_name, True, True)
@@ -504,7 +538,7 @@ class ContentPreviewPage(WizardPage):
 
         self.column_list = newTreeView(mforms.TreeFlatList)
         self.column_list.add_column(mforms.CheckColumnType, "", 40, True)
-        self.column_list.add_column(mforms.StringColumnType, "Column name", 300, False)
+        self.column_list.add_column(mforms.StringColumnType, "Sütun adı", 300, False)
         self.column_list.end_columns()
         self.column_list.set_size(-1, 150)
 
@@ -515,7 +549,7 @@ class ContentPreviewPage(WizardPage):
         cbox.show(True)
         
         options_layer = mforms.newPanel(mforms.TitledBoxPanel)
-        options_layer.set_title("Additional options")
+        options_layer.set_title("Ek seçenekler")
         
         options_box = mforms.newBox(False)
         options_box.set_spacing(12)
@@ -524,7 +558,7 @@ class ContentPreviewPage(WizardPage):
         boxfailures = mforms.newBox(False)
         
         self.skipfailures_chb = newCheckBox()
-        self.skipfailures_chb.set_text("Skip failures");
+        self.skipfailures_chb.set_text("Hatalı nesneleri atla");
         self.skipfailures_chb.set_active(False)
         
         boxfailures.add(self.skipfailures_chb, False, True)
@@ -534,7 +568,7 @@ class ContentPreviewPage(WizardPage):
         boxappend = mforms.newBox(False)
         
         self.append_chb = newCheckBox()
-        self.append_chb.set_text("Append to existing data");
+        self.append_chb.set_text("Mevcut verilere ekle");
         self.append_chb.set_active(False)
         boxappend.add(self.append_chb, False, True)
         boxappend.add(small_label("Append to existing table instead of creating a new one."), False, True)
@@ -543,7 +577,7 @@ class ContentPreviewPage(WizardPage):
         boxoverwrite = mforms.newBox(False)
         
         self.overwrite_chb = newCheckBox()
-        self.overwrite_chb.set_text("Overwrite existing data");
+        self.overwrite_chb.set_text("Mevcut verilerin üzerine yaz");
         self.overwrite_chb.set_active(False)
         
         self.append_chb.add_clicked_callback(lambda checkbox1 = self.append_chb, checkbox2 = self.overwrite_chb: self.one_check_only(checkbox1, checkbox2))
@@ -555,7 +589,7 @@ class ContentPreviewPage(WizardPage):
         if self.support_spatial_index:
             boxspatial = mforms.newBox(False)
             self.spatial_index_chb = newCheckBox()
-            self.spatial_index_chb.set_text("Create spatial index")
+            self.spatial_index_chb.set_text("Mekânsal indeks oluştur")
             self.spatial_index_chb.set_active(False)
             boxspatial.add(self.spatial_index_chb, False, True)
             boxspatial.add(small_label("import will make spatial index around geometry column"), False, True)
@@ -569,7 +603,7 @@ class ContentPreviewPage(WizardPage):
         boxconvert = mforms.newBox(False)
         entry_box = mforms.newBox(True)
         entry_box.set_spacing(8)
-        entry_box.add(mforms.newLabel("Convert data to the following EPSG:"), False, True)
+        entry_box.add(mforms.newLabel("Hedef EPSG:"), False, True)
         self.convert_to_epsg = mforms.newTextEntry()
         entry_box.add(self.convert_to_epsg, False, True)
         boxconvert.add(entry_box, True, True)
@@ -673,7 +707,7 @@ class ImportProgressPage(WizardProgressPage):
 
 class ResultsPage(WizardPage):
     def __init__(self, owner):
-        WizardPage.__init__(self, owner, "Import Results")
+        WizardPage.__init__(self, owner, "Aktarım sonucu")
 
     def get_path(self):
         return self.main.select_file_page.shapefile_path.get_string_value()
@@ -696,7 +730,7 @@ class SpatialImporterWizard(WizardForm):
         
         self.selected_schema = None
 
-        self.set_title("Load Spatial Data")
+        self.set_title("Mekânsal veri aktarımı")
 
         self.center()
 

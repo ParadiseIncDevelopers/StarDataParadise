@@ -1423,8 +1423,9 @@ class WbAdminPerformanceSchemaInstrumentation(WbAdminPSBaseTab, ChangeCounter):
 
         self.rebuild_ui(True)
 
-        self._showing_advanced = True
+        self._showing_advanced = False
         self.switch_advanced()
+        self.config_tab.set_active_tab(2)  # Instruments, after presets and introduction.
         return self.content
 
 
@@ -1461,7 +1462,7 @@ class WbAdminPerformanceSchemaInstrumentation(WbAdminPSBaseTab, ChangeCounter):
             self.apply_button.show(False)
             self.cancel_button.show(False)
 
-        self.advanced_button.set_text("Hide Advanced" if self._showing_advanced else "Show Advanced")
+        self.advanced_button.set_text("Gelişmişi gizle" if self._showing_advanced else "Gelişmiş")
 
 
     def rebuild_ui(self, from_scratch):

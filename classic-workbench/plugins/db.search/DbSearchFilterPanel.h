@@ -42,6 +42,7 @@ private:
   mforms::Label _limit_total_hint;
   mforms::TextEntry _limit_total;
   mforms::Button _search_button;
+  mforms::Button _preview_button;
 
 public:
   DBSearchFilterPanel();
@@ -97,6 +98,9 @@ public:
 
   mforms::Button *search_button() {
     return &_search_button;
+  }
+  mforms::Button *preview_button() {
+    return &_preview_button;
   }
   mforms::TextEntry *search_field() {
     return &_search_text;

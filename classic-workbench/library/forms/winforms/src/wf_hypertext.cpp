@@ -70,7 +70,7 @@ bool HyperTextWrapper::create(mforms::HyperText *backend) {
 
   // Default font. Can be overridden in the HTML code as usual.
   try {
-    panel->Font = ControlUtilities::GetFont("Tahoma", 8.25f, Drawing::FontStyle::Regular);
+    panel->Font = ControlUtilities::GetFont("Segoe UI", 9.75f, Drawing::FontStyle::Regular);
   } catch (System::ArgumentException ^ e) {
     // Argument exception pops up when the system cannot find the Regular font style (corrupt font).
     logError("HyperTextWrapper, setting default font failed. %s\n", e->Message);

@@ -35,6 +35,7 @@ import inspect
 import random
 import string
 import functools
+import re
 
 # Declares the global variable for sudo prefix
 default_sudo_prefix = ''
@@ -50,6 +51,7 @@ from workbench.utils import QueueFileMP
 from wb_common import InvalidPasswordError, PermissionDeniedError, Users, sanitize_sudo_output, splitpath, to_unicode
 from wb_common import CmdOptions, CmdOutput
 from workbench.log import log_info, log_warning, log_error, log_debug, log_debug2, log_debug3
+from workbench.sdp_i18n import tr
 
 from workbench.tcp_utils import CustomCommandListener
 from workbench.os_utils import FileUtils, OSUtils, FunctionType
@@ -869,10 +871,10 @@ class FileOpsLinuxBase(object):
 
         output = sanitize_sudo_output(output.getvalue()).strip()
         
-        available = "Could not determine"
+        available = tr("Could not determine")
         if res == 0:
             tokens = output.split("\n")[-1].strip().split()
-            available = "%s of %s available" % (tokens[3], tokens[1])
+            available = tr("%s of %s available") % (tokens[3], tokens[1])
         
         return available
         
@@ -1415,6 +1417,15 @@ class FileOpsLocalWindows(object): # Used for remote as well, if not using sftp
             except Exception:
                 ret_val = 'Could not determine'
 
+        if ret_val == 'Could not determine':
+            return tr('Could not determine')
+        if isinstance(ret_val, str):
+            # FileUtils returns native prose. Translate only its known complete
+            # numeric/unit format and retain the two raw values unchanged.
+            match = re.fullmatch(r'([0-9]+(?:\.[0-9]+)? (?:B|KB|MB|GB|TB)) of '
+                                 r'([0-9]+(?:\.[0-9]+)? (?:B|KB|MB|GB|TB)) available', ret_val)
+            if match:
+                return tr('%s of %s available') % match.groups()
         return ret_val
 
     # content must be a string
@@ -1689,7 +1700,7 @@ class FileOpsRemoteWindows(object):
                             user_password,
                             output_handler = lambda line, l = out:l.append(line))
 
-        available = "Could not determine"
+        available = tr("Could not determine")
         if res == 0 and len(out):
             measures = ['B', 'KB', 'MB', 'GB', 'TB']
             tokens = out[0].strip().split("\n")[-1].strip().split()
@@ -1701,7 +1712,7 @@ class FileOpsRemoteWindows(object):
                 index = index + 1
 
 
-            available = "%.2f %s available" % (total, measures[index])
+            available = tr("%.2f %s available") % (total, measures[index])
         
         return available
 

@@ -64,7 +64,7 @@ base::Rect DocumentEntry::getAccessibilityBounds() {
 //----------------------------------------------------------------------------------------------------------------------
 
 std::string DocumentEntry::getAccessibilityDefaultAction() {
-  return "Modeli a\xC3\xA7";
+  return _("Open model");
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -79,20 +79,20 @@ void DocumentEntry::accessibilityDoDefaultAction() {
 DocumentsSection::DocumentsSection(mforms::HomeScreen *owner) : HomeScreenSection("sidebar_modeling.png") {
   _owner = owner;
 
-  _add_button.title = "Yeni model";
-  _add_button.description = "Yeni model";
+  _add_button.title = _("New model");
+  _add_button.description = _("New model");
   _add_button.defaultHandler = [this]() {
     _owner->trigger_callback(HomeScreenAction::ActionNewEERModel, base::any());
   };
 
-  _open_button.title = "Model a\xC3\xA7";
-  _open_button.description = "Model dosyas\xC4\xB1 a\xC3\xA7";
+  _open_button.title = _("Open model");
+  _open_button.description = _("Open model file");
   _open_button.defaultHandler = [this]() {
     _owner->trigger_callback(HomeScreenAction::ActionOpenEERModel, base::any());
   };
 
-  _action_button.title = "Model olu\xC5\x9Ftur";
-  _action_button.description = "Veritaban\xC4\xB1 veya SQL beti\xC4\x9Finden model olu\xC5\x9Ftur";
+  _action_button.title = _("Create model");
+  _action_button.description = _("Create a model from a database or SQL script");
   _action_button.defaultHandler = [this]() {
     if (_model_action_menu != nullptr)
       _model_action_menu->popup_at(this, static_cast<int>(_action_button.bounds.xcenter()),
@@ -352,7 +352,7 @@ base::Size DocumentsSection::getLayoutSize(base::Size proposedSize) {
 //----------------------------------------------------------------------------------------------------------------------
 
 const char* DocumentsSection::getTitle() {
-  return "Modeller";
+  return _("Models");
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -463,7 +463,7 @@ void DocumentsSection::repaint(cairo_t *cr, int areax, int areay, int areaw, int
   cairo_set_font_size(cr, 16);
   cairo_set_source_rgb(cr, _textColor.red, _textColor.green, _textColor.blue);
   cairo_move_to(cr, 12, 25);
-  cairo_show_text(cr, "Modeller");
+  cairo_show_text(cr, _("Models"));
   cairo_set_font_size(cr, 13);
   cairo_select_font_face(cr, "Segoe UI", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
   for (HomeAccessibleButton *button : {&_add_button, &_open_button, &_action_button}) {
@@ -480,15 +480,15 @@ void DocumentsSection::repaint(cairo_t *cr, int areax, int areay, int areaw, int
   cairo_select_font_face(cr, "Segoe UI", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
   const double width = get_width() - DOCUMENTS_LEFT_PADDING - DOCUMENTS_RIGHT_PADDING;
   cairo_move_to(cr, 44, 56); cairo_show_text(cr, "Model");
-  cairo_move_to(cr, 12 + width * .32, 56); cairo_show_text(cr, "Konum");
+  cairo_move_to(cr, 12 + width * .32, 56); cairo_show_text(cr, _("Location"));
   if (width > 650) {
     cairo_move_to(cr, 12 + width * .78, 56);
-    cairo_show_text(cr, "Son kullan\xC4\xB1m");
+    cairo_show_text(cr, _("Last opened"));
   }
   if (_filtered_documents.empty()) {
     cairo_select_font_face(cr, "Segoe UI", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
     cairo_move_to(cr, 20, 92);
-    cairo_show_text(cr, "Yeni bir model olu\xC5\x9Fturun veya mevcut .mwb dosyas\xC4\xB1n\xC4\xB1 a\xC3\xA7\xC4\xB1n.");
+    cairo_show_text(cr, _("Create a new model or open an existing .mwb file."));
   }
   for (size_t index = 0; index < _filtered_documents.size(); ++index) {
     const DocumentEntry &entry = _filtered_documents[index];

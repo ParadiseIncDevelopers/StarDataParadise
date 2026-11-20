@@ -30,6 +30,7 @@ from workbench.log import log_info, log_error, log_debug
 
 from mforms import App, Utilities, newTabView, Color, ControlBackgroundColor
 import mforms
+from workbench.sdp_i18n import tr
 
 from workbench.notifications import nc
 
@@ -108,7 +109,7 @@ def scan_admin_modules():
 #===============================================================================
 class AdministratorTab(mforms.AppView):
     def __init__(self, ctrl_be, server_profile, main_view, editor):
-        mforms.AppView.__init__(self, False, "Administrator", "Administrator", False)
+        mforms.AppView.__init__(self, False, tr("Server administration"), "Administrator", False)
         self.editor                     = editor
         self.owner                      = main_view
         self.tabs                       = []
@@ -135,6 +136,8 @@ class AdministratorTab(mforms.AppView):
         self.ctrl_be.add_me_for_event("server_started", self)
         self.ctrl_be.add_me_for_event("server_stopped", self)
 
+        # The SQL workspace already owns the administrator sidebar. A second
+        # navigation rail here consumed editor width and clipped status values.
         self.add(self.tabview, True, True)
 
         self._timeout_tm = Utilities.add_timeout(0.5, weakcb(self, "timeout"))
@@ -216,7 +219,7 @@ class AdministratorTab(mforms.AppView):
             except Exception as e:
                 import traceback
                 log_error("Unhandled exception in Admin for %s: %s\n" % (panel, traceback.format_exc()))
-                mforms.Utilities.show_error("Error", "An unhandled exception occurred (%s). Please refer to the log files for details." % e, "OK", "", "")
+                mforms.Utilities.show_error(tr("Error"), "An unhandled exception occurred (%s). Please refer to the log files for details." % e, tr("OK"), "", "")
         self.old_active_tab = panel
 
     #---------------------------------------------------------------------------

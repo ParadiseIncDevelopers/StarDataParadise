@@ -21,6 +21,7 @@
 # 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 from workbench.graphics.canvas import Figure, ImageFigure, RectangleShapeFigure, TextFigure
+from workbench.sdp_i18n import tr
 
 from mforms import Color, ControlBackgroundColor, TextColor, TextBackgroundColor
 
@@ -150,7 +151,7 @@ class DBTimeLineGraph(Figure):
                 c.move_to(0, y)
                 y += 14
                 c.set_source_rgb(*self._colors[i])
-                c.show_text("%s - %i seconds ago" % (self.format_vaxis_value(value), time_offset))
+                c.show_text(tr("%s - %i seconds ago") % (self.format_vaxis_value(value), time_offset))
 
         if self._points[0]:
             # draw data
@@ -451,10 +452,11 @@ class DBLevelMeter(Figure):
         
         cr.set_source_rgb(0.5, 0.5, 0.5)
 
-        limit_y = cr.text_extents("limit %s" % self._max_value).height
+        limit_text = tr("limit %s") % self._max_value
+        limit_y = cr.text_extents(limit_text).height
 
         cr.move_to(34, limit_y)
-        cr.show_text("limit %s" % self._max_value)
+        cr.show_text(limit_text)
 
         if p1 != p2:
             max_h = cr.text_extents("max %s" % self._max_seen_value).height

@@ -160,10 +160,10 @@ void DbSqlEditorLog::reset() {
 
   add_column("", int());  // msg type (icon)
   add_column("#", int()); // sequence no.
-  add_column("Time", std::string());
-  add_column("Action", std::string());
-  add_column("Message", std::string());
-  add_column("Duration / Fetch", std::string());
+  add_column(_("Time"), std::string());
+  add_column(_("Action"), std::string());
+  add_column(_("Message"), std::string());
+  add_column(_("Duration / Fetch"), std::string());
 
   std::shared_ptr<sqlite::connection> data_swap_db = this->data_swap_db();
   Recordset_data_storage::create_data_swap_tables(data_swap_db.get(), _column_names, _column_types);

@@ -204,6 +204,7 @@ public:
   void SetNormalImage(Drawing::Image ^ image);
   void SetActiveImage(Drawing::Image ^ image);
   void RegisterDropDown(ToolStripButton ^ button);
+  void ConfigureEditorCommand();
 };
 
 //----------------- ToolbarItemEventTarget ---------------------------------------------------------
@@ -234,6 +235,31 @@ public:
       item->callback();
       if (!destroyed) // We might get deleted in the callback.
         wrapper->UpdateItemImage();
+    }
+  }
+
+  void OnExecuteChoice(Object ^ sender, System::EventArgs ^ e) {
+    ToolStripMenuItem ^ choice = dynamic_cast<ToolStripMenuItem ^>(sender);
+    ToolStripSplitButton ^ split = choice == nullptr ? nullptr : dynamic_cast<ToolStripSplitButton ^>(choice->OwnerItem);
+    if (split == nullptr || split->Owner == nullptr)
+      return;
+    String ^ command = dynamic_cast<String ^>(choice->Tag);
+    array<ToolStripItem ^> ^ targets = split->Owner->Items->Find(command, false);
+    if (targets->Length == 0 || !targets[0]->Enabled)
+      return;
+    mforms::ToolBarItem *backend = ObjectWrapper::GetBackend<mforms::ToolBarItem>(targets[0]);
+    if (backend != nullptr)
+      backend->callback();
+  }
+
+  void OnExecuteOpening(Object ^ sender, System::EventArgs ^ e) {
+    ToolStripSplitButton ^ split = dynamic_cast<ToolStripSplitButton ^>(sender);
+    if (split == nullptr || split->Owner == nullptr)
+      return;
+    for each (ToolStripMenuItem ^ choice in split->DropDownItems) {
+      String ^ command = dynamic_cast<String ^>(choice->Tag);
+      array<ToolStripItem ^> ^ targets = split->Owner->Items->Find(command, false);
+      choice->Enabled = targets->Length > 0 && targets[0]->Enabled;
     }
   }
 
@@ -301,7 +327,7 @@ ToolBarItemWrapper::ToolBarItemWrapper(mforms::ToolBarItem *backend, mforms::Too
 
     case mforms::LabelItem: {
       ToolStripLabel ^ label = ToolBarItemWrapper::Create<ToolStripLabel>(backend, this);
-      label->Font = gcnew Font(DEFAULT_FONT_FAMILY, 10, FontStyle::Regular, GraphicsUnit::Pixel);
+      label->Font = ControlUtilities::GetFont("Segoe UI", 9.75f, FontStyle::Regular);
       label->ForeColor = Conversions::GetApplicationColor(ApplicationColor::AppColorPanelToolbar, true);
       item = label;
       break;
@@ -346,7 +372,7 @@ ToolBarItemWrapper::ToolBarItemWrapper(mforms::ToolBarItem *backend, mforms::Too
       selector->DropDown = dropdown;
       selector->DisplayStyle = ToolStripItemDisplayStyle::Text;
       selector->BackColor = Color::DarkGray;
-      selector->Font = ControlUtilities::GetFont("Microsoft Sans Serif", 8.25f);
+      selector->Font = ControlUtilities::GetFont("Segoe UI", 9.75f);
       selector->Margin = Padding(2, 3, 2, 3);
       item = selector;
       break;
@@ -355,7 +381,7 @@ ToolBarItemWrapper::ToolBarItemWrapper(mforms::ToolBarItem *backend, mforms::Too
       ToolStripComboBox ^ selector = ViewWrapper::Create<ToolStripComboBox>(backend, this);
       selector->DropDownStyle = ComboBoxStyle::DropDownList;
       selector->FlatStyle = FlatStyle::Popup;
-      selector->Font = ControlUtilities::GetFont("Microsoft Sans Serif", 8.25f);
+      selector->Font = ControlUtilities::GetFont("Segoe UI", 9.75f);
       selector->Margin = Padding(2, 3, 2, 3);
       selector->SelectedIndexChanged += gcnew EventHandler(eventTarget, &ToolbarItemEventTarget::OnItemActivation);
       item = selector;
@@ -385,7 +411,7 @@ ToolBarItemWrapper::ToolBarItemWrapper(mforms::ToolBarItem *backend, mforms::Too
 
     case mforms::TitleItem: {
       ToolStripLabel ^ label = ToolBarItemWrapper::Create<ToolStripLabel>(backend, this);
-      label->Font = gcnew Font(DEFAULT_FONT_FAMILY, 10, FontStyle::Bold, GraphicsUnit::Pixel);
+      label->Font = ControlUtilities::GetFont("Segoe UI", 9.75f, FontStyle::Bold);
       label->ForeColor = ColorTranslator::FromHtml("#333333");
       item = label;
       break;
@@ -440,12 +466,12 @@ void ToolBarItemWrapper::UpdateItemImage() {
     if (isChecked && static_cast<Drawing::Image ^>(activeImage) != nullptr) {
       item->Image = activeImage;
       item->AutoSize = false;
-      item->Size = activeImage->Size + button->Margin.Size + borderSize;
+      item->Size = activeImage->Size + item->Margin.Size + borderSize;
     } else {
       item->Image = normalImage;
       if (static_cast<Drawing::Image ^>(normalImage) != nullptr) {
         item->AutoSize = false;
-        item->Size = normalImage->Size + button->Margin.Size + borderSize;
+        item->Size = normalImage->Size + item->Margin.Size + borderSize;
       }
     }
     // Text-bearing native commands need their label included after every image
@@ -495,6 +521,40 @@ void ToolBarItemWrapper::RegisterDropDown(ToolStripButton ^ button) {
   button->Click += gcnew EventHandler(eventTarget, &ToolbarItemEventTarget::OnColorItemActivation);
 }
 
+// The native command remains the mforms toolbar item. Only its Windows host is
+// upgraded to a split button; menu choices call the existing command items.
+void ToolBarItemWrapper::ConfigureEditorCommand() {
+  ToolStripItem ^ previous = GetManagedObject<ToolStripItem>();
+  mforms::ToolBarItem *backend = GetBackend<mforms::ToolBarItem>();
+  if (backend == nullptr || backend->getInternalName() != "query.execute")
+    return;
+  ToolStripSplitButton ^ split = ToolBarItemWrapper::Create<ToolStripSplitButton>(backend, this);
+  split->Name = "query.execute";
+  split->Text = previous->Text;
+  split->ToolTipText = previous->ToolTipText;
+  split->Image = previous->Image;
+  split->Enabled = previous->Enabled;
+  split->DisplayStyle = ToolStripItemDisplayStyle::ImageAndText;
+  split->ImageScaling = ToolStripItemImageScaling::SizeToFit;
+  split->ForeColor = Color::White;
+  split->BackColor = ColorTranslator::FromHtml("#043133");
+  split->Font = gcnew Font("Segoe UI", 9.75f, FontStyle::Regular, GraphicsUnit::Point);
+  split->Padding = Padding(8, 3, 6, 3);
+  split->Margin = Padding(3, 2, 5, 2);
+  split->ButtonClick += gcnew EventHandler(eventTarget, &ToolbarItemEventTarget::OnItemActivation);
+  split->DropDownOpening += gcnew EventHandler(eventTarget, &ToolbarItemEventTarget::OnExecuteOpening);
+  ToolStripMenuItem ^ all = gcnew ToolStripMenuItem("Seçimi veya tüm betiği çalıştır");
+  all->Tag = "query.execute";
+  all->Click += gcnew EventHandler(eventTarget, &ToolbarItemEventTarget::OnExecuteChoice);
+  split->DropDownItems->Add(all);
+  ToolStripMenuItem ^ current = gcnew ToolStripMenuItem("İmleçteki ifadeyi çalıştır");
+  current->Tag = "query.execute_current_statement";
+  current->Click += gcnew EventHandler(eventTarget, &ToolbarItemEventTarget::OnExecuteChoice);
+  split->DropDownItems->Add(current);
+  previous->Image = nullptr;
+  delete previous;
+}
+
 //----------------- ToolBarWrapper -----------------------------------------------------------------
 
 ToolBarWrapper::ToolBarWrapper(mforms::ToolBar *toolbar) : ViewWrapper(toolbar) {
@@ -528,7 +588,7 @@ bool ToolBarWrapper::create_tool_bar(mforms::ToolBar *backend, mforms::ToolBarTy
       toolstrip->AutoSize = false;
       toolstrip->Size = Size(100, 23);
       try {
-        toolstrip->Font = ControlUtilities::GetFont("Microsoft Sans Serif", 8.25f);
+        toolstrip->Font = ControlUtilities::GetFont("Segoe UI", 9.75f);
       } catch (System::ArgumentException ^ e) {
         // Argument exception pops up when the system cannot find the Regular font style (corrupt font).
         logError("ToolBarWrapper::create_tool_bar failed. %s\n", e->Message);
@@ -572,6 +632,42 @@ void ToolBarWrapper::insert_item(mforms::ToolBar *backend, int index, mforms::To
 
   // Update the name of the control, so the accessibility layer has something to work with.
   native_item->Name = CppStringToNative(item->getInternalName());
+
+  if (item->getInternalName() == "query.execute") {
+    item->get_data<ToolBarItemWrapper>()->ConfigureEditorCommand();
+    native_item = ToolBarWrapper::GetManagedObject<ToolStripItem>(item);
+    toolstrip->Renderer = gcnew FlatQueryToolStripRenderer();
+    toolstrip->BackColor = ColorTranslator::FromHtml("#E7EEEF");
+    toolstrip->GripStyle = ToolStripGripStyle::Hidden;
+    toolstrip->Padding = Padding(6, 3, 4, 3);
+    toolstrip->ImageScalingSize = Size(16, 16);
+    toolstrip->Font = gcnew Font("Segoe UI", 9.75f, FontStyle::Regular, GraphicsUnit::Point);
+  }
+  if (item->getInternalName() == "query.execute_current_statement")
+    native_item->Visible = false; // Available from the split menu and existing keyboard command.
+  if (item->getInternalName().find("workspace.") == 0 && item->getInternalName() != "workspace.page") {
+    native_item->DisplayStyle = ToolStripItemDisplayStyle::ImageAndText;
+    native_item->Font = gcnew Font("Segoe UI", 9.75f, FontStyle::Regular, GraphicsUnit::Point);
+    native_item->Padding = Padding(10, 5, 12, 5);
+    native_item->Margin = Padding(2, 0, 2, 0);
+    native_item->ImageScaling = ToolStripItemImageScaling::SizeToFit;
+    toolstrip->ImageScalingSize = Size(20, 20);
+    toolstrip->GripStyle = ToolStripGripStyle::Hidden;
+  }
+  if (item->getInternalName() == "query.autocommit") {
+    native_item->DisplayStyle = ToolStripItemDisplayStyle::ImageAndText;
+    native_item->Padding = Padding(6, 3, 6, 3);
+  }
+  if (item->getInternalName() == "limit_rows") {
+    ToolStripComboBox ^ selector = dynamic_cast<ToolStripComboBox ^>(native_item);
+    if (selector != nullptr) {
+      selector->Font = gcnew Font("Segoe UI", 9.75f, FontStyle::Regular, GraphicsUnit::Point);
+      selector->AutoSize = false;
+      selector->Width = 112;
+      selector->Margin = Padding(8, 3, 10, 3);
+      selector->FlatStyle = FlatStyle::Flat;
+    }
+  }
 
   if (index < 0 || index >= toolstrip->Items->Count) {
     index = toolstrip->Items->Count;
@@ -658,6 +754,12 @@ void ToolBarWrapper::set_item_text(mforms::ToolBarItem *item, const std::string 
     default: {
       ToolStripItem ^ stripItem = ToolBarWrapper::GetManagedObject<ToolStripItem>(item);
       stripItem->Text = native_text;
+      if (item->get_type() == mforms::ToggleItem && !String::IsNullOrEmpty(native_text)) {
+        stripItem->DisplayStyle = stripItem->Image == nullptr ? ToolStripItemDisplayStyle::Text : ToolStripItemDisplayStyle::ImageAndText;
+        stripItem->Font = gcnew Font("Segoe UI", 9.75f, FontStyle::Regular, GraphicsUnit::Point);
+        stripItem->Padding = Padding(10, 2, 10, 2);
+        stripItem->AutoSize = true;
+      }
     }
   }
 }
@@ -725,6 +827,16 @@ void ToolBarWrapper::set_selector_items(mforms::ToolBarItem *item, const std::ve
         List<String ^> list = CppStringListToNative(values);
         combobox->Items->Clear();
         combobox->Items->AddRange(list.ToArray());
+        if (item->getInternalName() == "workspace.page") {
+          combobox->AutoSize = false;
+          combobox->Font = gcnew Font("Segoe UI", 9.75f, FontStyle::Regular, GraphicsUnit::Point);
+          combobox->Width = 220;
+          combobox->ComboBox->MinimumSize = Size(220, 0);
+          int dropWidth = 220;
+          for each (String ^ label in list)
+            dropWidth = Math::Max(dropWidth, TextRenderer::MeasureText(label, combobox->Font).Width + 28);
+          combobox->DropDownWidth = dropWidth;
+        }
         if (combobox->Items->Count > 0)
           combobox->SelectedIndex = 0;
       }

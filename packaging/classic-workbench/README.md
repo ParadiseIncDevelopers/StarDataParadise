@@ -1,10 +1,24 @@
 # Klasik StarDataParadise Workbench
 
-Tam Classic kaynak ağacı [classic-workbench/](../../classic-workbench/) altında master dalında yayımlanır. Bu klasör upstream kaynakları, StarDataParadise değişikliklerini, ikonları ve lisans bildirimlerini birlikte içerir. Yerel geliştirme ağacı `out/mysql-workbench-native-src` master dalında commit edilmiştir. Aşağıdaki yama akışı da aynı 8.0.47 tabanından kaynak hazırlamak için kullanılabilir.
+Tam Classic kaynak ağacı [classic-workbench/](../../classic-workbench/) altında master dalında yayımlanır. Bu klasör upstream kaynakları, StarDataParadise değişikliklerini, ikonları ve lisans bildirimlerini birlikte içerir. İlk tam kaynak yayını yerel `out/mysql-workbench-native-src` ağacının master commit'inden alınmıştır; güncel ürün kaynağı `classic-workbench/` altında sürümlenir. Aşağıdaki yama akışı da aynı 8.0.47 tabanından kaynak hazırlamak için kullanılabilir.
 
 Bağlantılar, Modeller ve Veri Taşıma ekranlarının renk, tipografi, ikon ve kompakt yerleşim ölçüleri [ana sayfa tasarım kurallarında](tasarim/ANA_SAYFA.md) yer alır.
 
-## 8.0.47 kaynak derlemesi · `v0.3.0-preview.4`
+## Güncel Classic çalışma alanı - `v0.3.0-preview.5`
+
+Bağlı SQL alanı ve uygulama genelindeki son tasarım değişiklikleri için kanonik kaynak `classic-workbench/` dizinidir. Hazırlanmış 8.0.47 native geliştirme ağacı ve aşağıdaki bağımlılıklar mevcutsa güncel kaynakları ayrı bir çalışma zamanına derleyin:
+
+```powershell
+pwsh -NoProfile -File packaging/classic-workbench/Build-Workspace.ps1 -Output out/classic-data-schema-delivery
+```
+
+Güncel çıktı `out/classic-data-schema-delivery/StarDataParadise.exe` olur. Varsayılan çalışma zamanı tohumu, hazırlanmış native ağacın `bin/x64/Release_OSS` dizinidir; başka bir tam çalışma zamanı `-RuntimeSeed` ile seçilebilir. Betik kaynakları hash denetimiyle yerel native derleme ağacına eşler, farklı yerel değişiklikte durur ve açık eski uygulamayı sonlandırmaz. 18 native hedefin tam derlemesi, sonraki hedefli turlar ve son `WBControls`/`wbprivate` teslim derlemesi geçti. Kullanıcı ayarlarından ayrı kabul profili `--configdir` ile seçilebilir.
+
+Başlık → ana sekmeler → menü → SQL/Veri/Şema/Performans/Yönetim/Araçlar sırası, düz ortak bileşenler, profil satırında bağlantı beklemesi, kompakt nesne/SQL inceleme yüzeyleri, beş ürün aracı ve yeni hata penceresi bu çıktıda bulunur. [Uygulama kaydı](tasarim/sql-calisma-alani/UYGULAMA.md) gerçek native görüntüleri ve kabul sınırlarını; [araçlar kaydı](tasarim/sql-calisma-alani/ARACLAR.md) sağlayıcıları açıklar. Aşağıdaki yama akışları önceki tabanı hazırlamak içindir; son UI değişiklikleri kanonik kaynak ağacındadır.
+
+Son [Veri/Şema, dil paketi ve yönetim kabulü](tasarim/sql-calisma-alani/VERI-SEMA-YONETIM.md), tablo editörünü, gerçek satıra bağlı sağ formu, SQL önizlemesini, sonuç sekmelerini ve gerçek SDP ölçümlerini kapsar. 66 Python sınaması, 21 derlenmiş kabul kontrolü, Türkçe/İngilizce açılış ve canlı Uygula/Vazgeç akışları geçti. [Sürüm notları](SURUM_NOTLARI.md) bu sürümün adını ve her değişikliğin amacını açıklar. [Önceki görsel uyum kabulü](tasarim/sql-calisma-alani/UYGULAMA.md#gorsel-uyum) tarihsel kayıtta korunur. Tam DPI ve installer kur/kaldır kabulü ayrı kapsamdır.
+
+## 8.0.47 kaynak derlemesi - `v0.3.0-preview.4`
 
 `workbench-8.0.47.patch`, Workbench 8.0.47’nin `dc3590dbfbee29c87e201d4ef53607e5deb0e4f9` commit’ine uygulanır. Yama, StarDataParadise metinlerini ve yıldız ikonlarını, klasik SQL editörüyle ilgili marka değişikliklerini ve Windows kaynak derleme düzeltmelerini içerir. SQL editörünün tasarım dosyası 8.0.47 ile aynı. Karşılama ekranındaki tanıtım bandı mevcut tercih üzerinden varsayılan olarak gizli.
 

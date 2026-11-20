@@ -33,6 +33,7 @@ from mforms import newTreeView
 from mforms import FileChooser
 from sqlide_power_import_export_be import create_module
 from workbench.ui import WizardForm, WizardPage, WizardProgressPage
+from workbench.sdp_i18n import tr
 from datetime import datetime
 import operator
 
@@ -44,7 +45,7 @@ from wb_common import to_unicode
 last_location = None
 
 def showPowerExport(editor, selection):
-    exporter = PowerExportWizard(editor, mforms.Form.main_form(), selection, "Table Data Export")
+    exporter = PowerExportWizard(editor, mforms.Form.main_form(), selection, tr("Table Data Export"))
     exporter.run()
 
 def handleContextMenu(name, sender, args):
@@ -70,7 +71,7 @@ def handleContextMenu(name, sender, args):
 
     if user_selection:
         if user_selection['table']:
-            item = mforms.newMenuItem("Table Data Export Wizard")
+            item = mforms.newMenuItem(tr("Table Data Export Wizard"))
             item.add_clicked_callback(lambda sender=sender : showPowerExport(sender, user_selection))
             menu.insert_item(4, item)
 
@@ -93,16 +94,16 @@ class SimpleTabExport(mforms.Box):
         
     def create_ui(self):
         self.suspend_layout()
-        self.set_spacing(16)
-        self.content.set_spacing(16)
+        self.set_spacing(8)
+        self.content.set_spacing(8)
         
         colbox = mforms.newBox(False)
         colbox.set_spacing(8)
-        colbox.add(mforms.newLabel("Select columns you'd like to export"), False, True)
+        colbox.add(mforms.newLabel("Aktarılacak sütunlar"), False, True)
         
         self.column_list = newTreeView(mforms.TreeFlatList)
-        self.column_list.add_column(mforms.CheckColumnType, "Export", 50, True)
-        self.column_list.add_column(mforms.StringColumnType, "Column name", self.owner.main.get_width(), False)
+        self.column_list.add_column(mforms.CheckColumnType, "Aktar", 50, True)
+        self.column_list.add_column(mforms.StringColumnType, "Sütun adı", 360, False)
         self.column_list.end_columns()
         self.column_list.set_allow_sorting(True)
         self.column_list.set_size(200, -1)
@@ -110,7 +111,7 @@ class SimpleTabExport(mforms.Box):
         
         limit_box = mforms.newBox(True)
         limit_box.set_spacing(8)
-        limit_box.add(mforms.newLabel("Count: "), False, False)
+        limit_box.add(mforms.newLabel("Satır sayısı:"), False, False)
         self.limit_entry = mforms.newTextEntry()
         self.limit_entry.set_size(50, -1)
         self.limit_entry.add_changed_callback(lambda entry=self.limit_entry: self.entry_changed(entry))
@@ -118,7 +119,7 @@ class SimpleTabExport(mforms.Box):
         
         offset_box = mforms.newBox(True)
         offset_box.set_spacing(8)
-        offset_box.add(mforms.newLabel("Row Offset: "), False, False)
+        offset_box.add(mforms.newLabel("Başlangıç satırı:"), False, False)
         self.offset_entry = mforms.newTextEntry()
         self.offset_entry.set_size(50, -1)
         self.offset_entry.add_changed_callback(lambda entry=self.offset_entry: self.entry_changed(entry))
@@ -127,7 +128,7 @@ class SimpleTabExport(mforms.Box):
         
         
         sellall_cb = mforms.newCheckBox()
-        sellall_cb.set_text("Select / Deselect all entries")
+        sellall_cb.set_text("Tümünü seç / temizle")
         sellall_cb.set_active(True)
         sellall_cb.add_clicked_callback(lambda cb = sellall_cb: self.sell_all(cb))
         
@@ -195,7 +196,7 @@ class AdvancedTabExport(mforms.Box):
         box.set_spacing(8)
         lbl_box = mforms.newBox(False)
         lbl_box.set_spacing(8)
-        lbl_box.add(mforms.newLabel("Type query that will be used as a base for export."), False, True)
+        lbl_box.add(mforms.newLabel("Dışa aktarılacak verinin SQL sorgusu"), False, True)
         box.add(lbl_box, False, True)
         self.code_editor = mforms.CodeEditor()
         self.code_editor.set_language(mforms.LanguageMySQL)
@@ -219,8 +220,8 @@ class AdvancedTabExport(mforms.Box):
 
 class ResultsPage(WizardPage):
     def __init__(self, owner):
-        WizardPage.__init__(self, owner, "Export Results")
-        self.next_button.set_text('Finish')
+        WizardPage.__init__(self, owner, "Aktarım sonucu")
+        self.next_button.set_text("Bitir")
             
     def go_next(self):
         self.main.close()
@@ -313,7 +314,7 @@ class SelectFilePage(WizardPage):
             
     def create_ui(self):
         self.suspend_layout()
-        self.set_spacing(16)
+        self.set_spacing(8)
         
         label = mforms.newLabel("Table Data Export allows you to easily export data into CSV, JSON datafiles.\n")
         label.set_style(mforms.BoldInfoCaptionStyle)
@@ -323,7 +324,7 @@ class SelectFilePage(WizardPage):
         entry_box = mforms.newBox(True)
         entry_box.set_spacing(5)
 
-        entry_box.add(mforms.newLabel("File Path:"), False, True)
+        entry_box.add(mforms.newLabel("Dosya:"), False, True)
 
         self.exportfile_path = mforms.newTextEntry()
         self.exportfile_path.add_changed_callback(lambda entry=self.exportfile_path: self.entry_changed(entry))
@@ -334,7 +335,7 @@ class SelectFilePage(WizardPage):
             self.get_module(True)
 
         browse_btn = mforms.newButton()
-        browse_btn.set_text("Browse...")
+        browse_btn.set_text("Gözat…")
         browse_btn.set_name("Browse")
         browse_btn.add_clicked_callback(self.browse)
         entry_box.add(browse_btn, False, False)
@@ -352,14 +353,14 @@ class SelectFilePage(WizardPage):
         self.content.add(radio_box, False, True)
 
         self.optpanel = mforms.newPanel(mforms.TitledBoxPanel)
-        self.optpanel.set_title("Options:")
+        self.optpanel.set_title("Seçenekler")
 
         self.content.add(self.optpanel, False, True)
         self.optpanel.show(False)
         
         self.export_local_box = mforms.newBox(False)
         self.export_local_cb = mforms.newCheckBox()
-        self.export_local_cb.set_text("Export to local machine")
+        self.export_local_cb.set_text("Yerel dosyaya aktar")
         self.export_local_cb.set_active(True)
         self.export_local_box.add(self.export_local_cb, False, True)
         l = mforms.newLabel("""If checked, rows will be exported on the location that started Workbench.\nIf not checked, rows will be exported on the server.\nIf server and computer that started Workbench are different machines, import of that file can be done manual way only.""")
@@ -551,13 +552,13 @@ class DataInputPage(WizardPage):
         
     def create_ui(self):
         self.suspend_layout()
-        self.set_spacing(16)
+        self.set_spacing(8)
         
         headingBox = mforms.newBox(True)
-        headingBox.set_spacing(16)
+        headingBox.set_spacing(8)
         
         self.simple_export_box = mforms.newBox(False)
-        self.simple_export_box.set_spacing(16)
+        self.simple_export_box.set_spacing(8)
         
         label = mforms.newLabel("Select source table for export:")
         label.set_style(mforms.BoldInfoCaptionStyle)

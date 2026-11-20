@@ -35,6 +35,19 @@ namespace MySQL.Grt.Db
 {
   public partial class RecordsetView : Form, IRecordsetView
   {
+    private sealed class ResultGridView : GridView
+    {
+      public ResultGridView(RecordsetWrapper recordset, Font font) : base(recordset, font) { }
+
+      protected override void OnCellFormatting(DataGridViewCellFormattingEventArgs e)
+      {
+        base.OnCellFormatting(e);
+        // The shared grid also serves logs/models with a blue alternating-row
+        // scheme. SQL results use the neutral table surface from the design.
+        e.CellStyle.BackColor = SystemColors.Window;
+      }
+    }
+
     private RecordsetWrapper model;
     private GridView gridView;
     private int contextColumnIndex;
@@ -55,12 +68,17 @@ namespace MySQL.Grt.Db
 
     public void SetupRecordset(RecordsetWrapper recordset)
     {
-      Font font = null;
+      Font font = ControlUtilities.GetFont("Segoe UI", 9.75f);
       string fontName = recordset.getFont();
       float size = recordset.getFontSize();
-      if(!string.IsNullOrEmpty(fontName) && size > 0)
+      if(!string.IsNullOrEmpty(fontName) && size > 0 && !IsLegacyResultFont(fontName, size))
         font = ControlUtilities.GetFont(fontName, size);
-      gridView = new GridView(recordset, font);
+      gridView = new ResultGridView(recordset, font);
+      gridView.Tag = "sdp.data"; // SQL aliases and result values are never UI translations.
+      // SQL aliases are data, even when they match a UI catalog key.
+      gridView.Tag = "sdp.data";
+      gridView.Font = font;
+      StyleResultGrid();
    //   gridView.Dock = DockStyle.Fill;
       gridView.BorderStyle = BorderStyle.None;
       gridView.StandardTab = false; // Let Tab move the cursor to the next cell instead next control in parent tab order.
@@ -88,6 +106,51 @@ namespace MySQL.Grt.Db
       gridView.ColumnWidthChanged += gridView_ColumnWidthChanged;
 
       Model = recordset;
+    }
+
+    private static bool IsLegacyResultFont(string family, float size)
+    {
+      return size <= 8.25f &&
+        (string.Equals(family, "Tahoma", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(family, "Microsoft Sans Serif", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void StyleResultGrid()
+    {
+      float scale;
+      using (Graphics graphics = gridView.CreateGraphics())
+        scale = graphics.DpiY / 96f;
+      int rowHeight = Math.Max((int)Math.Ceiling(26f * scale), gridView.Font.Height + (int)Math.Ceiling(8f * scale));
+      int headerHeight = Math.Max((int)Math.Ceiling(30f * scale), gridView.Font.Height + (int)Math.Ceiling(10f * scale));
+      Color foreground = SystemInformation.HighContrast ? SystemColors.WindowText : Color.FromArgb(16, 38, 41);
+      Color surface = SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(231, 238, 239);
+      Color selected = SystemInformation.HighContrast ? SystemColors.Highlight : Color.FromArgb(221, 235, 228);
+      Color selectedText = SystemInformation.HighContrast ? SystemColors.HighlightText : foreground;
+      gridView.EnableHeadersVisualStyles = false;
+      gridView.GridColor = SystemInformation.HighContrast ? SystemColors.WindowText : Color.FromArgb(163, 180, 188);
+      gridView.CellBorderStyle = DataGridViewCellBorderStyle.Single;
+      gridView.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+      gridView.RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
+      gridView.ForeColor = foreground;
+      gridView.BackgroundColor = SystemColors.Window;
+      gridView.DefaultCellStyle.ForeColor = foreground;
+      gridView.DefaultCellStyle.SelectionBackColor = selected;
+      gridView.DefaultCellStyle.SelectionForeColor = selectedText;
+      gridView.DefaultCellStyle.Padding = new Padding((int)Math.Ceiling(6f * scale), 0, (int)Math.Ceiling(6f * scale), 0);
+      gridView.ColumnHeadersDefaultCellStyle.Font = ControlUtilities.GetFont("Segoe UI Semibold", 9.75f);
+      gridView.ColumnHeadersDefaultCellStyle.BackColor = surface;
+      gridView.ColumnHeadersDefaultCellStyle.ForeColor = foreground;
+      gridView.ColumnHeadersDefaultCellStyle.SelectionBackColor = surface;
+      gridView.ColumnHeadersDefaultCellStyle.SelectionForeColor = foreground;
+      gridView.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
+      gridView.RowHeadersDefaultCellStyle.BackColor = surface;
+      gridView.RowHeadersDefaultCellStyle.ForeColor = foreground;
+      gridView.RowHeadersDefaultCellStyle.SelectionBackColor = selected;
+      gridView.RowHeadersDefaultCellStyle.SelectionForeColor = selectedText;
+      gridView.RowTemplate.MinimumHeight = rowHeight;
+      gridView.RowTemplate.Height = rowHeight;
+      gridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+      gridView.ColumnHeadersHeight = headerHeight;
     }
 
     public bool Dirty
@@ -417,7 +480,39 @@ namespace MySQL.Grt.Db
 
     public void set_column_width(int column, int width)
     {
-      gridView.Columns[column].Width = width;
+      DataGridViewColumn gridColumn = gridView.Columns[column];
+      float scale;
+      using (Graphics graphics = gridView.CreateGraphics())
+        scale = graphics.DpiX / 96f;
+      const TextFormatFlags textFlags = TextFormatFlags.NoPadding | TextFormatFlags.SingleLine;
+      Font headerFont = gridView.ColumnHeadersDefaultCellStyle.Font ?? gridView.Font;
+      int padding = gridView.DefaultCellStyle.Padding.Horizontal + (int)Math.Ceiling(18f * scale);
+      int headerWidth = TextRenderer.MeasureText(gridColumn.HeaderText, headerFont, Size.Empty, textFlags).Width + padding;
+      int minimum = Math.Max((int)Math.Ceiling(70f * scale), headerWidth);
+      if (width < minimum)
+      {
+        // Old autofit/cache widths were measured before the current font and
+        // cell padding. Repair only widths that cannot display their header;
+        // larger saved widths and direct user resizing retain their values.
+        width = minimum;
+        int sampleCount = Math.Min(50, gridView.RowCount);
+        int sampleLimit = (int)Math.Ceiling(180f * scale);
+        for (int row = 0; row < sampleCount; ++row)
+        {
+          if (gridView.Rows[row].IsNewRow)
+            continue;
+          object formatted = gridView[column, row].FormattedValue;
+          string text = formatted == null ? String.Empty : formatted.ToString();
+          int lineEnd = text.IndexOfAny(new char[] { '\r', '\n' });
+          if (lineEnd >= 0)
+            text = text.Substring(0, lineEnd);
+          if (text.Length > 400)
+            text = text.Substring(0, 400);
+          int cellWidth = TextRenderer.MeasureText(text, gridView.Font, Size.Empty, textFlags).Width + padding;
+          width = Math.Max(width, Math.Min(sampleLimit, cellWidth));
+        }
+      }
+      gridColumn.Width = width;
     }
 
     public void update_columns()
@@ -445,9 +540,9 @@ namespace MySQL.Grt.Db
     
     public void set_font(String font, float size, FontStyle style)
     {
-      gridView.Font = new Font(font, size, style);
-      // Don't auto resize rows here, as this might be very expensive (e.g. many rows, large cell values).
-      gridView.AutoResizeColumnHeadersHeight();
+      gridView.Font = IsLegacyResultFont(font, size) ? ControlUtilities.GetFont("Segoe UI", 9.75f) : new Font(font, size, style);
+      StyleResultGrid();
+      // Existing rows retain their height; recalculating every row is expensive.
     }
     
     public void set_column_header_indicator(int column, IRecordsetView.ColumnHeaderIndicator order)

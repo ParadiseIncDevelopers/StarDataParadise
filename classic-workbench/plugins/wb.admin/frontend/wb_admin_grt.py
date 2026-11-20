@@ -29,6 +29,7 @@ import grt
 
 from mforms import Utilities, newButton, newLabel, newBox
 import mforms
+from workbench.sdp_i18n import tr
 
 import wb_admin_main
 import wb_admin_utils
@@ -114,7 +115,7 @@ class AdministratorContext:
 
         self.sidebar.add_on_section_command_callback(self._sidebar_entry_clicked)
 
-        self.sidebar_sections = [("Management", "Management", "MANAGEMENT", []), ("Instance", "Instance", "INSTANCE", []), ("Performance", "Performance", "PERFORMANCE", [])]
+        self.sidebar_sections = [("Management", tr("Management"), tr("Management").upper(), []), ("Instance", tr("Service and files"), tr("Service and files").upper(), []), ("Performance", tr("Performance"), tr("Performance").upper(), [])]
 
         self.shown_in_sidebar = False
 
@@ -178,7 +179,7 @@ class AdministratorContext:
             try:
                 mforms.App.get().set_status_text("Acquiring management access to target host...")
                 self.ctrl_be.acquire_admin_access()
-                mforms.App.get().set_status_text("Management support for target host enabled successfully.")
+                mforms.App.get().set_status_text(tr("Management connection is ready."))
                 return True
             except OperationCancelledError as exc:
                 self.admin_access_status = "Remote management capabilities are currently unavailable.\nSSH connection was cancelled"
@@ -186,7 +187,7 @@ class AdministratorContext:
                 return None
             except InvalidPasswordError as exc:
                 self.admin_access_status = "Remote management capabilities are currently unavailable.\nCould not acquire management access to the server\n\n%s" % exc
-                if Utilities.show_error("Could not acquire management access for administration", "%s" % exc, "Retry", "Cancel", "") == mforms.ResultOk:
+                if Utilities.show_error(tr("Could not acquire management access for administration"), "%s" % exc, tr("Retry"), tr("Cancel"), "") == mforms.ResultOk:
                     continue
                 mforms.App.get().set_status_text("Could not Open WB Admin")
                 return None
@@ -195,7 +196,7 @@ class AdministratorContext:
                 traceback.print_exc()
                 self.admin_access_status = "Remote management capabilities are currently unavailable.\nCould not acquire management access to the server\n\n%s" % exc
                 mforms.App.get().set_status_text("Could not Open WB Admin")
-                if Utilities.show_error("Could not acquire management access for administration", "%s: %s" % (type(exc).__name__, exc), "Settings...", "Cancel", "") == mforms.ResultOk:
+                if Utilities.show_error(tr("Could not acquire management access for administration"), "%s: %s" % (type(exc).__name__, exc), tr("Settings..."), tr("Cancel"), "") == mforms.ResultOk:
                     grt.modules.Workbench.showInstanceManagerFor(self.connection)
                 return None
 
@@ -230,7 +231,7 @@ class AdministratorContext:
                     norm_cb(settings, option)
             else:
                 if msg is not None:
-                    Utilities.show_warning("WB Administrator", msg, "OK", "", "")
+                    Utilities.show_warning(tr("WB Administrator"), msg, tr("OK"), "", "")
                 norm_cb(settings, option)
 
         def norm_to_switch(settings, option):
@@ -262,27 +263,27 @@ class AdministratorContext:
             self.admin_tab = wb_admin_main.AdministratorTab(self.ctrl_be, self.server_profile, self, self.editor)
         except MySQLError as exc:
             if str(exc):
-                Utilities.show_error("Error Connecting to MySQL Server (%s)" % exc.location, str(exc), "OK", "", "")
+                Utilities.show_error("Error Connecting to MySQL Server (%s)" % exc.location, str(exc), tr("OK"), "", "")
             app.set_status_text("Could not Open WB Admin")
             return None
         except OperationCancelledError as exc:
             app.set_status_text("Cancelled (%s)"%exc)
             return None
         except NoDriverInConnection as exc:
-            Utilities.show_error('Missing connection driver', str(exc), 'OK', '', '')
+            Utilities.show_error(tr('Missing connection driver'), str(exc), tr('OK'), '', '')
             app.set_status_text("Could not Open WB Admin")
             return None
         except Exception as exc:
             import traceback
             traceback.print_exc()
-            Utilities.show_error("Error Starting Workbench Administrator", "%s: %s" % (type(exc).__name__, exc), "OK", "", "")
+            Utilities.show_error(tr("Error Starting Workbench Administrator"), "%s: %s" % (type(exc).__name__, exc), tr("OK"), "", "")
             app.set_status_text("Could not Open WB Admin")
             return None
 
         dp = mforms.fromgrt(self.editor.dockingPoint)
         dp.dock_view(self.admin_tab, "", 0)
         dp.select_view(self.admin_tab)
-        self.admin_tab.set_title("Administrator")
+        self.admin_tab.set_title(tr("Server administration"))
 
         return self.admin_tab
 
@@ -299,7 +300,7 @@ class AdministratorContext:
             if entry_id in self.disabled_pages:
                 Utilities.show_error(self.page_titles[entry_id],
                                      self.disabled_pages[entry_id],
-                                     "OK", "", "")
+                                     tr("OK"), "", "")
                 return
             self.open_into_section(entry_id)
 
@@ -334,7 +335,7 @@ class AdministratorContext:
         for sname, saname, stitle, sitems in self.sidebar_sections:
             for ident, ianame, title, icon_path in sitems:
                 if ident == entry_id:
-                    self.admin_tab.set_content_label("Administration - %s" % title)
+                    self.admin_tab.set_content_label(title)
                     break
 
         self.admin_tab.select_page(page)
@@ -349,10 +350,17 @@ class AdministratorContext:
         if not section_id:
             section_id = "Management" # the default
 
+        title = tr(wb_admin_utils.CLASSIC_PAGE_TITLES.get(title, title))
         self.page_titles[page_class.identifier()] = title
 
         self.admin_pages[page_class.identifier()] = (page_class, needs_remote_access)
-        icon_path = page_class.identifier() + ".png"
+        icons = {"admin_server_status": "sdp_database-cog.png", "admin_connections": "sdp_link.png",
+                 "admin_manage_privs": "sdp_key.png", "admin_status_vars": "sdp_list-details.png",
+                 "admin_export": "sdp_file-export.png", "admin_restore_data": "sdp_file-import.png",
+                 "admin_start_stop": "sdp_player-play.png", "admin_server_logs": "sdp_file-code.png",
+                 "admin_option_file": "sdp_edit.png", "admin_dashboard": "sdp_gauge.png",
+                 "admin_performance_reports": "sdp_chart-bar.png", "admin_instrumentation_setup": "sdp_database-cog.png"}
+        icon_path = icons.get(page_class.identifier(), "sdp_database-cog.png")
         for sname, saname, stitle, sitems in self.sidebar_sections:
             if sname == section_id:
                 sitems.append((page_class.identifier(), accessibilityName, title, icon_path))
@@ -585,21 +593,21 @@ class PasswordExpiredDialog(mforms.Form):
 
         self.old_password = mforms.newTextEntry(mforms.PasswordEntry)
         self.old_password.set_name("Old Password")
-        box.add(newLabel("Old Password:", True), 0, 1, 0, 1, mforms.HFillFlag|mforms.VFillFlag)
+        box.add(newLabel(tr("Old Password:"), True), 0, 1, 0, 1, mforms.HFillFlag|mforms.VFillFlag)
         box.add(self.old_password, 1, 2, 0, 1, mforms.HFillFlag|mforms.HExpandFlag)
 
         self.password = mforms.newTextEntry(mforms.PasswordEntry)
         self.password.set_name("New Password")
-        box.add(newLabel("New Password:", True), 0, 1, 1, 2, mforms.HFillFlag|mforms.VFillFlag)
+        box.add(newLabel(tr("New Password:"), True), 0, 1, 1, 2, mforms.HFillFlag|mforms.VFillFlag)
         box.add(self.password, 1, 2, 1, 2, mforms.HFillFlag|mforms.HExpandFlag)
 
         self.confirm = mforms.newTextEntry(mforms.PasswordEntry)
         self.confirm.set_name("Confirm Password")
-        box.add(newLabel("Confirm:", True), 0, 1, 2, 3, mforms.HFillFlag|mforms.VFillFlag)
+        box.add(newLabel(tr("Confirm:"), True), 0, 1, 2, 3, mforms.HFillFlag|mforms.VFillFlag)
         box.add(self.confirm, 1, 2, 2, 3, mforms.HFillFlag|mforms.HExpandFlag)
 
         self.legacy = mforms.newCheckBox()
-        self.legacy.set_text("This server version is < 5.7")
+        self.legacy.set_text(tr("This server version is < 5.7"))
         if self.version:
             self.legacy.set_active(not self.version.is_supported_mysql_version_at_least(5, 7))
             self.legacy.show(False)
@@ -610,10 +618,10 @@ class PasswordExpiredDialog(mforms.Form):
         bbox = newBox(True)
         bbox.set_spacing(8)
         self.ok = newButton()
-        self.ok.set_text("OK")
+        self.ok.set_text(tr("OK"))
 
         self.cancel = newButton()
-        self.cancel.set_text("Cancel")
+        self.cancel.set_text(tr("Cancel"))
         mforms.Utilities.add_end_ok_cancel_buttons(bbox, self.ok, self.cancel)
 
         vbox.add_end(bbox, False, True)
@@ -627,7 +635,7 @@ class PasswordExpiredDialog(mforms.Form):
     def run(self):
         if self.run_modal(self.ok, self.cancel):
             if self.password.get_string_value() != self.confirm.get_string_value():
-                mforms.Utilities.show_error("Reset Password", "The password and its confirmation do not match. Please try again.", "OK", "", "")
+                mforms.Utilities.show_error(tr("Reset Password"), tr("The password and its confirmation do not match. Please try again."), tr("OK"), "", "")
                 return self.run()
             
             con = self._conn.shallow_copy()
@@ -647,7 +655,7 @@ class PasswordExpiredDialog(mforms.Form):
                 c.connect()
                 mforms.Utilities_store_password(c.connect_info.hostIdentifier, c.connect_info.parameterValues.userName, self.password.get_string_value())
             except MySQLError as e:
-                if mforms.Utilities.show_error("Reset Password", str(e), "Retry", "Cancel", "") == mforms.ResultOk:
+                if mforms.Utilities.show_error(tr("Reset Password"), str(e), tr("Retry"), tr("Cancel"), "") == mforms.ResultOk:
                     retry = True
                 result = 0
             except Exception as e:
@@ -897,7 +905,7 @@ def resetPasswordCache(editor):
                 title, service, account = details
                 mforms.Utilities.forget_password(service, account)
 
-    mforms.Utilities.show_message("Reset Saved Passwords", "Saved passwords for this connection were deleted.", "OK", "", "")
+    mforms.Utilities.show_message(tr("Reset Saved Passwords"), tr("Saved passwords for this connection were deleted."), tr("OK"), "", "")
 
 
 

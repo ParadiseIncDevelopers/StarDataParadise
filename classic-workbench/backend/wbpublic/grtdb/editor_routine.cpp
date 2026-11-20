@@ -57,7 +57,7 @@ std::string RoutineEditorBE::get_sql() {
 //--------------------------------------------------------------------------------------------------
 
 std::string RoutineEditorBE::get_title() {
-  return base::strfmt("%s - Routine", get_name().c_str());
+  return get_name() + " - " + _("Routine");
 }
 
 //--------------------------------------------------------------------------------------------------

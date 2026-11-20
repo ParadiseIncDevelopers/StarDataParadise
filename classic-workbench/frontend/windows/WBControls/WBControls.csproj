@@ -87,6 +87,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdvNodeCheckBox.cs">
@@ -147,6 +148,7 @@
       <DependentUpon>StringInputForm.cs</DependentUpon>
     </Compile>
     <Compile Include="WbToolStripRenderers.cs" />
+    <Compile Include="SdpLanguage.cs" />
     <EmbeddedResource Include="FindPanel.resx">
       <DependentUpon>FindPanel.cs</DependentUpon>
     </EmbeddedResource>

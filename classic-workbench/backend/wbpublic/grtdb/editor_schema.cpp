@@ -92,7 +92,7 @@ std::string SchemaEditorBE::get_schema_option_by_name(const std::string& name) {
 //--------------------------------------------------------------------------------------------------
 
 std::string SchemaEditorBE::get_title() {
-  return get_name() + " - Schema";
+  return get_name() + " - " + _("Schema");
 }
 
 //--------------------------------------------------------------------------------------------------

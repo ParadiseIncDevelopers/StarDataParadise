@@ -29,6 +29,7 @@
 #include "mforms/scrollpanel.h"
 #include "mforms/table.h"
 #include "mforms/toolbar.h"
+#include "mforms/label.h"
 
 class ResultFormView : public mforms::AppView {
 public:
@@ -43,9 +44,12 @@ private:
   mforms::ToolBar _tbar;
   mforms::ToolBarItem *_label_item;
   mforms::ToolBarItem *_geom_type_item;
+  mforms::Label _empty_state;
 
   bool _editable;
+  bool _displaying_record = false;
   boost::signals2::connection _refresh_ui_connection;
+  boost::signals2::connection _selection_connection;
 
   void navigate(mforms::ToolBarItem *item);
   void update_value(int column, const std::string &value);
@@ -54,7 +58,7 @@ private:
   void geom_type_changed();
 
 public:
-  ResultFormView(bool editable);
+  ResultFormView(bool editable, bool compact = false);
 
   mforms::ToolBar *get_toolbar() {
     return &_tbar;

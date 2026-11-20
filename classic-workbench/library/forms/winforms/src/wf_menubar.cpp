@@ -25,6 +25,7 @@
 #include "wf_base.h"
 #include "wf_view.h"
 #include "wf_menubar.h"
+#include "base/string_utilities.h"
 
 using namespace System::ComponentModel;
 using namespace System::Drawing;
@@ -223,7 +224,7 @@ bool MenuBarWrapper::create_menu_item(mforms::MenuItem *item, const std::string 
 
 void MenuBarWrapper::set_title(mforms::MenuItem *item, const std::string &title) {
   ToolStripItem ^ object = GetManagedObject<ToolStripItem>(item);
-  object->Text = CppStringToNative(title);
+  object->Text = CppStringToNative(base::translate_ui(title));
 }
 
 //--------------------------------------------------------------------------------------------------

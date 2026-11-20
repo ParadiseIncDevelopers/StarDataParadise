@@ -360,7 +360,8 @@ void SidebarSection::create_context_for_layout() {
 void SidebarSection::layout(cairo_t* cr) {
   set_layout_dirty(false);
 
-  _layout_height = SECTION_TOP_SPACING + SECTION_HEADER_HEIGHT;
+  const bool schema_heading = _title == _("Schema Explorer");
+  _layout_height = schema_heading ? 25 : SECTION_TOP_SPACING + SECTION_HEADER_HEIGHT;
 
   if (_expanded) {
     if (_entries.size() > 0)
@@ -402,6 +403,11 @@ void SidebarSection::layout(cairo_t* cr) {
                           SECTION_TOP_SPACING);
     _refresh_button->bounds_width = SECTION_HEADER_HEIGHT;
     _refresh_button->bounds_height = SECTION_HEADER_HEIGHT;
+    if (schema_heading) {
+      _refresh_button->move((int)width - 28, 5);
+      _refresh_button->bounds_width = 20;
+      _refresh_button->bounds_height = 20;
+    }
   }
 }
 
@@ -578,11 +584,13 @@ void SidebarSection::repaint(cairo_t* cr, int areax, int areay, int areaw, int a
     layout(cr);
   }
 
-  Rect bounds(SECTION_SIDE_SPACING, SECTION_TOP_SPACING + SIDEBAR_TITLE_FONT_SIZE, width - SECTION_SIDE_SPACING,
+  const bool schema_heading = _title == _("Schema Explorer");
+  const int heading_font_size = schema_heading ? 13 : SIDEBAR_TITLE_FONT_SIZE;
+  Rect bounds(schema_heading ? 10 : SECTION_SIDE_SPACING, SECTION_TOP_SPACING + heading_font_size + (schema_heading ? 4 : 0), width - SECTION_SIDE_SPACING,
               SECTION_HEADER_HEIGHT);
 
   cairo_select_font_face(cr, SIDEBAR_FONT, CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-  cairo_set_font_size(cr, SIDEBAR_TITLE_FONT_SIZE);
+  cairo_set_font_size(cr, heading_font_size);
   draw_header_text(cr, bounds, _title, _owner->_inactiveTextColor);
 
   if (_config_button)
@@ -1165,12 +1173,12 @@ AdvancedSidebar::AdvancedSidebar()
     _schema_search_box(true),
     _schema_search_text(mforms::SmallSearchEntry),
     _remote_search_enabled(false),
-    _schema_search_warning(_("Showing loaded schemas only")),
+    _schema_search_warning(_("Only loaded schemas are shown")),
     _schema_model(0),
     _base_model(0),
     _is_model_owner(false),
     _schema_box(false) {
-  _remote_search.set_text(_("Search on Server..."));
+  _remote_search.set_text(_("Search on server…"));
 
   _schema_search_warning.set_style(mforms::SmallHelpTextStyle);
   _schema_search_warning.set_text_align(mforms::MiddleCenter);
@@ -1230,6 +1238,7 @@ void AdvancedSidebar::setup_schema_tree() {
 
   _new_schema_tree.set_name("Schema Tree");
   _new_schema_tree.setInternalName("SchemaTree");
+  _new_schema_tree.set_row_height(26);
   _new_schema_tree.add_column(mforms::IconStringColumnType, _("Schema"), 100, false, true);
   _new_schema_tree.set_selection_mode(mforms::TreeSelectMultiple);
 #ifndef __APPLE__
@@ -1237,6 +1246,8 @@ void AdvancedSidebar::setup_schema_tree() {
 #endif
   scoped_connect(_new_schema_tree.signal_changed(), std::bind(&AdvancedSidebar::on_tree_node_selected, this));
 
+  _filtered_schema_tree.set_name("Filtered Schema Tree");
+  _filtered_schema_tree.set_row_height(26);
   _filtered_schema_tree.add_column(mforms::IconStringColumnType, _("Schema"), 100, false, true);
   _filtered_schema_tree.set_selection_mode(mforms::TreeSelectMultiple);
 #ifndef __APPLE__
@@ -1256,27 +1267,27 @@ void AdvancedSidebar::setup_schema_tree() {
   _schema_search_box.set_back_color(background_color);
   _schema_search_box.set_name("Schema Search Box");
   _schema_search_box.setInternalName("schema-search-box");
-  _schema_search_box.set_spacing(5);
+  _schema_search_box.set_spacing(6);
 #ifdef _MSC_VER
-  _schema_search_box.set_padding(4, 0, 6, 5);
-  _schema_search_box.set_size(-1, 17); // Height excluding the padding, which adds extra pixels.
+  _schema_search_box.set_padding(8, 6, 8, 8);
+  _schema_search_text.set_size(-1, 26);
 #else
   _schema_search_box.set_padding(8, 1, 8, 5);
 #endif
 
 #ifdef _MSC_VER
   mforms::ImageBox* image = mforms::manage(new mforms::ImageBox, false);
-  image->set_image("search_sidebar.png");
+  image->set_image("sdp_search.png");
   image->set_image_align(mforms::MiddleCenter);
   _schema_search_box.add(image, false, false);
 #endif
 
-  _schema_search_text.set_placeholder_text("Filter objects");
+  _schema_search_text.set_placeholder_text(_("Search objects…"));
   _schema_search_text.set_tooltip(
-    "You can use wildcards to search for objects in multiple schemas.\n"
-    "* - a substitue for zero or more characters\n"
-    "? - a substitue for single character\n"
-    "Search is possible only through already loaded schemas.");
+    _("Filters objects in loaded schemas.\n"
+      "* - zero or more characters\n"
+      "? - one character\n"
+      "Separate schema and object names with a dot."));
   _schema_search_text.set_name("Schema Filter Entry");
   _schema_search_box.add(&_schema_search_text, true, true);
   scoped_connect(_schema_search_text.signal_changed(),

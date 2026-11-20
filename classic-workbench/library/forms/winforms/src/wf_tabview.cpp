@@ -281,6 +281,16 @@ void TabViewWrapper::set_aux_view(mforms::TabView *backend, mforms::View *aux) {
   FlatTabControl ^ tabControl = TabViewWrapper::GetManagedObject<FlatTabControl>(backend);
 
   if (tabControl != nullptr) {
+    if (tabControl->Name == "Resultset Placeholder") {
+      // Query result names belong above their data, alongside the view tabs.
+      tabControl->TabStyle = FlatTabControl::TabStyleType::TopNormal;
+      tabControl->ItemSize = Size(0, 32);
+      tabControl->ItemPadding = Padding(10, 0, 8, 0);
+      tabControl->ContentPadding = Padding(0);
+      tabControl->Font = gcnew Font("Segoe UI", 9.75f);
+      tabControl->ShowCloseButton = true;
+      tabControl->CanCloseLastTab = true;
+    }
     Control ^ control = TabViewWrapper::GetManagedObject<Control>(aux);
     if (control != nullptr) {
       tabControl->AuxControl = control;

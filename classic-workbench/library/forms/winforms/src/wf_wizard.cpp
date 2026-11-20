@@ -28,6 +28,7 @@
 #include "wf_wizard.h"
 
 #include "base/log.h"
+#include "base/string_utilities.h"
 
 using namespace System::Drawing;
 using namespace System::Drawing::Drawing2D;
@@ -61,7 +62,6 @@ public:
   Button ^ nextButton;
   Button ^ cancelButton;
   Panel ^ content; // This is where the actual wizard content is docked to.
-  Image ^ sidebarOverlay;
 
   mforms::Wizard *backend;
 
@@ -83,34 +83,34 @@ public:
     cancelButton = gcnew Button;
     content = gcnew Panel;
 
-    std::string icon_path = mforms::App::get()->get_resource_path("wb-wizard-vista-bg.png");
-    String ^ native_path = gcnew String(icon_path.c_str());
-    if (File::Exists(native_path))
-      sidebarOverlay = Image::FromFile(native_path);
-    else
-      sidebarOverlay = nullptr;
-
-    BackColor = Color::White;
-    FormBorderStyle = System::Windows::Forms::FormBorderStyle::SizableToolWindow;
+    BackColor = SystemInformation::HighContrast ? SystemColors::Control : Color::FromArgb(237, 242, 244);
+    ForeColor = SystemInformation::HighContrast ? SystemColors::ControlText : Color::FromArgb(16, 38, 41);
+    Font = gcnew Drawing::Font("Segoe UI", 9.75f, FontStyle::Regular, GraphicsUnit::Point);
+    FormBorderStyle = System::Windows::Forms::FormBorderStyle::Sizable;
     MaximizeBox = false;
     MinimizeBox = false;
     StartPosition = FormStartPosition::CenterScreen;
     CancelButton = cancelButton;
-    Icon = gcnew Drawing::Icon("images/icons/MySQLWorkbench.ico", Drawing::Size(16, 16));
+    if (File::Exists("images/icons/MySQLWorkbench.ico"))
+      Icon = gcnew Drawing::Icon("images/icons/MySQLWorkbench.ico", Drawing::Size(16, 16));
 
     // The footer with buttons.
     Controls->Add(footer);
     footer->RowCount = 1;
     footer->ColumnCount = 2;
+    footer->ColumnStyles->Add(gcnew ColumnStyle(SizeType::Percent, 100));
+    footer->ColumnStyles->Add(gcnew ColumnStyle(SizeType::AutoSize));
     footer->AutoSize = true;
     footer->Dock = DockStyle::Bottom;
     footer->Padding = System::Windows::Forms::Padding(10);
     footer->Controls->Add(extraButton, 0, 0);
 
-    buttonBar->FlowDirection = FlowDirection::RightToLeft;
+    buttonBar->FlowDirection = FlowDirection::LeftToRight;
+    buttonBar->WrapContents = false;
+    buttonBar->AutoSizeMode = System::Windows::Forms::AutoSizeMode::GrowAndShrink;
+    buttonBar->Controls->Add(backButton);
     buttonBar->Controls->Add(cancelButton);
     buttonBar->Controls->Add(nextButton);
-    buttonBar->Controls->Add(backButton);
     buttonBar->Dock = DockStyle::Right;
     buttonBar->AutoSize = true;
     buttonBar->Margin = System::Windows::Forms::Padding(0);
@@ -118,44 +118,52 @@ public:
 
     // We need to keep a reference to the wizard in the buttons to be able
     // to notify it when the buttons are clicked.
-    backButton->Text = "&Back";
+    backButton->Text = CppStringToNative(_("Back"));
     backButton->UseMnemonic = true;
     backButton->Click += gcnew EventHandler(this, &WizardForm::BackClick);
-    backButton->FlatStyle = FlatStyle::System;
+    StyleButton(backButton, false);
 
-    nextButton->Text = "&Next";
+    nextButton->Text = CppStringToNative(_("Next"));
     nextButton->UseMnemonic = true;
     nextButton->Click += gcnew EventHandler(this, &WizardForm::NextClick);
-    nextButton->FlatStyle = FlatStyle::System;
+    StyleButton(nextButton, true);
 
-    cancelButton->Text = "Cancel";
+    cancelButton->Text = CppStringToNative(_("Cancel"));
     cancelButton->Click += gcnew EventHandler(this, &WizardForm::CancelClick);
-    cancelButton->FlatStyle = FlatStyle::System;
+    StyleButton(cancelButton, false);
 
-    extraButton->Text = "&Advanced";
+    extraButton->Text = CppStringToNative(_("Advanced"));
     extraButton->UseMnemonic = true;
     extraButton->Click += gcnew EventHandler(this, &WizardForm::ExtraClick);
-    extraButton->FlatStyle = FlatStyle::System;
+    StyleButton(extraButton, false);
 
     // The side bar with background painting and list of strings.
     Controls->Add(sidebar);
     sidebar->Dock = DockStyle::Left;
-    sidebar->ForeColor = Color::White;
+    sidebar->ForeColor = ForeColor;
+    sidebar->FlowDirection = FlowDirection::TopDown;
+    sidebar->WrapContents = false;
+    sidebar->AutoScroll = true;
+    sidebar->Padding = System::Windows::Forms::Padding(8);
+    Graphics ^ graphics = CreateGraphics();
+    sidebar->Width = (int)System::Math::Round(184 * graphics->DpiX / 96.0f);
+    delete graphics;
     sidebar->Paint += gcnew PaintEventHandler(this, &WizardForm::SidebarPaint);
 
     // Title
     Controls->Add(title);
     title->AutoSize = false;
     try {
-      title->Font = gcnew Drawing::Font("Tahoma", 12.0, FontStyle::Bold, GraphicsUnit::Pixel);
+      title->Font = gcnew Drawing::Font("Segoe UI", 11.0f, FontStyle::Bold, GraphicsUnit::Point);
     } catch (System::ArgumentException ^ e) {
       // Argument exception pops up when the system cannot find the Regular font style (corrupt font).
       logError("WizardWrapper::c_tor setting title font failed. %s\n", e->Message);
     }
 
-    title->ForeColor = ColorTranslator::FromHtml("#003392");
+    title->ForeColor = ForeColor;
+    title->BackColor = SystemInformation::HighContrast ? SystemColors::Control : Color::FromArgb(231, 238, 239);
     title->Location = Point(sidebar->Width, 0);
-    title->Padding = System::Windows::Forms::Padding(15);
+    title->Padding = System::Windows::Forms::Padding(12, 8, 12, 8);
 
     // Other initialization.
     Controls->Add(content);
@@ -164,10 +172,23 @@ public:
     Size = Drawing::Size(800, 600);
   }
 
+  void StyleButton(Button ^ button, bool primary) {
+    button->FlatStyle = FlatStyle::Flat;
+    button->FlatAppearance->BorderSize = primary ? 0 : 1;
+    button->FlatAppearance->BorderColor = SystemInformation::HighContrast ? SystemColors::ControlText : Color::FromArgb(163, 180, 188);
+    button->UseVisualStyleBackColor = false;
+    button->AutoSize = true;
+    button->Padding = System::Windows::Forms::Padding(10, 2, 10, 2);
+    button->MinimumSize = Drawing::Size(88, 28);
+    button->BackColor = SystemInformation::HighContrast ? SystemColors::Control :
+      (primary ? Color::FromArgb(4, 49, 51) : Color::FromArgb(237, 242, 244));
+    button->ForeColor = SystemInformation::HighContrast ? SystemColors::ControlText : (primary ? Color::White : ForeColor);
+  }
+
   //------------------------------------------------------------------------------------------------
 
   /**
-   * Used to draw a gradient background for the side bar.
+   * Draw the flat step rail and its neutral divider.
    *
    * @param sender The control for which the paint event is triggered (the side bar).
    * @param arguments Additional data needed to paint the background.
@@ -175,12 +196,10 @@ public:
   void SidebarPaint(System::Object ^ sender, PaintEventArgs ^ args) {
     Graphics ^ g = args->Graphics;
 
-    LinearGradientBrush gradientBrush(Point(10, 0), Point(10, sidebar->Height), Color::FromArgb(255, 66, 111, 166),
-                                      Color::FromArgb(255, 103, 186, 104));
-
-    g->FillRectangle(% gradientBrush, 0, 0, sidebar->Width, sidebar->Height);
-    if (sidebarOverlay != nullptr)
-      g->DrawImage(sidebarOverlay, 0, sidebar->Height - sidebarOverlay->Height);
+    SolidBrush surface(SystemInformation::HighContrast ? SystemColors::Control : Color::FromArgb(231, 238, 239));
+    g->FillRectangle(% surface, 0, 0, sidebar->Width, sidebar->Height);
+    Pen divider(SystemInformation::HighContrast ? SystemColors::ControlText : Color::FromArgb(163, 180, 188));
+    g->DrawLine(% divider, sidebar->Width - 1, 0, sidebar->Width - 1, sidebar->Height);
   }
 
   //------------------------------------------------------------------------------------------------
@@ -218,10 +237,10 @@ public:
       return;
 
     System::Drawing::Rectangle area = DisplayRectangle;
-    title->Size = Drawing::Size(area.Width - sidebar->Width, 50);
+    title->Size = Drawing::Size(System::Math::Max(0, area.Width - sidebar->Width), title->PreferredHeight);
     title->Location = Point(sidebar->Width, 0);
 
-    content->Size = Drawing::Size(area.Width - sidebar->Width, area.Height - footer->Height - title->Height);
+    content->Size = Drawing::Size(System::Math::Max(0, area.Width - sidebar->Width), System::Math::Max(0, area.Height - footer->Height - title->Height));
     content->Location = Point(sidebar->Width, title->Height);
   }
 
@@ -256,29 +275,32 @@ public:
           FontStyle style = FontStyle::Regular;
           switch (entry[0]) {
             case '*': // current task
-              label->ForeColor = Color::White;
+              label->ForeColor = ForeColor;
               style = FontStyle::Bold;
               break;
 
             case '.': // executed task
-              label->ForeColor = Color::White;
+              label->ForeColor = ForeColor;
               break;
 
             case '-': // open task
-              label->ForeColor = Color::FromArgb(255, 192, 192, 192);
+              label->ForeColor = SystemInformation::HighContrast ? SystemColors::ControlText : Color::FromArgb(79, 87, 89);
               break;
           }
 
           try {
-            label->Font = gcnew Drawing::Font("Tahoma", 11.0, style, GraphicsUnit::Pixel);
+            label->Font = gcnew Drawing::Font("Segoe UI", 9.75f, style, GraphicsUnit::Point);
           } catch (System::ArgumentException ^ e) {
             // Argument exception pops up when the system cannot find the Regular font style (corrupt font).
             logError("WizardWrapper::set_step_list setting label font failed. %s\n", e->Message);
           }
 
-          label->BackColor = Drawing::Color::Transparent;
-          label->Padding = System::Windows::Forms::Padding(7);
-          label->Size = Drawing::Size(sidebar->Width, label->PreferredHeight);
+          label->BackColor = entry[0] == '*' ? (SystemInformation::HighContrast ? SystemColors::Highlight : Color::FromArgb(221, 235, 228)) : Drawing::Color::Transparent;
+          if (entry[0] == '*' && SystemInformation::HighContrast) label->ForeColor = SystemColors::HighlightText;
+          label->Padding = System::Windows::Forms::Padding(8, 6, 8, 6);
+          label->Margin = System::Windows::Forms::Padding(0, 0, 0, 4);
+          int width = System::Math::Max(40, sidebar->Width - sidebar->Padding.Horizontal - SystemInformation::VerticalScrollBarWidth);
+          label->Size = Drawing::Size(width, label->GetPreferredSize(Drawing::Size(width, 0)).Height);
           sidebar->Controls->Add(label);
         }
     } finally {
@@ -309,7 +331,11 @@ bool WizardWrapper::create(mforms::Wizard *backend, mforms::Form *owner) {
 //--------------------------------------------------------------------------------------------------
 
 void WizardWrapper::set_title(mforms::Wizard *backend, const std::string &title) {
-  Form ^ form = WizardWrapper::GetManagedObject<Form>(backend);
+  WizardForm ^ form = WizardWrapper::GetManagedObject<WizardForm>(backend);
+  if (backend->getInternalName() == "script_run_wizard") {
+    form->sidebar->Visible = false;
+    form->sidebar->Width = 0;
+  }
   form->Text = CppStringToNative(title);
 }
 
@@ -394,7 +420,7 @@ void WizardWrapper::set_extra_caption(mforms::Wizard *backend, const std::string
 void WizardWrapper::set_next_caption(mforms::Wizard *backend, const std::string &caption) {
   WizardForm ^ form = WizardWrapper::GetManagedObject<WizardForm>(backend);
   if (caption.empty())
-    form->nextButton->Text = "&Next";
+    form->nextButton->Text = CppStringToNative(_("Next"));
   else
     form->nextButton->Text = CppStringToNative(caption)->Replace("_", "&");
 }

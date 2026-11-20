@@ -211,11 +211,11 @@ void SidebarSection::addEntry(const std::string &title, const std::string &icon_
   entry->owner = this;
   entry->title = title;
   if (icon_name == "sidebar_wb.png")
-    entry->title = "Ba\xC4\x9Flant\xC4\xB1lar";
+    entry->title = _("Connections");
   else if (icon_name == "sidebar_modeling.png")
-    entry->title = "Modeller";
+    entry->title = _("Models");
   else if (icon_name == "sidebar_migration.png")
-    entry->title = "Veri Ta\xC5\x9F\xC4\xB1ma";
+    entry->title = _("Data Migration");
 
   entry->icon = mforms::Utilities::load_icon(icon_name, true);
   if (entry->icon == nullptr)
@@ -361,7 +361,7 @@ Accessible *SidebarSection::accessibilityHitTest(ssize_t x, ssize_t y) {
 
 //----------------- HomeScreen -----------------------------------------------------------------------------------------
 
-HomeScreen::HomeScreen() : AppView(false, "Ba\xC5\x9Flang\xC4\xB1\xC3\xA7", "home", true), _welcomeHost(false), _darkMode(false) {
+HomeScreen::HomeScreen() : AppView(false, _("Home"), "home", true), _welcomeHost(false), _darkMode(false) {
   set_name("Home Screen");
   setInternalName("homeScreen");
 
@@ -527,6 +527,7 @@ void HomeScreen::setup_done() {
 //----------------------------------------------------------------------------------------------------------------------
 
 void HomeScreen::showSection(size_t index) {
+  if (ConnectionsSection::opening_section != nullptr) return;
   if (index < _sections.size()) {
     if (_sidebarSection != nullptr) {
       _sidebarSection->setActive(_sections[index]);

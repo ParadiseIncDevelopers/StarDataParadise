@@ -24,8 +24,10 @@
 
 using System;
 using System.ComponentModel;
+using System.Drawing;
 using System.Windows.Forms;
 
+using MySQL.Controls;
 using MySQL.Grt;
 using MySQL.Grt.Db;
 
@@ -47,6 +49,8 @@ namespace MySQL.GUI.Workbench.Plugins
     {
       InitializeComponent();
       ReinitWithArguments(value);
+      ConfigureClassicObjectEditor(mainTabControl);
+      ConfigureSchemaPage();
 
       if (IsEditingLiveObject)
         AdjustEditModeControls(mainTabControl);
@@ -55,6 +59,52 @@ namespace MySQL.GUI.Workbench.Plugins
     #endregion
 
     #region Form implemenation
+
+    private void ConfigureSchemaPage()
+    {
+      nameTextBox.Parent = null;
+      optCharset.Parent = null;
+      optCollation.Parent = null;
+      optComments.Parent = null;
+      refactorButton.Parent = null;
+      tabPage1.Controls.Clear();
+      tabPage1.Padding = new Padding(8);
+      var fields = new TableLayoutPanel();
+      fields.Dock = DockStyle.Top;
+      fields.AutoSize = true;
+      fields.ColumnCount = 3;
+      fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 128));
+      fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+      fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 128));
+      fields.RowCount = 4;
+      string[] captions = { "Schema name", "Character set", "Collation", "Comment" };
+      Control[] editors = { nameTextBox, optCharset, optCollation, optComments };
+      for (int row = 0; row < editors.Length; row++)
+      {
+        fields.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var label = row == 3 ? label7 : new Label();
+        label.Text = SdpLanguage.Translate(captions[row]);
+        label.Dock = DockStyle.Fill;
+        label.TextAlign = ContentAlignment.MiddleLeft;
+        label.AutoSize = true;
+        label.Margin = new Padding(0, 4, 8, 4);
+        fields.Controls.Add(label, 0, row);
+        editors[row].Dock = DockStyle.Fill;
+        editors[row].Margin = new Padding(0, 4, 8, 4);
+        fields.Controls.Add(editors[row], 1, row);
+        if (row > 0) fields.SetColumnSpan(editors[row], 2);
+        if (row == 3)
+        {
+          label.Visible = editors[row].Visible;
+          editors[row].MinimumSize = new Size(0, 96);
+        }
+      }
+      refactorButton.Text = SdpLanguage.Translate("Rename");
+      refactorButton.Dock = DockStyle.Fill;
+      refactorButton.AutoSize = true;
+      fields.Controls.Add(refactorButton, 2, 0);
+      tabPage1.Controls.Add(fields);
+    }
 
     public override bool ReinitWithArguments(GrtValue value)
     {
@@ -98,7 +148,7 @@ namespace MySQL.GUI.Workbench.Plugins
         optCharset.Items.AddRange(charsetLlist.ToArray());
 
         var charset = schemaEditorWrapper.get_schema_option_by_name("CHARACTER SET");
-        var idx = optCharset.FindString(charset);
+        var idx = optCharset.FindStringExact(charset);
         if (idx < 0)
           idx = 0;
         optCharset.SelectedIndex = idx;
@@ -111,7 +161,7 @@ namespace MySQL.GUI.Workbench.Plugins
         optCollation.Items.AddRange(collation.ToArray());
 
         var collate = schemaEditorWrapper.get_schema_option_by_name("COLLATE");
-        idx = optCollation.FindString(charset);
+        idx = optCollation.FindStringExact(collate);
         if (idx < 0)
           idx = 0;
         optCollation.SelectedIndex = idx;

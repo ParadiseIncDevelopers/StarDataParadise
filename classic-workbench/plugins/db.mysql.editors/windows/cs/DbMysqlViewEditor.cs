@@ -45,6 +45,8 @@ namespace MySQL.GUI.Workbench.Plugins
     {
       InitializeComponent();
       ReinitWithArguments(value);
+      ConfigureClassicObjectEditor(mainTabControl);
+      ConfigureClassicDefinitionPage(tabPage1, panel1, nameTextBox, "View name");
 
       if (IsEditingLiveObject)
         AdjustEditModeControls(mainTabControl);

@@ -42,11 +42,7 @@ namespace MySQL.Utilities
     public delegate void ReadyDelegate();
 
     private Size baseSize;
-    private float borderSize = 3;
-    private float shadowSize = 20;
-    private Color shadowColor = Color.Black;
-    private float shadowOffset = 5;
-    private float cornerSize = 20;
+    private float bitmapDpi = 96;
     private int animationSteps = 6;
     private bool useAnimation = false;
     private RectangleF cancelButtonBounds;
@@ -57,7 +53,14 @@ namespace MySQL.Utilities
     HUDForm()
     {
       InitializeComponent();
-      baseSize = Size;
+      using (Graphics graphics = CreateGraphics())
+        bitmapDpi = graphics.DpiX;
+      float scale = bitmapDpi / 96f;
+      baseSize = new Size((int)Math.Round(420 * scale), (int)Math.Round(132 * scale));
+      label1.Font = new Font("Segoe UI", 9.75f, FontStyle.Bold, GraphicsUnit.Point);
+      label2.Font = new Font("Segoe UI", 9.75f, FontStyle.Regular, GraphicsUnit.Point);
+      pictureBox1.Visible = false;
+      cancelButtonPicture.Visible = false;
       SetStyle(ControlStyles.Selectable, false);
       UpdateStyles();
 
@@ -81,7 +84,7 @@ namespace MySQL.Utilities
         currentInstance = instance;
         Monitor.Exit(instanceLock);
 
-        instance.label1.Text = title;
+        instance.label1.Text = FriendlyWaitTitle(title);
         instance.label2.Text = message;
         instance.cancelDelegate = deleg;
 
@@ -126,7 +129,7 @@ namespace MySQL.Utilities
       {
         HUDForm instance = new HUDForm();
         currentInstance = instance;
-        instance.label1.Text = title;
+        instance.label1.Text = FriendlyWaitTitle(title);
         instance.label2.Text = message;
 
         instance.Reshow(animated, false);
@@ -254,138 +257,68 @@ namespace MySQL.Utilities
 
     #region Drawing
 
-    protected GraphicsPath GetPath()
+    private static string FriendlyWaitTitle(string title)
     {
-      // Generate the outline of the actual content area. Center it around the origin.
-      // It will later get transformed to the final position.
-      GraphicsPath result = new GraphicsPath();
-
-      float width = baseSize.Width;// -2 * borderSize; excluding the border here hasn't any effect it seems
-      float height = baseSize.Height;// -2 * borderSize;
-      RectangleF bounds = new RectangleF(-width / 2, -height / 2, width, height);
-      result.AddArc(bounds.Left, bounds.Top, cornerSize, cornerSize, 180, 90);
-      result.AddArc(bounds.Right - cornerSize, bounds.Top, cornerSize, cornerSize, -90, 90);
-      result.AddArc(bounds.Right - cornerSize, bounds.Bottom - cornerSize, cornerSize, cornerSize, 0, 90);
-      result.AddArc(bounds.Left, bounds.Bottom - cornerSize, cornerSize, cornerSize, 90, 90);
-      result.CloseAllFigures();
-      return result;
+      return (title ?? "").Replace("MySQL Workbench", "StarDataParadise Classic")
+        .Replace("MySQLWorkbench", "StarDataParadise Classic")
+        .Replace("StarDataParadise Workbench", "StarDataParadise Classic")
+        .Replace("SDP_CONNECTION", "Bağlanıyor…");
     }
 
-    /// <summary>
-    /// Prepares the bitmap used to draw the window. Layered windows (like this one) use a bitmap for their
-    /// content, including alpha channel.
-    /// </summary>
+    // Layered hosting and worker completion remain unchanged. The visual is a
+    // compact rectangular panel with a single neutral separator and text action.
     protected void PrepareBitmap(bool showCancelButton)
     {
-      if (contentBitmap != null)
-        contentBitmap.Dispose();
+      if (contentBitmap != null) contentBitmap.Dispose();
       contentBitmap = new Bitmap(Width, Height);
-
-      GraphicsPath path = GetPath();
-      GraphicsPath innerPath = (GraphicsPath)path.Clone();
-
-      // Increase size of the outline by the shadow size and move it to the center.
-      // The inner path keeps the original bounds for clipping.
-      Matrix matrix = new Matrix();
-
-      float offsetX = Width / 2;
-      float offsetY = Height / 2;
-      matrix.Translate(offsetX + shadowOffset, offsetY + shadowOffset);
-      matrix.Scale(1 + (2 * shadowSize + borderSize) / (float)baseSize.Width, 1 + (2 * shadowSize + borderSize) / (float)baseSize.Height);
-      path.Transform(matrix);
-
-      // Also move the inner part to its final place.
-      matrix.Reset();
-      matrix.Translate(offsetX, offsetY);
-      innerPath.Transform(matrix);
-
-      Graphics g = Graphics.FromImage(contentBitmap);
-      g.SmoothingMode = SmoothingMode.HighQuality;
-      using (Brush brush = new SolidBrush(Color.FromArgb(10, 0, 0, 0)))
-        g.FillRectangle(brush, ClientRectangle);
-
-      // Fill interior.
-      using (Brush brush = new SolidBrush(Color.FromArgb(191, 0, 0, 0)))
-        g.FillPath(brush, innerPath);
-
-      // ... and draw border around the interior.
-      using (Pen borderPen = new Pen(Color.FromArgb(200, Color.White)))
+      contentBitmap.SetResolution(bitmapDpi, bitmapDpi);
+      using (Graphics graphics = Graphics.FromImage(contentBitmap))
       {
-        borderPen.EndCap = LineCap.Round;
-        borderPen.StartCap = LineCap.Round;
-        borderPen.Width = borderSize;
-        GraphicsPath borderPath = (GraphicsPath)innerPath.Clone();
-        borderPath.Widen(borderPen);
-        using (SolidBrush brush = new SolidBrush(Color.FromArgb(255, Color.White)))
-          g.FillPath(brush, borderPath);
-
-        // Clip out interior. Exclude both, the panel itself as well as its border.
-        using (Region region = new Region(innerPath))
-          g.SetClip(region, CombineMode.Exclude);
-
-        innerPath.Widen(borderPen);
-        using (Region region = new Region(innerPath))
-          g.SetClip(region, CombineMode.Exclude);
-      }
-
-      using (PathGradientBrush backStyle = new PathGradientBrush(path))
-      {
-        backStyle.CenterColor = shadowColor;
-        backStyle.SurroundColors = new Color[] { Color.Transparent };
-
-        // Make a smooth fade out of the shadow color using the built-in sigma bell curve generator.
-        backStyle.SetSigmaBellShape(0.4f, 1f);
-
-        // Now draw the shadow.
-        g.FillPath(backStyle, path);
-      }
-
-      // Remove clipping for the remaining interior.
-      g.ResetClip();
-      RectangleF innerBounds = innerPath.GetBounds();
-      Point targetLocation = pictureBox1.Location;
-      targetLocation.Offset((int)innerBounds.Left, (int)innerBounds.Top);
-      g.DrawImageUnscaled(pictureBox1.Image, targetLocation);
-
-      // Message text output.
-      using (StringFormat format = new StringFormat(StringFormatFlags.FitBlackBox))
-      {
-        targetLocation = label1.Location;
-        targetLocation.Offset((int)innerBounds.Left, (int)innerBounds.Top);
-        RectangleF textBounds = new RectangleF(targetLocation,
-          new SizeF(
-            innerBounds.Right - targetLocation.X - Padding.Right,
-            innerBounds.Bottom - targetLocation.Y - Padding.Bottom
-          )
-        );
-
-        path.Dispose();
-        innerPath.Dispose();
-
-        using (Brush textBrush = new SolidBrush(label1.ForeColor))
-          g.DrawString(label1.Text, label1.Font, textBrush, textBounds, format);
-
-        targetLocation = label2.Location;
-        targetLocation.Offset((int)innerBounds.Left, (int)innerBounds.Top);
-        textBounds = new RectangleF(targetLocation,
-          new SizeF(
-            innerBounds.Right - targetLocation.X - Padding.Right,
-            innerBounds.Bottom - targetLocation.Y - Padding.Bottom
-          )
-        );
-
-        using (Brush textBrush = new SolidBrush(label2.ForeColor))
-          g.DrawString(label2.Text, label2.Font, textBrush, textBounds, format);
-
+        float scale = bitmapDpi / 96f;
+        var bounds = new Rectangle((Width - baseSize.Width) / 2, (Height - baseSize.Height) / 2,
+          baseSize.Width, baseSize.Height);
+        Color surface = SystemInformation.HighContrast ? SystemColors.Window : Color.FromArgb(237, 242, 244);
+        Color ink = SystemInformation.HighContrast ? SystemColors.WindowText : Color.FromArgb(16, 38, 41);
+        Color muted = SystemInformation.HighContrast ? SystemColors.WindowText : Color.FromArgb(79, 87, 89);
+        Color rule = SystemInformation.HighContrast ? SystemColors.WindowText : Color.FromArgb(163, 180, 188);
+        graphics.Clear(Color.FromArgb(8, surface));
+        using (Brush brush = new SolidBrush(surface)) graphics.FillRectangle(brush, bounds);
+        using (Pen pen = new Pen(rule)) graphics.DrawRectangle(pen, bounds.Left, bounds.Top, bounds.Width - 1, bounds.Height - 1);
+        int padding = (int)Math.Round(12 * scale);
+        var titleBounds = new RectangleF(bounds.Left + padding, bounds.Top + padding,
+          bounds.Width - 2 * padding, 24 * scale);
+        using (StringFormat format = new StringFormat(StringFormatFlags.NoWrap))
+        {
+          format.Trimming = StringTrimming.EllipsisCharacter;
+          using (Brush brush = new SolidBrush(ink))
+            graphics.DrawString(label1.Text, label1.Font, brush, titleBounds, format);
+        }
+        var messageBounds = new RectangleF(bounds.Left + padding, titleBounds.Bottom + 4 * scale,
+          bounds.Width - 2 * padding, 40 * scale);
+        using (StringFormat format = new StringFormat())
+        {
+          format.Trimming = StringTrimming.EllipsisCharacter;
+          using (Brush brush = new SolidBrush(muted))
+            graphics.DrawString(label2.Text, label2.Font, brush, messageBounds, format);
+        }
+        int footerY = bounds.Bottom - (int)Math.Round(38 * scale);
+        using (Pen pen = new Pen(rule)) graphics.DrawLine(pen, bounds.Left, footerY, bounds.Right - 1, footerY);
+        using (Brush brush = new SolidBrush(muted))
+          graphics.DrawString("İşlem sürüyor…", label2.Font, brush, bounds.Left + padding, footerY + 9 * scale);
         if (showCancelButton)
         {
-          Point buttonLocation = cancelButtonPicture.Location;
-          buttonLocation.Offset((int)innerBounds.Left, (int)innerBounds.Top);
-          cancelButtonBounds = new RectangleF(buttonLocation, cancelButtonPicture.Size);
-          g.DrawImageUnscaled(cancelButtonPicture.Image, buttonLocation);
+          cancelButtonBounds = new RectangleF(bounds.Right - padding - 82 * scale, footerY + 6 * scale, 82 * scale, 26 * scale);
+          using (Pen pen = new Pen(rule))
+            graphics.DrawRectangle(pen, cancelButtonBounds.X, cancelButtonBounds.Y, cancelButtonBounds.Width, cancelButtonBounds.Height);
+          using (Brush brush = new SolidBrush(ink))
+          using (StringFormat format = new StringFormat())
+          {
+            format.Alignment = StringAlignment.Center;
+            format.LineAlignment = StringAlignment.Center;
+            graphics.DrawString("Vazgeç", label2.Font, brush, cancelButtonBounds, format);
+          }
         }
-        else
-          cancelButtonBounds = new RectangleF();
+        else cancelButtonBounds = RectangleF.Empty;
       }
     }
 
@@ -436,8 +369,8 @@ namespace MySQL.Utilities
             if (cancelButtonBounds.Contains(position))
             {
               // Check before set. Windows XP will otherwise cause an endless recursion.
-              if (Cursor.Current != Cursors.AppStarting)
-                Cursor.Current = Cursors.AppStarting;
+              if (Cursor.Current != Cursors.Hand)
+                Cursor.Current = Cursors.Hand;
             }
             else
             {

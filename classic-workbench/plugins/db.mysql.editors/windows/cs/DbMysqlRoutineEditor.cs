@@ -45,6 +45,8 @@ namespace MySQL.GUI.Workbench.Plugins
     {
       InitializeComponent();
       ReinitWithArguments(value);
+      ConfigureClassicObjectEditor(mainTabControl);
+      ConfigureClassicDefinitionPage(tabPage1, panel2, nameTextBox, "Routine / function name");
       if (IsEditingLiveObject)
       {
         mainTabControl.TabPages.Remove(commentTabPage);

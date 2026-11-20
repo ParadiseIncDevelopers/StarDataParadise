@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 
 using MySQL.Base;
@@ -35,6 +36,20 @@ using MySQL.Workbench;
 
 namespace MySQL.GUI.Workbench.Plugins
 {
+  public class ClassicObjectTreeView : Aga.Controls.Tree.TreeViewAdv
+  {
+    public override void DrawNode(Aga.Controls.Tree.TreeNodeAdv node, Aga.Controls.Tree.DrawContext context)
+    {
+      if (node.IsSelected && !SystemInformation.HighContrast)
+      {
+        using (var brush = new SolidBrush(Color.FromArgb(221, 235, 228)))
+          context.Graphics.FillRectangle(brush, new Rectangle(0, context.Bounds.Top, Width, RowHeight));
+        context.DrawSelection = Aga.Controls.Tree.DrawSelectionMode.None;
+      }
+      base.DrawNode(node, context);
+    }
+  }
+
   /// <summary>
   /// Generic GRT Object Editor
   /// </summary>
@@ -198,6 +213,101 @@ namespace MySQL.GUI.Workbench.Plugins
 
     #region Form Implementation
 
+    protected void ConfigureClassicObjectEditor(FlatTabControl tabs)
+    {
+      Font = new Font("Segoe UI", 9.75f, FontStyle.Regular, GraphicsUnit.Point);
+      StyleClassicControl(this);
+      SdpLanguage.Apply(this);
+      tabs.Alignment = TabAlignment.Top;
+      tabs.TabStyle = FlatTabControl.TabStyleType.Classic;
+      tabs.Font = Font;
+      tabs.ItemSize = new Size(56, Math.Max(28, Font.Height + 12));
+      tabs.ItemPadding = new Padding(10, 0, 10, 0);
+      tabs.ContentPadding = Padding.Empty;
+      tabs.RenderWithGlow = false;
+      tabs.BackgroundColor = SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(237, 242, 244);
+    }
+
+    private void StyleClassicControl(Control control)
+    {
+      if (control.GetType().Name.IndexOf("Scintilla", StringComparison.OrdinalIgnoreCase) >= 0) return;
+      control.Font = Font;
+      if (Object.Equals(control.Tag, "sdp.data")) return;
+      if (control is TabPage || control is Panel || control is GroupBox)
+        control.BackColor = SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(237, 242, 244);
+      if (control is Label || control is TabPage || control is GroupBox || control is Button || control is CheckBox || control is RadioButton)
+      {
+        control.ForeColor = SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(16, 38, 41);
+        control.Text = SdpLanguage.Translate(control.Text);
+      }
+      Aga.Controls.Tree.TreeViewAdv tree = control as Aga.Controls.Tree.TreeViewAdv;
+      if (tree != null)
+      {
+        tree.RowHeight = Math.Max(26, Font.Height + 10);
+        tree.FullRowSelect = true;
+        tree.GridColor = Color.FromArgb(210, 221, 225);
+        foreach (Aga.Controls.Tree.TreeColumn column in tree.Columns)
+        {
+          column.Header = SdpLanguage.Translate(column.Header);
+          column.TooltipText = SdpLanguage.Translate(column.TooltipText);
+        }
+      }
+      Button button = control as Button;
+      if (button != null)
+      {
+        button.FlatStyle = FlatStyle.Flat;
+        button.FlatAppearance.BorderColor = Color.FromArgb(163, 180, 188);
+        button.MinimumSize = new Size(button.MinimumSize.Width, Math.Max(28, Font.Height + 10));
+      }
+      PictureBox picture = control as PictureBox;
+      if (picture != null && picture.Width >= 32 && picture.Height >= 32) picture.Visible = false;
+      Panel panel = control as Panel;
+      if (panel != null && panel.Padding == new Padding(1)) panel.Padding = Padding.Empty;
+      foreach (Control child in control.Controls) StyleClassicControl(child);
+    }
+
+    protected static Image ClassicEditorIcon(string name)
+    {
+      string path = Path.Combine(Application.StartupPath, "images", "ui", "sdp_" + name + ".png");
+      if (!File.Exists(path)) return null;
+      using (Image source = Image.FromFile(path)) return new Bitmap(source);
+    }
+
+    protected void ConfigureClassicDefinitionPage(TabPage page, Control editor, TextBox name, string caption)
+    {
+      editor.Parent = null;
+      name.Parent = null;
+      page.Controls.Clear();
+      page.Padding = new Padding(8);
+      var heading = new TableLayoutPanel();
+      heading.Dock = DockStyle.Top;
+      heading.Height = Math.Max(34, Font.Height + 14);
+      heading.ColumnCount = 3;
+      heading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 116));
+      heading.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 240));
+      heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+      var label = new Label();
+      label.Text = SdpLanguage.Translate(caption);
+      label.Dock = DockStyle.Fill;
+      label.TextAlign = ContentAlignment.MiddleLeft;
+      heading.Controls.Add(label, 0, 0);
+      name.Dock = DockStyle.Fill;
+      name.Margin = new Padding(0, 4, 8, 4);
+      heading.Controls.Add(name, 1, 0);
+      var hint = new Label();
+      hint.Text = SdpLanguage.Translate("The name is read from the SQL definition.");
+      hint.ForeColor = SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(79, 87, 89);
+      hint.Dock = DockStyle.Fill;
+      hint.TextAlign = ContentAlignment.MiddleLeft;
+      hint.AutoEllipsis = true;
+      heading.Controls.Add(hint, 2, 0);
+      editor.Dock = DockStyle.Fill;
+      editor.Padding = Padding.Empty;
+      editor.BackColor = SystemInformation.HighContrast ? SystemColors.Window : Color.White;
+      page.Controls.Add(editor);
+      page.Controls.Add(heading);
+    }
+
     public Control SetupEditorOnHost(Control host, bool coloring)
     {
       if (backend != null && editorBackend == null)
@@ -250,19 +360,26 @@ namespace MySQL.GUI.Workbench.Plugins
             mainSplitContainer = new SplitContainer();
             mainSplitContainer.Dock = DockStyle.Fill;
             mainSplitContainer.Orientation = Orientation.Horizontal;
-            mainSplitContainer.SplitterWidth = 2;
+            mainSplitContainer.SplitterWidth = 1;
             mainSplitContainer.FixedPanel = FixedPanel.Panel2;
 
-            Panel liveObjectControlsPanel = new Panel();
+            FlowLayoutPanel liveObjectControlsPanel = new FlowLayoutPanel();
+            liveObjectControlsPanel.FlowDirection = FlowDirection.RightToLeft;
+            liveObjectControlsPanel.WrapContents = false;
+            liveObjectControlsPanel.Padding = new Padding(8, 4, 8, 4);
             liveObjectControlsPanel.Parent = mainSplitContainer.Panel2;
             liveObjectControlsPanel.Dock = DockStyle.Fill;
 
             {
               revertLiveObjectButton = new Button();
-              revertLiveObjectButton.UseVisualStyleBackColor = true;
+              revertLiveObjectButton.UseVisualStyleBackColor = false;
               revertLiveObjectButton.Parent = liveObjectControlsPanel;
-              revertLiveObjectButton.FlatStyle = FlatStyle.System;
-              revertLiveObjectButton.Text = "Revert";
+              revertLiveObjectButton.FlatStyle = FlatStyle.Flat;
+              revertLiveObjectButton.FlatAppearance.BorderColor = Color.FromArgb(163, 180, 188);
+              revertLiveObjectButton.BackColor = Color.FromArgb(237, 242, 244);
+              revertLiveObjectButton.AutoSize = true;
+              revertLiveObjectButton.MinimumSize = new Size(100, Math.Max(28, Font.Height + 12));
+              revertLiveObjectButton.Text = SdpLanguage.Translate("Revert");
               revertLiveObjectButton.Location = new Point(
                 mainSplitContainer.Panel2.ClientSize.Width - revertLiveObjectButton.Width - revertLiveObjectButton.Margin.Right,
                 revertLiveObjectButton.Margin.Top);
@@ -270,21 +387,25 @@ namespace MySQL.GUI.Workbench.Plugins
             }
             {
               applyLiveObjectButton = new Button();
-              applyLiveObjectButton.UseVisualStyleBackColor = true;
+              applyLiveObjectButton.UseVisualStyleBackColor = false;
               applyLiveObjectButton.Parent = liveObjectControlsPanel;
-              applyLiveObjectButton.FlatStyle = FlatStyle.System;
-              applyLiveObjectButton.Text = "Apply";
+              applyLiveObjectButton.FlatStyle = FlatStyle.Flat;
+              applyLiveObjectButton.FlatAppearance.BorderSize = 0;
+              applyLiveObjectButton.BackColor = Color.FromArgb(4, 49, 51);
+              applyLiveObjectButton.ForeColor = Color.White;
+              applyLiveObjectButton.AutoSize = true;
+              applyLiveObjectButton.MinimumSize = new Size(140, Math.Max(28, Font.Height + 12));
+              applyLiveObjectButton.Text = SdpLanguage.Translate("Review SQL");
               applyLiveObjectButton.Location = new Point(
                 revertLiveObjectButton.Location.X - revertLiveObjectButton.Margin.Left - applyLiveObjectButton.Width - applyLiveObjectButton.Margin.Right,
                 revertLiveObjectButton.Location.Y);
               applyLiveObjectButton.Click += new EventHandler(applyChangesToLiveObjectButton_Click);
             }
 
-            mainSplitContainer.Panel2MinSize = revertLiveObjectButton.Height + revertLiveObjectButton.Margin.Vertical;
+            liveObjectControlsPanel.Controls.SetChildIndex(applyLiveObjectButton, 0);
+            mainSplitContainer.Panel2MinSize = revertLiveObjectButton.Height + revertLiveObjectButton.Margin.Vertical + 8;
             mainSplitContainer.SplitterDistance = mainContainer.ClientSize.Height - mainSplitContainer.Panel2MinSize - mainSplitContainer.SplitterWidth;
 
-            revertLiveObjectButton.Anchor =   AnchorStyles.Right | AnchorStyles.Bottom;
-            applyLiveObjectButton.Anchor = AnchorStyles.Right | AnchorStyles.Bottom;
           }
 
           mainSplitContainer.Parent = mainTabControl.Parent;

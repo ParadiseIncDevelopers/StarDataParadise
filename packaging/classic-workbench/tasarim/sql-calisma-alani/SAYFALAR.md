@@ -2,9 +2,11 @@
 
 [Galeriye dön](README.md). Her görsel tek bir sayfa veya durumu gösterir. Sekmeler ve alt durumlar aynı sayfanın bileşenlerini kullanır.
 
+Bu sayfa tasarım aşamasındaki görsel ve davranış önerilerini saklar. Görseller temsili içerik taşır; bazı ayrıntılar son kullanıcı düzeltmeleriyle değişmiştir. Çalışan kaynak, native ekran görüntüleri, gerçek işleyiciler ve kabul sınırları için [uygulama kaydı](UYGULAMA.md) ve [ürün araçları kaydı](ARACLAR.md) esas alınır. Kanonik kaynak `classic-workbench/` altındadır; aşağıdaki `out/mysql-workbench-native-src` bağlantıları incelemede kullanılan yerel derleme ağacını gösterir.
+
 <a id="sayfa-01"></a>
 
-## 01 · SQL çalışma alanı
+## 01 - SQL çalışma alanı
 
 ![SQL çalışma alanı](gorseller/01-sql-editoru.png)
 
@@ -14,11 +16,11 @@ Görünen komutlar Çalıştır, İmleçteki ifadeyi çalıştır, Durdur, Plan,
 
 Boş tampon, çalışan sorgu, hata konumu, çoklu sonuç, bağlantı kaybı. Aynı bağlantının sorgu sekmeleri işlemi paylaşır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_panel.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_panel.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
 
 <a id="sayfa-02"></a>
 
-## 02 · Veri tablosu ve hücre ayrıntısı
+## 02 - Veri tablosu ve hücre ayrıntısı
 
 ![Veri tablosu ve hücre ayrıntısı](gorseller/02-veri-tablosu.png)
 
@@ -28,11 +30,11 @@ Görünen komutlar Filtre, Yenile, Satır ekle, Kopyala, Dışa aktar, Hücre ay
 
 Anahtar bulunmadığında düzenleme nedeni gösterilir. NULL, boş metin ve boş binary ayrı değerlerdir. BIGINT ve DECIMAL metin hassasiyetini korur.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_resultset_ext.py>) · [İlgili canlı inceleme](referanslar/mevcut/24-query-results.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_resultset_ext.py>) - [İlgili canlı inceleme](referanslar/mevcut/24-query-results.jpg)
 
 <a id="sayfa-03"></a>
 
-## 03 · Sorgu planı
+## 03 - Sorgu planı
 
 ![Sorgu planı](gorseller/03-sorgu-plani.png)
 
@@ -42,11 +44,11 @@ Görünen komutlar EXPLAIN, Yeniden al, Ağaç, Tablo, JSON, düğüm ayrıntıs
 
 Plan biçimi sunucu desteğine göre seçilir. Tahmini maliyet ve satır sayısı, ölçülmüş yürütme süresinden ayrı etiketlenir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_form.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/25-explain.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_form.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/25-explain.jpg)
 
 <a id="sayfa-04"></a>
 
-## 04 · Sorgu geçmişi
+## 04 - Sorgu geçmişi
 
 ![Sorgu geçmişi](gorseller/04-sorgu-gecmisi.png)
 
@@ -56,11 +58,11 @@ Görünen komutlar Tarih, SQL içinde ara, Editöre aktar, Kopyala. Ana eylem **
 
 Gün seçimi, boş tarih, çok satırlı SQL, geçmiş kaydı kopyalama. SQL tamponuna aktarım ayrı yürütme eylemine hazırlanır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/db_sql_editor_history_be.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/22-query-history.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/db_sql_editor_history_be.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/22-query-history.jpg)
 
 <a id="sayfa-05"></a>
 
-## 05 · SQL parçaları
+## 05 - SQL parçaları
 
 ![SQL parçaları](gorseller/05-sql-parcalari.png)
 
@@ -70,11 +72,11 @@ Görünen komutlar Kategori, Ara, Parça kaydet, İmlece ekle, Seçimi değişti
 
 Yerleşik ve kullanıcı parçaları, boş kütüphane, seçili metin, kaydetme adı. Silme ve düzenleme bağlam menüsündedir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_snippets.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/26-snippets.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_snippets.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/26-snippets.jpg)
 
 <a id="sayfa-06"></a>
 
-## 06 · Bağlamsal SQL yardımı
+## 06 - Bağlamsal SQL yardımı
 
 ![Bağlamsal SQL yardımı](gorseller/06-sql-yardimi.png)
 
@@ -84,11 +86,11 @@ Görünen komutlar Geri, İleri, Otomatik yardım, İmleçteki komutu göster, Y
 
 Otomatik yardım kapalı, tanınmayan sözcük, yardım kaynağı eksik. Yardım çekmecesi başlangıçta kapalıdır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_help.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_help.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
 
 <a id="sayfa-07"></a>
 
-## 07 · Şema ve nesne inceleyicisi
+## 07 - Şema ve nesne inceleyicisi
 
 ![Şema ve nesne inceleyicisi](gorseller/07-sema-inceleyicisi.png)
 
@@ -98,11 +100,11 @@ Görünen komutlar Nesne ara, İncele, Oluştur, Yenile, Genel, Tablolar, Görü
 
 Şema ve tablo seçimi aynı inceleyici ailesinde çalışır. Satır ve boyut tahminleri etiketlidir. Bakım ayrı yüzeyde açılır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_catalogman_ext.py>) · [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_catalogman_ext.py>) - [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
 
 <a id="sayfa-08"></a>
 
-## 08 · Tablo tasarımı
+## 08 - Tablo tasarımı
 
 ![Tablo tasarımı](gorseller/08-tablo-tasarimi.png)
 
@@ -112,13 +114,13 @@ Görünen komutlar Sütunlar, İndeksler, Yabancı anahtarlar, Tetikleyiciler, B
 
 Yeni ve mevcut tablo, bağımsız PK/NN/UQ/AI bayrakları, üretilmiş sütun ifadesi ve Virtual/Stored seçimi. Değişiklikler mevcut DDL uygulama akışına gider.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/db.mysql.editors/windows/cs/DbMysqlTableEditor.cs>) · [İlgili canlı inceleme](referanslar/mevcut/19-table-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/db.mysql.editors/windows/cs/DbMysqlTableEditor.cs>) - [İlgili canlı inceleme](referanslar/mevcut/19-table-editor.jpg)
 
 Sözdizimi, yeni nesne ve düzenleme durumları aynı editör ailesinde çalışır. Değişiklik önizlemesi gerçek native üreticiden gelir. SQL metni görseldeki örnekten kopyalanarak üretilmez.
 
 <a id="sayfa-09"></a>
 
-## 09 · Görünüm düzenleyicisi
+## 09 - Görünüm düzenleyicisi
 
 ![Görünüm düzenleyicisi](gorseller/09-gorunum-duzenleyicisi.png)
 
@@ -128,13 +130,13 @@ Görünen komutlar Şema, Görünüm adı, Algoritma, Güvenlik, Tanım, Sütunl
 
 CREATE ve ALTER, salt okunur bağımlılık özeti, geçersiz SQL konumu. Kaynak bağımlılıkları katalogdan türetilir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/db.mysql.editors/windows/cs/DbMysqlViewEditor.cs>) · [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/db.mysql.editors/windows/cs/DbMysqlViewEditor.cs>) - [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
 
 Sözdizimi, yeni nesne ve düzenleme durumları aynı editör ailesinde çalışır. Değişiklik önizlemesi gerçek native üreticiden gelir. SQL metni görseldeki örnekten kopyalanarak üretilmez.
 
 <a id="sayfa-10"></a>
 
-## 10 · Yordam ve fonksiyon düzenleyicisi
+## 10 - Yordam ve fonksiyon düzenleyicisi
 
 ![Yordam ve fonksiyon düzenleyicisi](gorseller/10-rutin-duzenleyicisi.png)
 
@@ -144,13 +146,13 @@ Görünen komutlar Tür, Şema, Ad, Tanım, Parametreler, DDL, Sözdizimini dene
 
 Yordamda IN/OUT/INOUT, fonksiyonda dönüş türü. Mevcut Classic rutin editörü ve SQL ayrıştırıcısı kullanılır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/db.mysql.editors/windows/cs/DbMysqlRoutineEditor.cs>) · [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/db.mysql.editors/windows/cs/DbMysqlRoutineEditor.cs>) - [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
 
 Sözdizimi, yeni nesne ve düzenleme durumları aynı editör ailesinde çalışır. Değişiklik önizlemesi gerçek native üreticiden gelir. SQL metni görseldeki örnekten kopyalanarak üretilmez.
 
 <a id="sayfa-11"></a>
 
-## 11 · Tablo verisinde arama
+## 11 - Tablo verisinde arama
 
 ![Tablo verisinde arama](gorseller/11-veride-arama.png)
 
@@ -160,11 +162,11 @@ Görünen komutlar Kapsam, eşleme yöntemi, tablo başına sınır, toplam sın
 
 Arama sonucu, sıfır eşleşme, sorgu hatası, iptal. Önizleme mevcut arama üreticisinin gerçek SQL’ini gösterir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_grt.py>) · [İlgili canlı inceleme](referanslar/mevcut/20-data-search.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_grt.py>) - [İlgili canlı inceleme](referanslar/mevcut/20-data-search.jpg)
 
 <a id="sayfa-12"></a>
 
-## 12 · Sunucu özeti
+## 12 - Sunucu özeti
 
 ![Sunucu özeti](gorseller/12-sunucu-ozeti.png)
 
@@ -174,11 +176,11 @@ Görünen komutlar Yenile, dosya yolu kopyalama, özellik durumu. Ana eylem **Ye
 
 Profilin uç noktası ve sunucunun bildirdiği port ayrı kaynaklardır. TLS durumu oturum bilgisinden alınır. Bilinmeyen değer açıkça belirtilir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_server_status.py>) · [İlgili canlı inceleme](referanslar/mevcut/03-server-status.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_server_status.py>) - [İlgili canlı inceleme](referanslar/mevcut/03-server-status.jpg)
 
 <a id="sayfa-13"></a>
 
-## 13 · İstemci oturumları
+## 13 - İstemci oturumları
 
 ![İstemci oturumları](gorseller/13-istemci-oturumlari.png)
 
@@ -188,11 +190,11 @@ Görünen komutlar Kullanıcı/şema filtresi, Uyuyanları gizle, yenileme aral�
 
 Sorgu iptali ve bağlantı sonlandırma ayrı komutlardır. Kendi bağlantısı, yetki reddi, artık mevcut olmayan işlem ve yenileme sırasında seçim korunması ele alınır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_connections.py>) · [İlgili canlı inceleme](referanslar/mevcut/04-client-connections.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_connections.py>) - [İlgili canlı inceleme](referanslar/mevcut/04-client-connections.jpg)
 
 <a id="sayfa-14"></a>
 
-## 14 · Kullanıcılar ve yetkiler
+## 14 - Kullanıcılar ve yetkiler
 
 ![Kullanıcılar ve yetkiler](gorseller/14-kullanicilar-yetkiler.png)
 
@@ -202,11 +204,11 @@ Görünen komutlar Hesap ekle, Hesap, Sınırlar, Roller, Şema yetkileri, Geri 
 
 Mevcut hesap ve yeni hesap aynı form ailesidir. GRANT kapsamı hesap ve host ile birlikte görünür. Etkili yetki özeti ek sorgu uyarlaması gerektirir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_security.py>) · [İlgili canlı inceleme](referanslar/mevcut/05-users-privileges.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_security.py>) - [İlgili canlı inceleme](referanslar/mevcut/05-users-privileges.jpg)
 
 <a id="sayfa-15"></a>
 
-## 15 · Durum ve sistem değişkenleri
+## 15 - Durum ve sistem değişkenleri
 
 ![Durum ve sistem değişkenleri](gorseller/15-degiskenler.png)
 
@@ -216,11 +218,11 @@ Görünen komutlar Durum sayaçları, Sistem değişkenleri, kategori, kapsam, f
 
 Salt okunur, dinamik ve statik değişken ayrımı metadata’dan gelir. Oturum kapsamı, global kapsam ve yapılandırma dosyasının kalıcılığı ayrıdır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_variables.py>) · [İlgili canlı inceleme](referanslar/mevcut/06-status-variables.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_variables.py>) - [İlgili canlı inceleme](referanslar/mevcut/06-status-variables.jpg)
 
 <a id="sayfa-16"></a>
 
-## 16 · Performans izleme
+## 16 - Performans izleme
 
 ![Performans izleme](gorseller/16-performans-izleme.png)
 
@@ -230,11 +232,11 @@ Görünen komutlar Örnekleme aralığı, zaman penceresi, Duraklat, Yenile. Ana
 
 Eksik ölçüm, bağlantı kaybı, boş örnek aralığı, duraklatma. Grafik eksenleri ve birimler her seride görünür.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_performance_dashboard.py>) · [İlgili canlı inceleme](referanslar/mevcut/12-performance-dashboard.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_performance_dashboard.py>) - [İlgili canlı inceleme](referanslar/mevcut/12-performance-dashboard.jpg)
 
 <a id="sayfa-17"></a>
 
-## 17 · Performans raporları
+## 17 - Performans raporları
 
 ![Performans raporları](gorseller/17-performans-raporlari.png)
 
@@ -244,11 +246,11 @@ Görünen komutlar Rapor kategorisi, Yenile, Dışa aktar, SQL’i editörde aç
 
 Rapor desteği, yetki eksikliği, boş sonuç. İstatistiklerin toplama kapsamı ve süre birimleri gösterilir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_perfschema_reports.py>) · [İlgili canlı inceleme](referanslar/mevcut/13-performance-reports.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_perfschema_reports.py>) - [İlgili canlı inceleme](referanslar/mevcut/13-performance-reports.jpg)
 
 <a id="sayfa-18"></a>
 
-## 18 · Performans ölçüm ayarları
+## 18 - Performans ölçüm ayarları
 
 ![Performans ölçüm ayarları](gorseller/18-olcum-ayarlari.png)
 
@@ -258,11 +260,11 @@ Görünen komutlar Ölçüm grubu, Etkin, Süre ölçümü, Gelişmiş, Yeniden 
 
 TIMED alanı boolean olarak gösterilir. Grup satırlarında üç durumlu seçim bulunur. Veri temizleme ile yapılandırma uygulaması ayrı eylemlerdir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py>) · [İlgili canlı inceleme](referanslar/mevcut/14-performance-setup-empty.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_perfschema_instrumentation.py>) - [İlgili canlı inceleme](referanslar/mevcut/14-performance-setup-empty.jpg)
 
 <a id="sayfa-19"></a>
 
-## 19 · SQL dışa aktarma
+## 19 - SQL dışa aktarma
 
 ![SQL dışa aktarma](gorseller/19-sql-disa-aktarma.png)
 
@@ -272,11 +274,11 @@ Görünen komutlar Nesneler, yapı/veri modu, yordamlar, tetikleyiciler, olaylar
 
 Yazılabilir hedef, araç bulunamaması, araç sürümü, mevcut dosya, çalışan iş ve hata çıktısı. Mevcut dump motorunun seçenekleri korunur.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_export.py>) · [İlgili canlı inceleme](referanslar/mevcut/07-data-export.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_export.py>) - [İlgili canlı inceleme](referanslar/mevcut/07-data-export.jpg)
 
 <a id="sayfa-20"></a>
 
-## 20 · SQL içe aktarma
+## 20 - SQL içe aktarma
 
 ![SQL içe aktarma](gorseller/20-sql-ice-aktarma.png)
 
@@ -286,11 +288,11 @@ Görünen komutlar Kaynak, hedef profil, hedef şema, klasör nesneleri, dosya �
 
 Betikteki USE ve CREATE DATABASE etkisi görünür. Dosya önizleme ve hedef özeti için yeni UI bağları gerekir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_export.py>) · [İlgili canlı inceleme](referanslar/mevcut/08-data-import.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_export.py>) - [İlgili canlı inceleme](referanslar/mevcut/08-data-import.jpg)
 
 <a id="sayfa-21"></a>
 
-## 21 · Sunucu hizmeti
+## 21 - Sunucu hizmeti
 
 ![Sunucu hizmeti](gorseller/21-sunucu-hizmeti.png)
 
@@ -300,11 +302,11 @@ Görünen komutlar Profili yapılandır, Başlat, Durdur, Yenile, Kopyala. Ana e
 
 Hizmet adı eksik, yerel/SSH yönetimi, yönetim erişimi reddi, bağlı istemciler. Hizmet kimliği profil kaydından doğrulanır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_configuration_startup.py>) · [İlgili canlı inceleme](referanslar/mevcut/09-service-control.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_configuration_startup.py>) - [İlgili canlı inceleme](referanslar/mevcut/09-service-control.jpg)
 
 <a id="sayfa-22"></a>
 
-## 22 · Sunucu günlükleri
+## 22 - Sunucu günlükleri
 
 ![Sunucu günlükleri](gorseller/22-sunucu-gunlukleri.png)
 
@@ -314,11 +316,11 @@ Görünen komutlar Kaynak yol, tür, düzey, arama, Yenile, Son kayda git, önce
 
 Kaynak yolu eksik, dosya okunamıyor, döndürülmüş günlük, boş sonuç. Özgün kayıt metni ayrıntıda korunur.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_logs.py>) · [İlgili canlı inceleme](referanslar/mevcut/10-logs-config-required.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_logs.py>) - [İlgili canlı inceleme](referanslar/mevcut/10-logs-config-required.jpg)
 
 <a id="sayfa-23"></a>
 
-## 23 · Seçenek dosyası
+## 23 - Seçenek dosyası
 
 ![Seçenek dosyası](gorseller/23-yapilandirma.png)
 
@@ -328,11 +330,11 @@ Görünen komutlar Dosya seç, kategori, ara, mevcut/önerilen değer, fark, Ger
 
 Dosya eksik veya salt okunur, dışarıdan değişmiş dosya, sürüme bağlı seçenekler, yeniden başlatma ihtiyacı. Dosya ve canlı değişkenler ayrı saklama hedefleridir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_config_file_ui.py>) · [İlgili canlı inceleme](referanslar/mevcut/11-options-config-required.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.admin/frontend/wb_admin_config_file_ui.py>) - [İlgili canlı inceleme](referanslar/mevcut/11-options-config-required.jpg)
 
 <a id="sayfa-24"></a>
 
-## 24 · Uygulama tercihleri
+## 24 - Uygulama tercihleri
 
 ![Uygulama tercihleri](gorseller/24-tercihler.png)
 
@@ -342,13 +344,13 @@ Görünen komutlar Ayar ara, kategoriler, yazı önizlemesi, Varsayılanlar, Vaz
 
 Kategori içeriği mevcut preference anahtarlarından gelir. Arama ve ortak tipografi önizlemesi yeni UI bileşenidir. Bağlantı TLS/SSH alanları profil yöneticisinde bulunur.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/frontend/common/preferences_form.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/21-preferences.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/frontend/common/preferences_form.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/21-preferences.jpg)
 
 Tercih alt sayfaları bu form şablonunu paylaşır. Genel düzenleyici, SQL editörü, sorgu editörü, nesne editörleri, yürütme, yönetim, modelleme varsayılanları, modelleme veritabanı ayarları, diyagram, görünüm, yazı/renk, SSH ve diğer ayar grupları mevcut preference anahtarlarıyla eşleştirilir.
 
 <a id="sayfa-25"></a>
 
-## 25 · Betikler ve eklentiler
+## 25 - Betikler ve eklentiler
 
 ![Betikler ve eklentiler](gorseller/25-betikler.png)
 
@@ -358,11 +360,11 @@ Görünen komutlar Yeni, Aç, Kaydet, Çalıştır, Durdur, Dosyalar, Modüller,
 
 Dosya hatası, Python istisnası, çalışan betik, eklenti ayrıntısı. Yerleşik ayrı betik penceresi bu çalışma alanına uyarlanır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/frontend/windows/MySQLWorkbench/MainForm.cs>) · [İlgili canlı inceleme](referanslar/mevcut/23-scripting.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/frontend/windows/MySQLWorkbench/MainForm.cs>) - [İlgili canlı inceleme](referanslar/mevcut/23-scripting.jpg)
 
 <a id="sayfa-26"></a>
 
-## 26 · Sunucudan model çıkarma
+## 26 - Sunucudan model çıkarma
 
 ![Sunucudan model çıkarma](gorseller/26-model-cikarma.png)
 
@@ -372,11 +374,11 @@ Görünen komutlar Bağlantı, Nesneler, Model, Sonuç, nesne seçimi, diyagrama
 
 Nesne okuma yetkisi, desteklenmeyen tip, boş seçim, mevcut yerel modele aktarım. Sonuç yerel model alanında açılır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/modules/db.mysql/db_mysql_re_grt.py>) · [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/modules/db.mysql/db_mysql_re_grt.py>) - [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
 
 <a id="sayfa-27"></a>
 
-## 27 · Şema aktarımı
+## 27 - Şema aktarımı
 
 ![Şema aktarımı](gorseller/27-sema-aktarimi.png)
 
@@ -386,11 +388,11 @@ Görünen komutlar Kaynak/hedef, nesneler, SQL önizleme, Betiği kaydet, aktar�
 
 Önizleme mevcut göç SQL görüntüleyicisiyle paylaşılır. Kaynak ve hedef kimlikleri bütün adımlarda korunur.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/migration/dbcopy/db_copy_main.py>) · [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/migration/dbcopy/db_copy_main.py>) - [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
 
 <a id="sayfa-28"></a>
 
-## 28 · CSV ve JSON aktarımı
+## 28 - CSV ve JSON aktarımı
 
 ![CSV ve JSON aktarımı](gorseller/28-csv-json-aktarimi.png)
 
@@ -400,11 +402,11 @@ Görünen komutlar Dosya, hedef, yeni/mevcut tablo, kodlama, ayraç, başlık sa
 
 Eksik ve fazla sütun, boş değer, dönüşüm hatası, hassas sayılar ve UTF-8. Silme/üzerine yazma seçenekleri ayrıca incelenir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_power_import_wizard.py>) · [İlgili canlı inceleme](referanslar/mevcut/20-data-search.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_power_import_wizard.py>) - [İlgili canlı inceleme](referanslar/mevcut/20-data-search.jpg)
 
 <a id="sayfa-29"></a>
 
-## 29 · SQL değişiklik incelemesi
+## 29 - SQL değişiklik incelemesi
 
 ![SQL değişiklik incelemesi](gorseller/29-sql-degisiklik-incelemesi.png)
 
@@ -414,11 +416,11 @@ Görünen komutlar İşlem listesi, salt okunur SQL, hedef özeti, Betiği kayde
 
 İfade bazlı hata, kısmen uygulanmış DDL, hedef bağlantı değişimi. Başarı ve hata native uygulama sonucundan gelir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_form_ui.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/19-table-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/sqlide/wb_sql_editor_form_ui.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/19-table-editor.jpg)
 
 <a id="sayfa-30"></a>
 
-## 30 · SQL betik çalıştırma
+## 30 - SQL betik çalıştırma
 
 ![SQL betik çalıştırma](gorseller/30-sql-betik-calistirma.png)
 
@@ -428,11 +430,11 @@ Görünen komutlar Dosya, kodlama, önizleme, hedef, Hata halinde dur, çıktı.
 
 Dosyanın ilk bölümü önizlenir. Dosya kodlaması, hata halinde dur seçimi ve native runner davranışı korunur.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/run_script.py>) · [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/run_script.py>) - [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
 
 <a id="sayfa-31"></a>
 
-## 31 · Yardım ve ürün bilgisi
+## 31 - Yardım ve ürün bilgisi
 
 ![Yardım ve ürün bilgisi](gorseller/31-yardim-hakkinda.png)
 
@@ -442,11 +444,11 @@ Görünen komutlar Ürün bilgisi, Bileşen lisansları, Tanılama, Sürüm bilg
 
 Help dış bağlantı hedefleri kullanıcının son isteğiyle sonraki aşamaya bırakıldı. Sürüm ve kurulum bilgisi çalışma zamanından okunur.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/workbench/wb_context_ui.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbprivate/workbench/wb_context_ui.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/01-sql-editor.jpg)
 
 <a id="sayfa-32"></a>
 
-## 32 · Veri değişiklik geçmişi
+## 32 - Veri değişiklik geçmişi
 
 ![Veri değişiklik geçmişi](gorseller/32-veri-gecmisi.png)
 
@@ -456,13 +458,13 @@ Görünen komutlar Tablo/günlük, revizyon, Olaylar, Satır imajı, Fark, geri 
 
 Classic adaptörü gerekir. Mevcut history_log/read/diff kullanılır. Tek BIGINT anahtarlı mevcut satırın BIGINT/metin alanları restore preview/apply ile hazırlanır. BLOB geri yükleme, şema geçmişi ve silinen satır kurtarma ek kapsamdır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/history/README.md>) · [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/history/README.md>) - [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
 
 **Classic arayüz entegrasyonu önerisi.** Bu sayfanın görsel denemesi mevcut yönetim API’lerinin veya SQL/CLI araçlarının yeni bir arayüze bağlanmasını öngörür. Bu çalışmada entegrasyon kodu ve canlı işlem kabulü üretilmedi.
 
 <a id="sayfa-33"></a>
 
-## 33 · Decision kuralları
+## 33 - Decision kuralları
 
 ![Decision kuralları](gorseller/33-decision-kurallari.png)
 
@@ -472,7 +474,7 @@ Görünen komutlar Kaynak dosya, tablo, olay, kural/öncelik, kaynak SQL, üreti
 
 Classic adaptörü gerekir. BIGINT koşulları ve mevcut provision.py çeviricisi kullanılır. Kural setinin tamamı aynı üretim çağrısına gider.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/decision/README.md>) · [İlgili canlı inceleme](referanslar/mevcut/19-table-editor.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/decision/README.md>) - [İlgili canlı inceleme](referanslar/mevcut/19-table-editor.jpg)
 
 **Classic arayüz entegrasyonu önerisi.** Bu sayfanın görsel denemesi mevcut yönetim API’lerinin veya SQL/CLI araçlarının yeni bir arayüze bağlanmasını öngörür. Bu çalışmada entegrasyon kodu ve canlı işlem kabulü üretilmedi.
 
@@ -480,7 +482,7 @@ Classic adaptörü gerekir. BIGINT koşulları ve mevcut provision.py çeviricis
 
 <a id="sayfa-34"></a>
 
-## 34 · CPU model kayıtları
+## 34 - CPU model kayıtları
 
 ![CPU model kayıtları](gorseller/34-cpu-modelleri.png)
 
@@ -490,13 +492,13 @@ Görünen komutlar Model, Sürümler, Eğitim kaynağı, Tahmin, Eğit, Etkinle�
 
 Classic adaptörü gerekir. Mevcut sekiz CPU algoritması, özellik sırası ve sürüm checksum’ı kullanılır. GPU/dataset/checkpoint arayüzleri ayrı kapsamdır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/README.md>) · [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/README.md>) - [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
 
 **Classic arayüz entegrasyonu önerisi.** Bu sayfanın görsel denemesi mevcut yönetim API’lerinin veya SQL/CLI araçlarının yeni bir arayüze bağlanmasını öngörür. Bu çalışmada entegrasyon kodu ve canlı işlem kabulü üretilmedi.
 
 <a id="sayfa-35"></a>
 
-## 35 · Compute işleri ve zamanlamalar
+## 35 - Compute işleri ve zamanlamalar
 
 ![Compute işleri ve zamanlamalar](gorseller/35-compute-isleri.png)
 
@@ -506,13 +508,13 @@ Görünen komutlar Kuyruk, Zamanlamalar, İş gönder, Yenile, İptal iste, sonu
 
 Classic adaptörü gerekir. Gerçek kuyruğun durumları ve iptal isteği gösterilir. Sonuç hassasiyeti string/64-bit olarak korunur.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/jobs/compute_jobs.py>) · [İlgili canlı inceleme](referanslar/mevcut/04-client-connections.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/jobs/compute_jobs.py>) - [İlgili canlı inceleme](referanslar/mevcut/04-client-connections.jpg)
 
 **Classic arayüz entegrasyonu önerisi.** Bu sayfanın görsel denemesi mevcut yönetim API’lerinin veya SQL/CLI araçlarının yeni bir arayüze bağlanmasını öngörür. Bu çalışmada entegrasyon kodu ve canlı işlem kabulü üretilmedi.
 
 <a id="sayfa-36"></a>
 
-## 36 · Doğrulanmış yedekler
+## 36 - Doğrulanmış yedekler
 
 ![Doğrulanmış yedekler](gorseller/36-yedekler.png)
 
@@ -522,13 +524,13 @@ Görünen komutlar Arşivler, Doğrulama, Geri yükleme, Yeniden doğrula, hedef
 
 Classic adaptörü gerekir. Fiziksel ve mantıksal yedek formatı/araç seçimi görünür. Geri yükleme hedef UUID ve şema koşulları mevcut sağlayıcının sözleşmesinden gelir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/backup/PHYSICAL.md>) · [İlgili canlı inceleme](referanslar/mevcut/07-data-export.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadiseServer/compatibility/backup/PHYSICAL.md>) - [İlgili canlı inceleme](referanslar/mevcut/07-data-export.jpg)
 
 **Classic arayüz entegrasyonu önerisi.** Bu sayfanın görsel denemesi mevcut yönetim API’lerinin veya SQL/CLI araçlarının yeni bir arayüze bağlanmasını öngörür. Bu çalışmada entegrasyon kodu ve canlı işlem kabulü üretilmedi.
 
 <a id="sayfa-37"></a>
 
-## 37 · Veri türü eşleştirme
+## 37 - Veri türü eşleştirme
 
 ![Veri türü eşleştirme](gorseller/37-tur-eslestirme.png)
 
@@ -538,11 +540,11 @@ Görünen komutlar Kaynak tür/kategori, alt/üst uzunluk, hedef tür, uzunluk/h
 
 Her override kendi onay kutusuna bağlıdır. Kaynak tip aralıkları ve varsayılan koruma yerel mapping kayıtlarına gider.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/migration/frontend/datatype_mapping_editor.py>) · [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/migration/frontend/datatype_mapping_editor.py>) - [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
 
 <a id="sayfa-38"></a>
 
-## 38 · Tablo bakımı
+## 38 - Tablo bakımı
 
 ![Tablo bakımı](gorseller/38-tablo-bakimi.png)
 
@@ -552,11 +554,11 @@ Görünen komutlar ANALYZE, CHECK, OPTIMIZE, CHECKSUM, yöntem ve motor bazlı s
 
 İşlem ve seçenek desteği motor/sürüme göre değişir. Mevcut bakım işlevleri korunur. SQL inceleme ortak yüzeye bağlanır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_catalogman_ext.py>) · [İlgili canlı inceleme](referanslar/mevcut/18-table-inspector.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_catalogman_ext.py>) - [İlgili canlı inceleme](referanslar/mevcut/18-table-inspector.jpg)
 
 <a id="sayfa-39"></a>
 
-## 39 · Mekânsal veri aktarımı
+## 39 - Mekânsal veri aktarımı
 
 ![Mekânsal veri aktarımı](gorseller/39-mekansal-veri.png)
 
@@ -566,11 +568,11 @@ Görünen komutlar SHP/DBF/PRJ denetimi, ogrinfo/ogr2ogr, hedef şema, katman, E
 
 Eksik araç ve eksik dosya durumları kaynakta mevcut. Araç dizini seçimi yeni UI uyarlamasıdır. GDAL yolu doğrulandığında devam edilir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_import_spatial.py>) · [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_import_spatial.py>) - [İlgili canlı inceleme](referanslar/mevcut/16-schema-inspector.jpg)
 
 <a id="sayfa-40"></a>
 
-## 40 · Hücre ve BLOB inceleyicisi
+## 40 - Hücre ve BLOB inceleyicisi
 
 ![Hücre ve BLOB inceleyicisi](gorseller/40-hucre-blob.png)
 
@@ -580,11 +582,11 @@ Görünen komutlar Metin, Hex, Görsel, kodlama, Dosyaya kaydet, Dosyadan yükle
 
 Uzunluk, byte aralığı, NULL/boş değer ve salt okunur gerekçesi görünür. Büyük değerlerde mevcut sayfalama kullanılır.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbpublic/grtui/binary_data_editor.cpp>) · [İlgili canlı inceleme](referanslar/mevcut/24-query-results.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/backend/wbpublic/grtui/binary_data_editor.cpp>) - [İlgili canlı inceleme](referanslar/mevcut/24-query-results.jpg)
 
 <a id="sayfa-41"></a>
 
-## 41 · CSV ve JSON dışa aktarma
+## 41 - CSV ve JSON dışa aktarma
 
 ![CSV ve JSON dışa aktarma](gorseller/41-csv-json-disa-aktarma.png)
 
@@ -594,4 +596,4 @@ Görünen komutlar Kaynak, sütun seçimi, dosya/format/kodlama, ayraç, başlı
 
 Mevcut dosya, kodlama, hassas sayı, NULL ve büyük veri davranışı native export motorundan gelir. SQL dump ayrı giriştedir.
 
-[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_power_export_wizard.py>) · [İlgili canlı inceleme](referanslar/mevcut/24-query-results.jpg)
+[Mevcut kaynak](<C:/Users/Yusuf Salim OZBEK/source/repos/StarDataParadise/out/mysql-workbench-native-src/plugins/wb.sqlide/sqlide_power_export_wizard.py>) - [İlgili canlı inceleme](referanslar/mevcut/24-query-results.jpg)

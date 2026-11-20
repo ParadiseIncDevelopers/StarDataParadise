@@ -4,6 +4,7 @@ add_subdirectory(mysql.profiles)
 add_subdirectory(scripts)
 add_subdirectory(sqlidedata)
 add_subdirectory(wbdata)
+add_subdirectory(locales)
 
 # Copy files from the snippets dir:
 install(FILES "snippets/SQL DDL Statements.txt" DESTINATION ${WB_PACKAGE_SHARED_DIR}/snippets RENAME SQL_DDL_Statements.txt)

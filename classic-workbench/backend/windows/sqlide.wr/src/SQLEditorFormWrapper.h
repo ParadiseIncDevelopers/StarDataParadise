@@ -27,6 +27,7 @@
 #include "sqlide/wb_sql_editor_tree_controller.h"
 #include "sqlide/wb_sql_editor_form.h"
 #include "sqlide/wb_sql_editor_panel.h"
+#include "mforms/home_screen_connections.h"
 
 #pragma managed
 #include "db_sql_editor_history_wr.h"
@@ -59,6 +60,14 @@ namespace MySQL {
         MySQL::Grt::ActionList ^ action_list;
 
         GrtManager ^ grt_manager() { return gcnew GrtManager(); }
+
+        String ^ connection_avatar_path() {
+          auto connection = (*_ref)->connection_descriptor();
+          if (!connection.is_valid())
+            return "";
+          return CppStringToNative(mforms::connection_avatar_icon(
+            static_cast<int>(connection->parameterValues().get_int("sdpHomeAvatar", 0))));
+        }
 
           void new_sql_script_file() {
           (*_ref)->new_sql_script_file();

@@ -62,6 +62,7 @@ private:
 
       _tree_selection = _editor->schemaTreeSelection();
       _filter_panel.search_button()->set_enabled(_tree_selection.count() > 0);
+      _filter_panel.preview_button()->set_enabled(_tree_selection.count() > 0);
       _last_selection_change = 0;
       return false;
     }
@@ -73,6 +74,7 @@ private:
       _tree_selection = grt::ListRef<db_query_LiveDBObject>();
       if (info.get_int("selection-size") == 0) {
         _filter_panel.search_button()->set_enabled(false);
+        _filter_panel.preview_button()->set_enabled(false);
       } else {
         if (_last_selection_change == 0 && _check_selection_timeout == 0)
           _check_selection_timeout = mforms::Utilities::add_timeout(1, std::bind(&DBSearchView::check_selection, this));
@@ -142,6 +144,67 @@ private:
     mforms::App::get()->set_status_text("Searching failed");
   }
 
+  void preview_search_sql() {
+    auto filters = get_filters_from_schema_tree_selection();
+    if (filters.count() == 0) {
+      mforms::Utilities::show_message("SQL önizlemesi", "Şema gezgininden bir tablo veya şema seçin.", "Kapat");
+      return;
+    }
+    std::string query;
+    try {
+      auto connection = sql::DriverManager::getDriverManager()->getConnection(_editor->connection());
+      const bool all_types = _filter_panel.search_all_types();
+      query = DBSearchPanel::preview_sql(connection, _filter_panel.get_search_text(), filters,
+        SearchMode(_filter_panel.get_search_type()), _filter_panel.get_limit_total(),
+        _filter_panel.get_limit_table(), _filter_panel.exclude(),
+        all_types ? search_all_types : text_type, all_types ? "CHAR" : "");
+    } catch (grt::user_cancelled&) {
+      return;
+    } catch (std::exception& exc) {
+      mforms::Utilities::show_error("SQL önizlemesi hazırlanamadı", exc.what(), "Kapat");
+      return;
+    }
+    if (query.empty()) {
+      mforms::Utilities::show_message("SQL önizlemesi",
+        "Örnek tabloda seçili veri türlerine uygun sütun bulunamadı. Başka bir tablo seçin veya Tüm veri türleri seçeneğini kullanın.", "Kapat");
+      return;
+    }
+
+    mforms::Form form(mforms::Form::main_form());
+    form.set_name("Search SQL Preview");
+    form.set_title("Arama SQL önizlemesi");
+    mforms::Box box(false);
+    box.set_padding(12);
+    box.set_spacing(8);
+    mforms::Label heading;
+    heading.set_text(*_editor->connection()->name() + " - Örnek tablo sorgusu");
+    box.add(&heading, false, true);
+    mforms::CodeEditor code;
+    code.set_language(mforms::LanguageMySQL);
+    const std::string script = query + ";";
+    code.set_text(script.c_str());
+    code.set_read_only(true);
+    box.add(&code, true, true);
+    mforms::Label scope;
+    scope.set_text("İlk seçim kapsamından bir örnek tablo gösterilir. Sonraki tabloların satır sınırı kalan toplam sınıra göre hesaplanır.");
+    scope.set_wrap_text(true);
+    box.add(&scope, false, true);
+    mforms::Box footer(true);
+    footer.set_spacing(8);
+    mforms::Button copy;
+    copy.set_text("Kopyala");
+    copy.signal_clicked()->connect([script]() { mforms::Utilities::set_clipboard_text(script); });
+    footer.add(&copy, false, true);
+    mforms::Button close;
+    close.set_text("Kapat");
+    footer.add_end(&close, false, true);
+    box.add(&footer, false, true);
+    form.set_content(&box);
+    form.set_size(800, 480);
+    form.center();
+    form.run_modal(&close, &close);
+  }
+
   void start_search() {
     if (_search_panel.stop_search_if_working())
       return;
@@ -185,21 +248,20 @@ private:
 
 public:
   DBSearchView(db_query_EditorRef editor)
-    : mforms::AppView(false, "Database Search", "dbsearch", false),
+    : mforms::AppView(false, "Tablo verisinde arama", "dbsearch", false),
       _editor(editor),
       _search_panel(),
       _check_selection_timeout(0),
       _search_timeout(0),
       _last_selection_change(0) {
     set_padding(12);
-    set_spacing(12);
-    _label.set_text("Enter text to search in tables selected in the schema tree");
+    set_spacing(8);
+    _label.set_text("Tablo verisinde arama");
     _label.set_style(mforms::BoldStyle);
     add(&_label, false, true);
 
     _description.set_text(
-      "A text search will be done on the selected tables using SELECT. Note that this can be very slow since it will "
-      "search all columns from all tables.");
+      "Kapsam şema gezginindeki seçimdir. Arama SELECT ile yapılır; iki satır sınırı birlikte uygulanır.");
     _description.set_style(mforms::SmallHelpTextStyle);
     add(&_description, false, true);
 
@@ -209,6 +271,7 @@ public:
     _filter_panel.search_field()->signal_action()->connect(
       std::bind(&DBSearchView::search_activate, this, std::placeholders::_1));
     _filter_panel.search_button()->signal_clicked()->connect(std::bind(&DBSearchView::start_search, this));
+    _filter_panel.preview_button()->signal_clicked()->connect(std::bind(&DBSearchView::preview_search_sql, this));
 
     _search_panel.show(false);
 
@@ -223,6 +286,7 @@ public:
 
     _tree_selection = _editor->schemaTreeSelection();
     _filter_panel.search_button()->set_enabled(_tree_selection.count() > 0);
+    _filter_panel.preview_button()->set_enabled(_tree_selection.count() > 0);
   }
 
   virtual ~DBSearchView() {
@@ -272,7 +336,7 @@ public:
 
     dpoint->dock_view(v = mforms::manage(new DBSearchView(editor)), "", 0);
     dpoint->select_view(v);
-    v->set_title("Search");
+    v->set_title("Veride ara");
 
     return 0;
   }

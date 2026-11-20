@@ -49,6 +49,7 @@
 
 namespace mforms {
   class ToolBar;
+  class ToolBarItem;
   class AppView;
   class View;
   class MenuItem;
@@ -148,6 +149,7 @@ public:
 
   virtual mforms::MenuBar *get_menubar();
   virtual mforms::ToolBar *get_toolbar();
+  bool is_data_workspace() const { return _workspace_section == "data"; }
   std::string get_session_name();
 
   void auto_save();
@@ -510,6 +512,10 @@ private:
   GrtVersionRef _version;
   mforms::MenuBar *_menu = nullptr;
   mforms::ToolBar *_toolbar = nullptr;
+  mforms::ToolBarItem *_workspace_action = nullptr;
+  std::string _workspace_section = "sql";
+  void select_workspace_section(const std::string &section, bool open_page);
+  void open_workspace_action();
   std::string _connectionInfo;
   base::LockFile *_autosave_lock = nullptr;
   std::string _autosave_path;

@@ -34,6 +34,9 @@ from workbench.utils import Version
 from workbench.notifications import nc
 
 from mforms import Color, ControlBackgroundColor, TextColor, TextBackgroundColor
+from workbench.sdp_i18n import tr
+from wb_admin_utils import ClassicProductMetrics
+from wb_admin_monitor import WbAdminMonitor
 
 class MyDict:
     def __init__(self, d):
@@ -231,10 +234,11 @@ class CDifferencePerSecond(object):
       
         try:
             value = eval(self.expr % values)
-        except Exception as e:
-            value = 0
+        except Exception:
+            self.reset()
+            return None
       
-        if self.old_value and self.old_value_timestamp:
+        if self.old_value is not None and self.old_value_timestamp is not None:
             if timestamp > self.old_value_timestamp:
                 result = self.calculate(value, timestamp)
 
@@ -250,7 +254,7 @@ class CSingleDifferencePerSecond(CDifferencePerSecond):
 
 
     def calculate(self, value, timestamp):
-        return float(value - self.old_value) / (timestamp - self.old_value_timestamp)
+        return float(value - self.old_value) / (timestamp - self.old_value_timestamp) if value >= self.old_value else None
 
 
 class CTupleDifferencePerSecond(CDifferencePerSecond):
@@ -260,6 +264,8 @@ class CTupleDifferencePerSecond(CDifferencePerSecond):
         
 
     def calculate(self, value, timestamp):
+        if any(value[i] < self.old_value[i] for i in range(len(value))):
+            return None
         result = []
         for i in range(len(value)):
                 result.append(float(value[i] - self.old_value[i]) / (timestamp - self.old_value_timestamp))
@@ -275,8 +281,8 @@ class CRawValue(object):
             return None
         try:
             value = eval(self.expr % values)
-        except Exception as e:
-            value = 0
+        except Exception:
+            return None
 
         return value
 
@@ -677,6 +683,39 @@ class WbAdminDashboard(WbAdminTabBase):
         self.drawbox.set_needs_repaint()
 
     def create_ui(self):
+        charts = self.create_chart_ui()
+        self.overview = WbAdminMonitor(self.instance_info, self.ctrl_be, False)
+        self.overview.refresh_status(self.ctrl_be.is_server_running())
+        metrics = mforms.newBox(True)
+        metrics.set_padding(12)
+        metrics.set_spacing(24)
+        metrics.add(self.overview, True, True)
+        self.sdp_metrics = ClassicProductMetrics(self.ctrl_be)
+        metrics.add(self.sdp_metrics, True, True)
+        scroll = mforms.newScrollPanel(0)
+        scroll.add(metrics)
+        views = mforms.newTabView(mforms.TabViewTabless)
+        views.add_page(scroll, tr("SDP SQL and sessions"))
+        views.add_page(charts, tr("Network and storage"))
+        self._metric_views = views
+        body = mforms.newBox(False)
+        body.set_spacing(6)
+        choices = mforms.newBox(True)
+        choices.set_padding(8)
+        choices.set_spacing(8)
+        for index, caption in enumerate(("SDP SQL and sessions", "Network and storage")):
+            button = mforms.newButton()
+            button.set_text(tr(caption))
+            button.add_clicked_callback(lambda selected=index: views.set_active_tab(selected))
+            choices.add(button, False, True)
+        note = mforms.newLabel(tr("Rates use consecutive server samples; unavailable counters are not zero."))
+        note.set_style(mforms.SmallStyle)
+        choices.add(note, True, True)
+        body.add(choices, False, True)
+        body.add(views, True, True)
+        return body
+
+    def create_chart_ui(self):
         self._form_deactivated_conn = mforms.Form.main_form().add_deactivated_callback(self.form_deactivated)
         self.content = mforms.newScrollPanel(0)
 
@@ -699,23 +738,38 @@ class WbAdminDashboard(WbAdminTabBase):
         GLOBAL_DASHBOARD_WIDGETS = GLOBAL_DASHBOARD_WIDGETS_NETWORK + GLOBAL_DASHBOARD_WIDGETS_MYSQL_PRE_80 + GLOBAL_DASHBOARD_WIDGETS_INNODB
         if server_version and server_version.is_supported_mysql_version_at_least(8, 0, 0):
             GLOBAL_DASHBOARD_WIDGETS = GLOBAL_DASHBOARD_WIDGETS_NETWORK + GLOBAL_DASHBOARD_WIDGETS_MYSQL_POST_80 + GLOBAL_DASHBOARD_WIDGETS_INNODB
+        for heading, x in (("Network", 30), ("SDP SQL activity", 350), ("InnoDB storage", 650)):
+            figure = TextFigure(tr(heading))
+            figure._font = "Segoe UI"
+            figure.set_font_size(18)
+            figure.set_font_bold(True)
+            figure.move(x, 18)
+            self.figures.append(figure)
+            self.drawbox.add(figure)
         # create all widgets
         for caption, wclass, args, init, (calc, calc_expr), color, pos, hover_text in GLOBAL_DASHBOARD_WIDGETS:
+            if wclass is DBImage:
+                continue  # Headers and decorative bitmap arrows are superseded by text/real charts.
             if caption:
-                fig = TextFigure(caption)
+                fig = TextFigure(tr(caption))
+                fig._font = "Segoe UI"
                 self.figures.append(fig)
                 fig.set_text_color(0, 0, 0)
-                fig.set_font_size(13)
+                fig.set_font_size(11)
                 fig.set_font_bold(True)
                 self.drawbox.add(fig)
                 fig.move(pos[0], pos[1] - 20)
         
+            args = tuple(tr(arg) if isinstance(arg, str) else arg for arg in args)
             w = wclass(calc(calc_expr) if calc else None, *args)
+            if isinstance(w, TextFigure):
+                w._font = "Segoe UI"
             self.drawbox.add(w)
             w.set_main_color(color)
             w.move(*pos)
             if hover_text:
-                w.hover_text_template = hover_text
+                counters = list(dict.fromkeys(re.findall(r"%\(([^)]+)\)s", hover_text)))
+                w.hover_text_template = tr("Server counter values") + "\n" + "\n".join(key + ": %(" + key + ")s" for key in counters)
             
             if init:
                 init_calc, init_expr = init
@@ -743,7 +797,8 @@ class WbAdminDashboard(WbAdminTabBase):
 
     #---------------------------------------------------------------------------
     def server_stopped_event(self):
-        pass
+        if hasattr(self, "overview"):
+            self.overview.refresh_status("stopped")
 
     def repaint(self):
         self.drawbox.set_needs_repaint()
@@ -751,6 +806,8 @@ class WbAdminDashboard(WbAdminTabBase):
 
 
     def shutdown(self):
+        if hasattr(self, "overview"):
+            self.overview.stop()
         nc.remove_observer(self.updateColors)
         
         if self._form_deactivated_conn:
@@ -763,6 +820,8 @@ class WbAdminDashboard(WbAdminTabBase):
 
 
     def refresh(self):
+        if hasattr(self, "overview"):
+            self.overview.update()
         status_variables, timestamp = self.ctrl_be.status_variables, self.ctrl_be.status_variables_time
         if self.last_refresh_time != timestamp:
             for w in self.widgets:
@@ -772,6 +831,7 @@ class WbAdminDashboard(WbAdminTabBase):
             self.drawbox.variable_values.update(status_variables)
 
             self.drawbox.set_needs_repaint()
+            self.last_refresh_time = timestamp
 
         return True
 

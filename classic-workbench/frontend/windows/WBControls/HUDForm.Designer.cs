@@ -28,7 +28,6 @@
     /// </summary>
     private void InitializeComponent()
     {
-      System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(HUDForm));
       this.label1 = new System.Windows.Forms.Label();
       this.label2 = new System.Windows.Forms.Label();
       this.pictureBox1 = new System.Windows.Forms.PictureBox();
@@ -59,7 +58,6 @@
       // 
       // pictureBox1
       // 
-      this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
       this.pictureBox1.Location = new System.Drawing.Point(32, 12);
       this.pictureBox1.Name = "pictureBox1";
       this.pictureBox1.Size = new System.Drawing.Size(123, 131);
@@ -70,7 +68,6 @@
       // cancelButtonPicture
       // 
       this.cancelButtonPicture.Cursor = System.Windows.Forms.Cursors.AppStarting;
-      this.cancelButtonPicture.Image = global::MySQL.Controls.Properties.Resources.wait_panel_cancel_button;
       this.cancelButtonPicture.Location = new System.Drawing.Point(425, 144);
       this.cancelButtonPicture.Name = "cancelButtonPicture";
       this.cancelButtonPicture.Size = new System.Drawing.Size(83, 32);
@@ -96,7 +93,7 @@
       this.ShowIcon = false;
       this.ShowInTaskbar = false;
       this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-      this.Text = "HUDForm";
+      this.Text = "StarDataParadise Classic";
       ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
       ((System.ComponentModel.ISupportInitialize)(this.cancelButtonPicture)).EndInit();
       this.ResumeLayout(false);

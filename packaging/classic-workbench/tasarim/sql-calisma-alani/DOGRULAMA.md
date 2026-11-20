@@ -1,6 +1,8 @@
-# Tasarım paketi denetimi
+# Tasarım aşaması paket denetimi
 
-19 Kasım 2026. [Galeri](README.md) · [Canlı inceleme](INCELEME.md) · [Kurallar](KURALLAR.md).
+19 Kasım 2026. [Galeri](README.md) - [Canlı inceleme](INCELEME.md) - [Kurallar](KURALLAR.md).
+
+Bu belge uygulama öncesi 41 görselin ve mevcut uygulama incelemesinin tarihsel denetimidir. Sonraki native derleme, değişen kaynaklar ve yeni UI kabul sonuçları [güncel uygulama kaydındadır](UYGULAMA.md). Aşağıdaki adetler bu ilk tasarım paketine aittir; son uygulama görüntülerini kapsamaz.
 
 ## Tamamlanan kontroller
 
@@ -25,10 +27,10 @@ Canlı SQL yürütmesi iki sentetik satır üreten sabit SELECT/UNION ve bunun E
 
 Günlük ve seçenek dosyası sayfalarında profilin yapılandırma yolu eksikti. Ölçüm ayarları sayfası boş kaldı, nedeni teşhis edilmedi. Bu yüzeylerin taslak içeriği ilgili kaynak kodundan çıkarıldı. Bu bulgulara ait gerçek görüntüler [inceleme kaydında](INCELEME.md) bulunur.
 
-## Uygulama aşamasına kalanlar
+## Tasarım aşamasından uygulamaya
 
-Bu paket görsel ve etkileşim tasarımıdır. Bu etapta native derleme veya yeni UI için çalışır kabul yapılmadı. Görsellerdeki SQL, metrik, sürüm ve dosya yolları örnektir. Kesin ölçüler [kurallar belgesinde](KURALLAR.md) tanımlıdır. Uygulamada veri ve SQL gerçek işleyicilerden alınır.
+Bu ilk etap görsel ve etkileşim tasarımıydı; o aşamada native derleme veya yeni UI için çalışır kabul yapılmadı. Sonraki uygulama etabında 17 native hedef derlendi ve yeni UI çalıştırıldı. Görsellerdeki SQL, metrik, sürüm ve dosya yolları örnektir. Kesin ölçüler [kurallar belgesinde](KURALLAR.md) tanımlıdır. Gerçek derleme ve kabul kapsamı [uygulama kaydında](UYGULAMA.md) bulunur.
 
-Veri geçmişi, Decision, CPU modelleri, Compute ve yedekler için beş Classic adaptörü önerildi. Bu ekranların kuruluma bağlı durumu, hata/iptal akışı ve gerçek işlem çıktıları uygulama sırasında bağlanacaktır. Satırda bağlantı beklemesinin native modal/asenkron yaşam döngüsüne uyarlanması da bu pakette planlandı.
+Veri geçmişi, Decision, CPU modelleri, Compute ve yedekler için önerilen beş Classic adaptörü sonraki etapta bağlandı. Gerçek sağlayıcılar, kurulum durumu ve desteklenmeyen çalışma zamanı eylemleri [araçlar kaydında](ARACLAR.md) açıklanır. Satırda bağlantı beklemesi de native işçi ve iptal akışına uyarlandı; canlı SSH/iptal yarış matrisi henüz tamamlanmadı.
 
-Tam DPI, yüksek kontrast, ekran okuyucu ve bütün sayfalarda klavye dolaşımı kabulü uygulama aşamasına aittir. Mevcut sınırlamalar [canlı inceleme kaydında](INCELEME.md) ayrıca belirtilmiştir.
+Tam DPI, yüksek kontrast, ekran okuyucu ve bütün sayfalarda klavye dolaşımı kabulü henüz tamamlanmadı. İlk durumun sınırlamaları [canlı inceleme kaydında](INCELEME.md), yeni uygulamanın sınırları [uygulama kaydında](UYGULAMA.md) bulunur.

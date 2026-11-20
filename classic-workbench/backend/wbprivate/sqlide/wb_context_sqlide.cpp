@@ -30,6 +30,7 @@
 #include "base/log.h"
 #include "base/notifications.h"
 #include "base/ui_form.h"
+#include "base/scope_exit_trigger.h"
 
 #include "grt.h"
 
@@ -853,6 +854,11 @@ static bool cancel_connect_editor(SqlEditorForm::Ref editor) {
 }
 
 SqlEditorForm::Ref WBContextSQLIDE::create_connected_editor(const db_mgmt_ConnectionRef &conn) {
+  static bool opening_editor = false;
+  if (opening_editor)
+    throw grt::user_cancelled("A connection attempt is already running");
+  opening_editor = true;
+  base::ScopeExitTrigger reset_opening([&]() { opening_editor = false; });
   // start by opening the tunnel, if needed
   std::shared_ptr<wb::SSHTunnel> tunnel;
 
@@ -863,12 +869,17 @@ SqlEditorForm::Ref WBContextSQLIDE::create_connected_editor(const db_mgmt_Connec
 
   if (conn.is_valid()) {
     void *result_ptr = 0;
-    if (!mforms::Utilities::run_cancelable_task(
-          _("Opening SQL Editor"), strfmt(_("An SQL editor instance for '%s' is opening and should be available in a "
-                                            "moment.\n\nPlease stand by..."),
-                                          conn->name().c_str()),
-          std::bind(connect_editor, editor, tunnel), std::bind(cancel_connect_editor, editor), result_ptr))
+    auto cancelled = std::make_shared<bool>(false);
+    const bool completed = mforms::Utilities::run_cancelable_task(
+          "SDP_CONNECTION", conn->name(),
+          std::bind(connect_editor, editor, tunnel), [editor, cancelled]() {
+            *cancelled = cancel_connect_editor(editor);
+            return *cancelled;
+          }, result_ptr);
+    if (!completed || *cancelled) {
+      delete static_cast<std::string *>(result_ptr);
       throw grt::user_cancelled("canceled");
+    }
     if (!result_ptr)
       throw grt::user_cancelled("connection error");
 
@@ -884,8 +895,10 @@ SqlEditorForm::Ref WBContextSQLIDE::create_connected_editor(const db_mgmt_Connec
         args.ginsert(conn);
         ssize_t result =
           *grt::IntegerRef::cast_from(grt::GRT::get()->call_module_function("WbAdmin", "handleExpiredPassword", args));
-        if (result != 0)
+        if (result != 0) {
+          opening_editor = false;
           return create_connected_editor(conn);
+        }
         throw grt::user_cancelled("password reset cancelled by user");
       } else if (tmp == ":CANCELLED") {
         throw grt::user_cancelled("Cancelled");

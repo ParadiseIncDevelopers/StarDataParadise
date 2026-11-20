@@ -428,9 +428,9 @@ void WBContextUI::show_home_screen() {
     _documentsSection->setInternalName("homeScreenDocumentsSection");
     _home_screen->addSection(_documentsSection);
 
-    _home_screen->addSectionEntry("Veri Ta\xC5\x9F\xC4\xB1""ma", "sidebar_migration.png", [this]() {
+    _home_screen->addSectionEntry(_("Data Migration"), "sidebar_migration.png", [this]() {
       logInfo("Opening Migration Wizard...\n");
-      _wb->add_new_plugin_window("wb.migration.open", "Veri Ta\xC5\x9F\xC4\xB1""ma");
+      _wb->add_new_plugin_window("wb.migration.open", _("Data Migration"));
     }, false);
 
 
@@ -451,56 +451,56 @@ void WBContextUI::show_home_screen() {
       if (!shortcut.empty())
         item->set_shortcut(shortcut);
     };
-    auto *fileMenu = addMenu("&Dosya", "file");
-    addCommand(fileMenu, "Yeni SQL sekmesi", "builtin:query.newQueryNoconnection", "Control+T");
-    addCommand(fileMenu, "SQL dosyas\xC4\xB1"" a\xC3\xA7\xE2\x80\xA6""", "builtin:query.openScriptNoConnection", "Control+Shift+O");
+    auto *fileMenu = addMenu(_("&File"), "file");
+    addCommand(fileMenu, _("New SQL tab"), "builtin:query.newQueryNoconnection", "Control+T");
+    addCommand(fileMenu, _("Open SQL file..."), "builtin:query.openScriptNoConnection", "Control+Shift+O");
     fileMenu->add_separator();
-    addCommand(fileMenu, "Yeni model", "plugin:wb.file.newDocument", "Control+N");
-    addCommand(fileMenu, "Model a\xC3\xA7\xE2\x80\xA6""", "plugin:wb.file.openModel", "Control+O");
+    addCommand(fileMenu, _("New model"), "plugin:wb.file.newDocument", "Control+N");
+    addCommand(fileMenu, _("Open model..."), "plugin:wb.file.openModel", "Control+O");
     fileMenu->add_separator();
-    addCommand(fileMenu, "\xC3\x87\xC4\xB1""k\xC4\xB1\xC5\x9F""", "plugin:wb.file.exit");
+    addCommand(fileMenu, _("Exit"), "plugin:wb.file.exit");
 
-    auto *workspaceMenu = addMenu("&\xC3\x87""al\xC4\xB1\xC5\x9F""ma alan\xC4\xB1""", "workspace");
-    workspaceMenu->add_item_with_title("Ba\xC4\x9F""lant\xC4\xB1""lar", [this]() { _home_screen->showSection(0); },
-                                      "Ba\xC4\x9F""lant\xC4\xB1""lar", "home_connections");
-    workspaceMenu->add_item_with_title("Yeni ba\xC4\x9F""lant\xC4\xB1\xE2\x80\xA6""", [this]() {
+    auto *workspaceMenu = addMenu(_("&Workspace"), "workspace");
+    workspaceMenu->add_item_with_title(_("Connections"), [this]() { _home_screen->showSection(0); },
+                                      _("Connections"), "home_connections");
+    workspaceMenu->add_item_with_title(_("New connection..."), [this]() {
       handle_home_action(HomeScreenAction::ActionNewConnection, base::any());
-    }, "Yeni ba\xC4\x9F""lant\xC4\xB1""", "home_new_connection");
-    workspaceMenu->add_item_with_title("Ba\xC4\x9F""lant\xC4\xB1""lar\xC4\xB1"" y\xC3\xB6""net\xE2\x80\xA6""", [this]() {
+    }, _("New connection"), "home_new_connection");
+    workspaceMenu->add_item_with_title(_("Manage connections..."), [this]() {
       handle_home_action(HomeScreenAction::ActionManageConnections, base::any());
-    }, "Ba\xC4\x9F""lant\xC4\xB1""lar\xC4\xB1"" y\xC3\xB6""net", "home_manage_connections");
-    workspaceMenu->add_item_with_title("Modeller", [this]() { _home_screen->showSection(1); },
-                                      "Modeller", "home_models");
-    workspaceMenu->add_item_with_title("Veri Ta\xC5\x9F\xC4\xB1""ma", [this]() {
-      _wb->add_new_plugin_window("wb.migration.open", "Veri Ta\xC5\x9F\xC4\xB1""ma");
-    }, "Veri Ta\xC5\x9F\xC4\xB1""ma", "home_migration");
+    }, _("Manage connections"), "home_manage_connections");
+    workspaceMenu->add_item_with_title(_("Models"), [this]() { _home_screen->showSection(1); },
+                                      _("Models"), "home_models");
+    workspaceMenu->add_item_with_title(_("Data Migration"), [this]() {
+      _wb->add_new_plugin_window("wb.migration.open", _("Data Migration"));
+    }, _("Data Migration"), "home_migration");
     workspaceMenu->add_separator();
-    addCommand(workspaceMenu, "Betik konsolu", "plugin:wb.form.showGRTShell");
-    addCommand(workspaceMenu, "Workbench beti\xC4\x9F""i \xC3\xA7""al\xC4\xB1\xC5\x9F""t\xC4\xB1""r\xE2\x80\xA6""", "plugin:wb.tools.runScriptFile");
+    addCommand(workspaceMenu, _("Script console"), "plugin:wb.form.showGRTShell");
+    addCommand(workspaceMenu, _("Run Classic script..."), "plugin:wb.tools.runScriptFile");
 
-    auto *viewMenu = addMenu("&G\xC3\xB6""r\xC3\xBC""n\xC3\xBC""m", "view");
-    viewMenu->add_check_item_with_title("Kar\xC5\x9F\xC4\xB1""lama mesaj\xC4\xB1""", [this]() {
+    auto *viewMenu = addMenu(_("&View"), "view");
+    viewMenu->add_check_item_with_title(_("Welcome message"), [this]() {
       bool visible = bec::GRTManager::get()->get_app_option_int("HomeScreen:HeadingMessage", 1) == 0;
       bec::GRTManager::get()->set_app_option("HomeScreen:HeadingMessage", grt::IntegerRef(visible));
       _connectionsSection->showWelcomeHeading(visible);
-    }, "Kar\xC5\x9F\xC4\xB1""lama mesaj\xC4\xB1""", "home_welcome");
-    viewMenu->add_check_item_with_title("Koyu tema", [this]() {
+    }, _("Welcome message"), "home_welcome");
+    viewMenu->add_check_item_with_title(_("Dark theme"), [this]() {
       bool dark = !_home_screen->isDarkModeActive();
       bec::GRTManager::get()->set_app_option("HomeScreen:DarkMode", grt::IntegerRef(dark));
       _home_screen->setDarkMode(dark);
-    }, "Koyu tema", "home_dark");
+    }, _("Dark theme"), "home_dark");
     homeMenu->signal_will_show()->connect([this, homeMenu](mforms::MenuItem *) {
       homeMenu->set_item_checked("home_welcome",
         bec::GRTManager::get()->get_app_option_int("HomeScreen:HeadingMessage", 1) != 0);
       homeMenu->set_item_checked("home_dark", _home_screen->isDarkModeActive());
     });
 
-    auto *helpMenu = addMenu("&Yard\xC4\xB1""m", "help");
-    helpMenu->add_item_with_title("H\xC4\xB1""zl\xC4\xB1"" ba\xC5\x9F""lang\xC4\xB1\xC3\xA7""", [this]() {
+    auto *helpMenu = addMenu(_("&Help"), "help");
+    helpMenu->add_item_with_title(_("Quick start"), [this]() {
       handle_home_action(HomeScreenAction::ActionOpenDocs, base::any());
-    }, "H\xC4\xB1""zl\xC4\xB1"" ba\xC5\x9F""lang\xC4\xB1\xC3\xA7""", "home_docs");
-    helpMenu->add_item_with_title("StarDataParadise hakk\xC4\xB1""nda", [this]() { show_about(); },
-                                  "StarDataParadise hakk\xC4\xB1""nda", "home_about");
+    }, _("Quick start"), "home_docs");
+    helpMenu->add_item_with_title(_("About StarDataParadise"), [this]() { show_about(); },
+                                  _("About StarDataParadise"), "home_about");
     _home_screen->set_menubar(mforms::setReleaseOnAdd(homeMenu));
 
     _home_screen->setDarkMode(bec::GRTManager::get()->get_app_option_int("HomeScreen:DarkMode", 0) != 0);
@@ -1085,7 +1085,7 @@ void WBContextUI::handle_home_action(mforms::HomeScreenAction action, const base
 
     case HomeScreenAction::ActionNewConnection: {
       NewConnectionWizard wizard(_wb, _wb->get_root()->rdbmsMgmt());
-      wizard.set_title("Yeni ba\xC4\x9F""lant\xC4\xB1""");
+      wizard.set_title(_("New connection"));
       wizard.run();
       refresh_home_connections();
       break;

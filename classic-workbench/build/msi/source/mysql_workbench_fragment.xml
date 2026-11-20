@@ -209,6 +209,14 @@
                 <File Id="file12004" Name="mysql.canvas.dll" />
               </Component>
 
+              <Directory Id="sdp_locales_dir" Name="locales">
+                <Component DiskId="1" Guid="53bf75bc-3eb6-4fe6-9de3-bca58d65260e" Id="sdp_locales" Location="either">
+                  <File Id="sdp_locale_tr_core" Name="tr.json" />
+                  <File Id="sdp_locale_tr_admin" Name="tr-admin.json" />
+                  <File Id="sdp_locale_tr_data_schema" Name="tr-data-schema.json" />
+                  <File Id="sdp_locale_tr_workspace" Name="tr-workspace.json" />
+                </Component>
+              </Directory>
               <Directory Id="data_dir" Name="data">
                 <Component DiskId="1" Guid="E50DE540-4BCD-4d5b-BC3F-77AE41880A98" Id="data" KeyPath="yes" Location="either">
                   <File Id="file2001" Name="db_datatype_groups.xml" />
@@ -394,6 +402,31 @@
                       <File Id="file5266" Name="db.schema.unloaded.side.16x16.png" />
                       <File Id="file5267" Name="db.Column.pkfk.11x11.png" />
                       <File Id="file5268" Name="db.Column.pkfk.16x16.png" />
+                      <!-- BEGIN GENERATED CLASSIC TABLER SIDEBAR ICONS -->
+                      <File Id="file_sdpgrt_db_Column_fk_side_16x16_2x" Name="db.Column.fk.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Column_many_side_16x16_2x" Name="db.Column.many.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Column_pk_side_16x16_2x" Name="db.Column.pk.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Column_side_16x16_2x" Name="db.Column.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_ForeignKey_many_side_16x16_2x" Name="db.ForeignKey.many.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_ForeignKey_side_16x16_2x" Name="db.ForeignKey.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Index_many_side_16x16_2x" Name="db.Index.many.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Index_side_16x16_2x" Name="db.Index.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Routine_many_side_16x16_2x" Name="db.Routine.many.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Routine_side_16x16_2x" Name="db.Routine.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Schema_loading_side_16x16" Name="db.Schema.loading.side.16x16.png" />
+                      <File Id="file_sdpgrt_db_Schema_loading_side_16x16_2x" Name="db.Schema.loading.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Schema_side_16x16_2x" Name="db.Schema.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Schema_unloaded_side_16x16" Name="db.Schema.unloaded.side.16x16.png" />
+                      <File Id="file_sdpgrt_db_Schema_unloaded_side_16x16_2x" Name="db.Schema.unloaded.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Table_many_side_16x16_2x" Name="db.Table.many.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Table_side_16x16_2x" Name="db.Table.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Trigger_many_side_16x16_2x" Name="db.Trigger.many.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_Trigger_side_16x16_2x" Name="db.Trigger.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_View_broken_side_16x16_2x" Name="db.View.broken.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_View_many_side_16x16_2x" Name="db.View.many.side.16x16@2x.png" />
+                      <File Id="file_sdpgrt_db_View_side_16x16_2x" Name="db.View.side.16x16@2x.png" />
+                      <!-- END GENERATED CLASSIC TABLER SIDEBAR ICONS -->
+
                     </Component>
                   </Directory>
                 </Directory>
@@ -784,6 +817,130 @@
                     <File Id="session" Name="session.png" />
                     <File Id="folder" Name="folder.png" />
                     <File Id="session_switch" Name="session-switch.png" />
+                    <!-- BEGIN GENERATED CLASSIC TABLER ICONS -->
+                    <File Id="file_sdpui_refresh_sidebar_2x" Name="refresh_sidebar@2x.png" />
+                    <File Id="file_sdpui_sdp_alert_circle" Name="sdp_alert-circle.png" />
+                    <File Id="file_sdpui_sdp_alert_circle_2x" Name="sdp_alert-circle@2x.png" />
+                    <File Id="file_sdpui_sdp_arrow_back_up" Name="sdp_arrow-back-up.png" />
+                    <File Id="file_sdpui_sdp_arrow_back_up_2x" Name="sdp_arrow-back-up@2x.png" />
+                    <File Id="file_sdpui_sdp_arrows_sort" Name="sdp_arrows-sort.png" />
+                    <File Id="file_sdpui_sdp_arrows_sort_2x" Name="sdp_arrows-sort@2x.png" />
+                    <File Id="file_sdpui_sdp_bolt" Name="sdp_bolt.png" />
+                    <File Id="file_sdpui_sdp_bolt_2x" Name="sdp_bolt@2x.png" />
+                    <File Id="file_sdpui_sdp_bookmark_plus" Name="sdp_bookmark-plus.png" />
+                    <File Id="file_sdpui_sdp_bookmark_plus_2x" Name="sdp_bookmark-plus@2x.png" />
+                    <File Id="file_sdpui_sdp_chart_bar" Name="sdp_chart-bar.png" />
+                    <File Id="file_sdpui_sdp_chart_bar_2x" Name="sdp_chart-bar@2x.png" />
+                    <File Id="file_sdpui_sdp_check_white" Name="sdp_check-white.png" />
+                    <File Id="file_sdpui_sdp_check_white_2x" Name="sdp_check-white@2x.png" />
+                    <File Id="file_sdpui_sdp_check" Name="sdp_check.png" />
+                    <File Id="file_sdpui_sdp_check_2x" Name="sdp_check@2x.png" />
+                    <File Id="file_sdpui_sdp_chevron_down" Name="sdp_chevron-down.png" />
+                    <File Id="file_sdpui_sdp_chevron_down_2x" Name="sdp_chevron-down@2x.png" />
+                    <File Id="file_sdpui_sdp_chevron_left" Name="sdp_chevron-left.png" />
+                    <File Id="file_sdpui_sdp_chevron_left_2x" Name="sdp_chevron-left@2x.png" />
+                    <File Id="file_sdpui_sdp_chevron_right" Name="sdp_chevron-right.png" />
+                    <File Id="file_sdpui_sdp_chevron_right_2x" Name="sdp_chevron-right@2x.png" />
+                    <File Id="file_sdpui_sdp_chevrons_left" Name="sdp_chevrons-left.png" />
+                    <File Id="file_sdpui_sdp_chevrons_left_2x" Name="sdp_chevrons-left@2x.png" />
+                    <File Id="file_sdpui_sdp_chevrons_right" Name="sdp_chevrons-right.png" />
+                    <File Id="file_sdpui_sdp_chevrons_right_2x" Name="sdp_chevrons-right@2x.png" />
+                    <File Id="file_sdpui_sdp_clipboard_copy" Name="sdp_clipboard-copy.png" />
+                    <File Id="file_sdpui_sdp_clipboard_copy_2x" Name="sdp_clipboard-copy@2x.png" />
+                    <File Id="file_sdpui_sdp_clock" Name="sdp_clock.png" />
+                    <File Id="file_sdpui_sdp_clock_2x" Name="sdp_clock@2x.png" />
+                    <File Id="file_sdpui_sdp_code" Name="sdp_code.png" />
+                    <File Id="file_sdpui_sdp_code_2x" Name="sdp_code@2x.png" />
+                    <File Id="file_sdpui_sdp_columns_3" Name="sdp_columns-3.png" />
+                    <File Id="file_sdpui_sdp_columns_3_2x" Name="sdp_columns-3@2x.png" />
+                    <File Id="file_sdpui_sdp_columns" Name="sdp_columns.png" />
+                    <File Id="file_sdpui_sdp_columns_2x" Name="sdp_columns@2x.png" />
+                    <File Id="file_sdpui_sdp_copy" Name="sdp_copy.png" />
+                    <File Id="file_sdpui_sdp_copy_2x" Name="sdp_copy@2x.png" />
+                    <File Id="file_sdpui_sdp_database_cog" Name="sdp_database-cog.png" />
+                    <File Id="file_sdpui_sdp_database_cog_2x" Name="sdp_database-cog@2x.png" />
+                    <File Id="file_sdpui_sdp_database_exclamation" Name="sdp_database-exclamation.png" />
+                    <File Id="file_sdpui_sdp_database_exclamation_2x" Name="sdp_database-exclamation@2x.png" />
+                    <File Id="file_sdpui_sdp_database" Name="sdp_database.png" />
+                    <File Id="file_sdpui_sdp_database_2x" Name="sdp_database@2x.png" />
+                    <File Id="file_sdpui_sdp_device_floppy" Name="sdp_device-floppy.png" />
+                    <File Id="file_sdpui_sdp_device_floppy_2x" Name="sdp_device-floppy@2x.png" />
+                    <File Id="file_sdpui_sdp_download" Name="sdp_download.png" />
+                    <File Id="file_sdpui_sdp_download_2x" Name="sdp_download@2x.png" />
+                    <File Id="file_sdpui_sdp_edit" Name="sdp_edit.png" />
+                    <File Id="file_sdpui_sdp_edit_2x" Name="sdp_edit@2x.png" />
+                    <File Id="file_sdpui_sdp_external_link" Name="sdp_external-link.png" />
+                    <File Id="file_sdpui_sdp_external_link_2x" Name="sdp_external-link@2x.png" />
+                    <File Id="file_sdpui_sdp_file_code" Name="sdp_file-code.png" />
+                    <File Id="file_sdpui_sdp_file_code_2x" Name="sdp_file-code@2x.png" />
+                    <File Id="file_sdpui_sdp_file_export" Name="sdp_file-export.png" />
+                    <File Id="file_sdpui_sdp_file_export_2x" Name="sdp_file-export@2x.png" />
+                    <File Id="file_sdpui_sdp_file_import" Name="sdp_file-import.png" />
+                    <File Id="file_sdpui_sdp_file_import_2x" Name="sdp_file-import@2x.png" />
+                    <File Id="file_sdpui_sdp_filter" Name="sdp_filter.png" />
+                    <File Id="file_sdpui_sdp_filter_2x" Name="sdp_filter@2x.png" />
+                    <File Id="file_sdpui_sdp_folder_open" Name="sdp_folder-open.png" />
+                    <File Id="file_sdpui_sdp_folder_open_2x" Name="sdp_folder-open@2x.png" />
+                    <File Id="file_sdpui_sdp_folder" Name="sdp_folder.png" />
+                    <File Id="file_sdpui_sdp_folder_2x" Name="sdp_folder@2x.png" />
+                    <File Id="file_sdpui_sdp_forms" Name="sdp_forms.png" />
+                    <File Id="file_sdpui_sdp_forms_2x" Name="sdp_forms@2x.png" />
+                    <File Id="file_sdpui_sdp_function" Name="sdp_function.png" />
+                    <File Id="file_sdpui_sdp_function_2x" Name="sdp_function@2x.png" />
+                    <File Id="file_sdpui_sdp_gauge" Name="sdp_gauge.png" />
+                    <File Id="file_sdpui_sdp_gauge_2x" Name="sdp_gauge@2x.png" />
+                    <File Id="file_sdpui_sdp_history" Name="sdp_history.png" />
+                    <File Id="file_sdpui_sdp_history_2x" Name="sdp_history@2x.png" />
+                    <File Id="file_sdpui_sdp_key" Name="sdp_key.png" />
+                    <File Id="file_sdpui_sdp_key_2x" Name="sdp_key@2x.png" />
+                    <File Id="file_sdpui_sdp_link" Name="sdp_link.png" />
+                    <File Id="file_sdpui_sdp_link_2x" Name="sdp_link@2x.png" />
+                    <File Id="file_sdpui_sdp_list_details" Name="sdp_list-details.png" />
+                    <File Id="file_sdpui_sdp_list_details_2x" Name="sdp_list-details@2x.png" />
+                    <File Id="file_sdpui_sdp_message" Name="sdp_message.png" />
+                    <File Id="file_sdpui_sdp_message_2x" Name="sdp_message@2x.png" />
+                    <File Id="file_sdpui_sdp_pin" Name="sdp_pin.png" />
+                    <File Id="file_sdpui_sdp_pin_2x" Name="sdp_pin@2x.png" />
+                    <File Id="file_sdpui_sdp_player_play_white" Name="sdp_player-play-white.png" />
+                    <File Id="file_sdpui_sdp_player_play_white_2x" Name="sdp_player-play-white@2x.png" />
+                    <File Id="file_sdpui_sdp_player_play" Name="sdp_player-play.png" />
+                    <File Id="file_sdpui_sdp_player_play_2x" Name="sdp_player-play@2x.png" />
+                    <File Id="file_sdpui_sdp_player_stop" Name="sdp_player-stop.png" />
+                    <File Id="file_sdpui_sdp_player_stop_2x" Name="sdp_player-stop@2x.png" />
+                    <File Id="file_sdpui_sdp_plus" Name="sdp_plus.png" />
+                    <File Id="file_sdpui_sdp_plus_2x" Name="sdp_plus@2x.png" />
+                    <File Id="file_sdpui_sdp_refresh" Name="sdp_refresh.png" />
+                    <File Id="file_sdpui_sdp_refresh_2x" Name="sdp_refresh@2x.png" />
+                    <File Id="file_sdpui_sdp_row_insert_top" Name="sdp_row-insert-top.png" />
+                    <File Id="file_sdpui_sdp_row_insert_top_2x" Name="sdp_row-insert-top@2x.png" />
+                    <File Id="file_sdpui_sdp_schema" Name="sdp_schema.png" />
+                    <File Id="file_sdpui_sdp_schema_2x" Name="sdp_schema@2x.png" />
+                    <File Id="file_sdpui_sdp_search" Name="sdp_search.png" />
+                    <File Id="file_sdpui_sdp_search_2x" Name="sdp_search@2x.png" />
+                    <File Id="file_sdpui_sdp_settings" Name="sdp_settings.png" />
+                    <File Id="file_sdpui_sdp_settings_2x" Name="sdp_settings@2x.png" />
+                    <File Id="file_sdpui_sdp_sitemap" Name="sdp_sitemap.png" />
+                    <File Id="file_sdpui_sdp_sitemap_2x" Name="sdp_sitemap@2x.png" />
+                    <File Id="file_sdpui_sdp_sql" Name="sdp_sql.png" />
+                    <File Id="file_sdpui_sdp_sql_2x" Name="sdp_sql@2x.png" />
+                    <File Id="file_sdpui_sdp_table_off" Name="sdp_table-off.png" />
+                    <File Id="file_sdpui_sdp_table_off_2x" Name="sdp_table-off@2x.png" />
+                    <File Id="file_sdpui_sdp_table" Name="sdp_table.png" />
+                    <File Id="file_sdpui_sdp_table_2x" Name="sdp_table@2x.png" />
+                    <File Id="file_sdpui_sdp_text_wrap" Name="sdp_text-wrap.png" />
+                    <File Id="file_sdpui_sdp_text_wrap_2x" Name="sdp_text-wrap@2x.png" />
+                    <File Id="file_sdpui_sdp_tool" Name="sdp_tool.png" />
+                    <File Id="file_sdpui_sdp_tool_2x" Name="sdp_tool@2x.png" />
+                    <File Id="file_sdpui_sdp_trash" Name="sdp_trash.png" />
+                    <File Id="file_sdpui_sdp_trash_2x" Name="sdp_trash@2x.png" />
+                    <File Id="file_sdpui_sdp_window" Name="sdp_window.png" />
+                    <File Id="file_sdpui_sdp_window_2x" Name="sdp_window@2x.png" />
+                    <File Id="file_sdpui_sdp_x" Name="sdp_x.png" />
+                    <File Id="file_sdpui_sdp_x_2x" Name="sdp_x@2x.png" />
+                    <File Id="file_sdpui_sdp_tabler_icons" Name="sdp-tabler-icons.json" />
+                    <File Id="file_sdpui_tabler_license" Name="sdp-tabler-license.txt" Source="images\ui\tabler-source\LICENSE.txt" />
+                    <!-- END GENERATED CLASSIC TABLER ICONS -->
+
 
                   </Component>
                 </Directory>
@@ -1956,6 +2113,7 @@
                   <File Id="file200016" Name="client_utils.py" />
                   <File Id="file200017" Name="log.py" />
                   <File Id="file200018" Name="wizard_form.py" />
+                  <File Id="sdp_workbench_i18n_py" Name="sdp_i18n.py" />
                 </Component>
                 <Directory Id="library_workbench_graphics" Name="graphics">
                   <Component DiskId="1" Guid="4b29e751-d608-47c2-b3ab-d156dcbd94c7" Id="library_workbench_graphics" Location="either">
@@ -1972,6 +2130,13 @@
                   <File Id="file_man00001" Name="wb_catalog_utils.py" />
                   <File Id="file_man00002" Name="table_utils_grt.py" />
                   <File Id="file_man00004" Name="wb_utils_grt.py" />
+                  <File Id="file_sdp_tools_grt" Name="sdp_tools_grt.py" />
+                  <File Id="file_sdp_tools_backend" Name="sdp_tools_backend.py" />
+                  <File Id="file_sdp_compat_decision" Name="sdp_compat_decision.py" />
+                  <File Id="file_sdp_compat_jobs" Name="sdp_compat_jobs.py" />
+                  <File Id="file_sdp_compat_cpu" Name="sdp_compat_cpu.py" />
+                  <File Id="file_sdp_compat_logical" Name="sdp_compat_logical.py" />
+                  <File Id="file_sdp_compat_physical" Name="sdp_compat_physical.py" />
                   <File Id="file_man00005" Name="wb_admin_grt.py" />
                   <File Id="file_man00006" Name="wb_model_utils.py" />
                   <File Id="file61001" Name="opts.py" />

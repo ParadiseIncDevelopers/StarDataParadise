@@ -226,7 +226,7 @@ bool PanelWrapper::create(mforms::Panel *backend, mforms::PanelType panelType) {
       HeaderFillPanel ^ native_panel = PanelWrapper::Create<HeaderFillPanel>(backend, wrapper);
       control = native_panel;
       control->Padding = Padding(0, 21, 0, 0);
-      control->BackColor = Color::FromArgb(40, 55, 82);
+      control->BackColor = SystemInformation::HighContrast ? SystemColors::Window : Color::FromArgb(237, 242, 244);
 
       native_panel->HeaderPadding = Padding(5, 0, 5, 0);
       native_panel->HeaderColor = Conversions::GetApplicationColor(ApplicationColor::AppColorPanelHeader, false);

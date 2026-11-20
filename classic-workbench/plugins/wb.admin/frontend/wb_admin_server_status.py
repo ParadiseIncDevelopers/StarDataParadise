@@ -28,11 +28,12 @@ from workbench.db_utils import QueryError
 import mforms
 import time
 import wb_admin_monitor
+from workbench.sdp_i18n import tr
 
 from workbench.notifications import NotificationCenter
 
 def stradd(table, y, label, value):
-    t = mforms.newLabel(label + ":")
+    t = mforms.newLabel(tr(label) + ":")
     t.set_name(label)
     table.add(t, 0, 1, y, y+1, mforms.VFillFlag|mforms.HFillFlag)
 
@@ -54,8 +55,8 @@ class StateIcon(mforms.Box):
         self.set_managed()
 
         if not self.on_icon:
-            self.on_icon = mforms.App.get().get_resource_path("mysql-status-on.png")
-            self.off_icon = mforms.App.get().get_resource_path("mysql-status-off.png")
+            self.on_icon = mforms.App.get().get_resource_path("sdp_check.png")
+            self.off_icon = mforms.App.get().get_resource_path("sdp_alert-circle.png")
 
         self.set_spacing(8)
         self.image = mforms.newImageBox()
@@ -63,7 +64,7 @@ class StateIcon(mforms.Box):
         self.image.set_image(self.off_icon)
         self.add(self.image, False, True)
 
-        self.label = mforms.newLabel("n/a")
+        self.label = mforms.newLabel(tr("Not reported"))
         self.add(self.label, False, True)
 
         self.text = None
@@ -72,13 +73,13 @@ class StateIcon(mforms.Box):
     def set_state(self, state):
         if state:
             self.image.set_image(self.on_icon)
-            self.label.set_text("On")
+            self.label.set_text(tr("Enabled"))
         elif state is None:
             self.image.set_image(self.off_icon)
-            self.label.set_text("n/a")
+            self.label.set_text(tr("Not reported"))
         else:
             self.image.set_image(self.off_icon)
-            self.label.set_text("Off")
+            self.label.set_text(tr("Disabled"))
 
 
     def set_text(self, text):
@@ -101,10 +102,10 @@ class ConnectionInfo(mforms.Box):
         
         self.owner = owner
 
-        self.set_spacing(35)
+        self.set_spacing(12)
 
         self.icon = mforms.newImageBox()
-        self.icon.set_image(mforms.App.get().get_resource_path("mysql-logo-00.png"))
+        self.icon.set_image(mforms.App.get().get_resource_path("sdp_database-cog@2x.png"))
         self.icon.set_name("Server Status Stamp")
 
         self.add(self.icon, False, True)
@@ -113,12 +114,12 @@ class ConnectionInfo(mforms.Box):
         self.vbox = vbox
         self.add(vbox, True, True)
         vbox.set_spacing(2)
-        label = mforms.newLabel("Connection Name")
+        label = mforms.newLabel(tr("Connection profile"))
         label.set_name("Connection Name")
         vbox.add(label, False, True)
 
-        self.connection_name = mforms.newLabel("?")
-        self.connection_name.set_style(mforms.VeryBigStyle)
+        self.connection_name = mforms.newLabel(tr("?"))
+        self.connection_name.set_style(mforms.BigStyle)
         self.connection_name.set_name("Connection Name Value")
         vbox.add(self.connection_name, False, True)
 
@@ -138,38 +139,35 @@ class ConnectionInfo(mforms.Box):
         self.info_table = mforms.newTable()
         self.info_table.set_column_count(2)
         self.info_table.set_row_count(8)
-        self.info_table.set_column_spacing(18)
+        self.info_table.set_column_spacing(12)
         self.info_table.set_row_spacing(5)
 
-        stradd(self.info_table, 0, "\nHost", "\n" + info.get("hostname", "n/a"))
-        stradd(self.info_table, 1, "Socket", info.get("socket", "n/a"))
-        stradd(self.info_table, 2, "Port", info.get("port", "n/a"))
-        stradd(self.info_table, 3, "Version", "%s (%s)" % (info.get("version", "n/a"), info.get("version_comment", "")))
-        stradd(self.info_table, 4, "Compiled For", "%s   (%s)" % (info.get("version_compile_os", "n/a"), info.get("version_compile_machine", "n/a")))
-
-        stradd(self.info_table, 5, "Configuration File", ctrl_be.server_profile.config_file_path or "unknown")
+        unknown = tr("Not reported")
+        endpoint = "%s:%s" % (ctrl_be.server_profile.host_name or unknown, ctrl_be.server_profile.port or unknown)
+        stradd(self.info_table, 0, "Profile endpoint", endpoint)
+        stradd(self.info_table, 1, "Server host", info.get("hostname", unknown))
+        stradd(self.info_table, 2, "Reported server port", info.get("port", unknown))
+        stradd(self.info_table, 3, "Version", info.get("version", unknown))
+        stradd(self.info_table, 4, "Compiled For", "%s (%s)" % (info.get("version_compile_os", unknown), info.get("version_compile_machine", unknown)))
+        stradd(self.info_table, 5, "Configuration File", ctrl_be.server_profile.config_file_path or tr("Not configured"))
 
         uptime = status.get("Uptime", None)
         if uptime:
             uptime = int(uptime)
-            stradd(self.info_table, 6, "Running Since", "%s (%s)" % (time.ctime(ctrl_be.status_variables_time-uptime), format_duration(uptime, True)))
+            started = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(ctrl_be.status_variables_time-uptime))
+            stradd(self.info_table, 6, "Running Since", "%s - %s" % (started, tr("{days} days, {hours} hours").format(days=uptime // 86400, hours=(uptime // 3600) % 24)))
         else:
-            stradd(self.info_table, 6, "Running Since", "n/a")
+            stradd(self.info_table, 6, "Running Since", unknown)
         self.vbox.add(self.info_table, True, True)
 
         box = mforms.newBox(True)
         refresh = mforms.newButton()
-        refresh.set_text("Refresh")
-        refresh.set_tooltip("Refresh server status information")
+        refresh.set_text(tr("Refresh"))
+        refresh.set_tooltip(tr("Refresh server status information"))
         refresh.add_clicked_callback(self.owner.refresh_status)
         box.add(refresh, False, False)
         self.info_table.add(box, 1, 2, 7, 8, mforms.VFillFlag)
 
-        version = ctrl_be.target_version
-        if version and info:
-            icon = mforms.App.get().get_resource_path("mysql-logo-%i%i.png" % (version.majorNumber, version.minorNumber))
-            if icon:
-                self.icon.set_image(icon)
         self.resume_layout()
 
 #===============================================================================
@@ -199,7 +197,7 @@ class WbAdminServerStatus(mforms.Box):
 
         self.ui_created = False
 
-        self.set_spacing(24)
+        self.set_spacing(12)
 
         self.ctrl_be = ctrl_be
         self.server_profile = server_profile
@@ -210,31 +208,28 @@ class WbAdminServerStatus(mforms.Box):
         self.add(lbox, True, True)
 
         self.connection_info = ConnectionInfo(self)
-        self.connection_info.set_padding(24)
+        self.connection_info.set_padding(12)
         lbox.add(self.connection_info, False, True)
 
         self.scrollbox = mforms.newScrollPanel(mforms.ScrollPanelDrawBackground)
-        self.scrollbox.set_padding(24)
+        self.scrollbox.set_padding(12)
         self.scrollbox.set_name("Extra Server Info Section")
         
         self.content = mforms.newBox(False)
-        self.content.set_padding(20)
+        self.content.set_padding(4)
         self.content.set_spacing(4)
         self.scrollbox.add(self.content)
         lbox.add(self.scrollbox, True, True)
 
-        image = mforms.newImageBox()
+        image = mforms.newBox(False)
         image.set_name("Server Status Separator")
-        if self.server_profile.host_os == "linux":
-            image.set_image(mforms.App.get().get_resource_path("mysql-status-separator-linux.png"))
-        else:
-          image.set_image(mforms.App.get().get_resource_path("mysql-status-separator.png"))
-        image.set_image_align(mforms.MiddleCenter)
+        image.set_back_color("#C5D0D5")
+        image.set_size(1, -1)
         self.add(image, False, True)
 
         self.status = wb_admin_monitor.WbAdminMonitor(server_profile, self.ctrl_be)
-        self.status.set_size(360, -1)
-        self.status.set_padding(0, 24, 24, 24)
+        self.status.set_size(420, -1)
+        self.status.set_padding(0, 12, 12, 12)
         self.add(self.status, False, True)
 
         self.controls = {}
@@ -322,15 +317,15 @@ class WbAdminServerStatus(mforms.Box):
             res = self.ctrl_be.exec_query("SHOW SLAVE STATUS")
         except QueryError as e:
             if e.error == 1227:
-                repl_error = "Insufficient privileges to view replica status"
+                repl_error = tr("Insufficient privileges to view replica status")
             else:
-                repl_error = "Error querying status: %s" % str(e)
+                repl_error = tr("Replica status unavailable")
         repl = {}
         if res and res.nextRow():
             for field in ["Slave_IO_State", "Master_Host"]:
                 repl[field] = res.stringByName(field)
 
-        disk_space = "unable to retrieve"
+        disk_space = tr("Unavailable")
         if self.ctrl_be.server_control and info.get("datadir"):
             disk_space = self.ctrl_be.server_helper.get_available_space(info.get("datadir"))
 
@@ -348,14 +343,14 @@ class WbAdminServerStatus(mforms.Box):
                                    ("GTID Mode", info.get("gtid_mode"))],
                                   plugins)
         else:
-            self.controls[""][0].set_text(repl_error or "this server is not a replica in a replication setup")
+            self.controls[""][0].set_text(repl_error or tr("This server is not configured as a replica"))
         table.relayout()
 
         for key, (control, value_source) in list(self.controls.items()):
             if callable(value_source):
                 if isinstance(control, mforms.Label):
                     resp = value_source(info, plugins, status)
-                    control.set_text(resp if resp else "n/a")
+                    control.set_text(tr(resp) if resp else tr("Not reported"))
                 else:
                     value = value_source(info, plugins, status)
                     if type(value) is tuple:
@@ -376,7 +371,7 @@ class WbAdminServerStatus(mforms.Box):
         plugins = dict(self.ctrl_be.server_active_plugins) # plugin -> type
 
         repl = {}
-        disk_space = "checking..."
+        disk_space = tr("Checking...")
 
         def tristate(value, true_value = None):
             if true_value is not None and value == true_value:
@@ -406,7 +401,7 @@ class WbAdminServerStatus(mforms.Box):
                                ("Thread Pool", lambda info, plugins, status: tristate(info.get("thread_handling"), "loaded-dynamically")),
                                ("Memcached Plugin", lambda info, plugins, status: memcached_status),
                                ("Semisync Replication Plugin", lambda info, plugins, status: semi_sync_status),
-                               ("SSL Availability", lambda info, plugins, status: info.get("have_openssl") == "YES" or info.get("have_ssl") == "YES"),
+                               ("Server TLS capability", lambda info, plugins, status: True if info.get("have_openssl") == "YES" or info.get("have_ssl") == "YES" else (False if info.get("have_ssl") == "DISABLED" else None)),
                                ("Windows Authentication", lambda info, plugins, status: "authentication_windows" in plugins) if self.server_profile.target_is_windows else ("PAM Authentication", lambda info, plugins, status: "authentication_pam" in plugins),
                                ("Password Validation", lambda info, plugins, status: (tristate(info.get("validate_password_policy")), "(Policy: %s)" % info.get("validate_password_policy"))),
                                ("Audit Log", lambda info, plugins, status: (tristate(info.get("audit_log_policy")), "(Log Policy: %s)" % info.get("audit_log_policy"))),
@@ -429,7 +424,7 @@ class WbAdminServerStatus(mforms.Box):
                               params)
 
         self.add_info_section("Replica",
-                              [("", "checking...")],
+                              [("", tr("Checking..."))],
                               params)
 
         self.add_info_section("Authentication",
@@ -461,7 +456,7 @@ class WbAdminServerStatus(mforms.Box):
                                   params)
 
     def add_info_section_2(self, title, info, params):
-        label = mforms.newLabel(title)
+        label = mforms.newLabel(tr(title))
         label.set_style(mforms.BigBoldStyle)
         self.content.add(label, False, True)
         sep = mforms.newBox(False)
@@ -469,19 +464,15 @@ class WbAdminServerStatus(mforms.Box):
         sep.set_size(-1, 1)
         self.content.add(sep, False, True)
 
-        hbox = mforms.newBox(True)
-
-        info_table = self.make_info_table(info[:len(info)//2], params)
-        hbox.add(info_table, True, True)
-        info_table = self.make_info_table(info[len(info)//2:], params)
-        hbox.add(info_table, True, True)
-
-        self.content.add(hbox, False, True)
+        # Feature labels grow when localized. Keep one label/value pair per row
+        # instead of two competing tables whose right-hand states get clipped.
+        info_table = self.make_info_table(info, params)
+        self.content.add(info_table, False, True)
         self.content.get_parent().relayout()
 
 
     def add_info_section(self, title, info, params):
-        label = mforms.newLabel(title)
+        label = mforms.newLabel(tr(title))
         label.set_style(mforms.BigBoldStyle)
         self.content.add(label, False, True)
         sep = mforms.newBox(False)
@@ -515,7 +506,7 @@ class WbAdminServerStatus(mforms.Box):
             if label in self.controls:
                 info_table.remove(self.controls[label][0])
             else:
-                l = mforms.newLabel(label + ":")
+                l = mforms.newLabel(tr(label) + ":")
                 l.set_name(label)
                 info_table.add(l, 0, 1, i, i+1, mforms.VFillFlag|mforms.HFillFlag)
             is_gtid_mode_setable = label == 'GTID Mode:' and self.ctrl_be.target_version >= Version(5, 7, 6)
@@ -546,7 +537,7 @@ class WbAdminServerStatus(mforms.Box):
                     info_table.add(self.gtid_mode_selector, 1, 2, i, i + 1, mforms.HFillFlag | mforms.HExpandFlag | mforms.VFillFlag)
                     self.controls[label] = (self.gtid_mode_selector, value_source)
                 else:
-                    l2 = mforms.newLabel(value or "")
+                    l2 = mforms.newLabel(tr(value or ""))
                     if label and label != '':
                         l2.set_name(label + " Value")
                     l2.set_style(mforms.BoldStyle)

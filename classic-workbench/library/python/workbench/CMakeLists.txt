@@ -19,6 +19,7 @@ set(PY_FILES
     os_utils.py
     client_utils.py
     log.py
+    sdp_i18n.py
 )
 
 install(FILES ${PY_FILES} DESTINATION ${WB_PACKAGE_SHARED_DIR}/libraries/workbench)

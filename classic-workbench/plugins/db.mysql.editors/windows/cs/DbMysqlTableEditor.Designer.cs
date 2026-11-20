@@ -99,7 +99,7 @@ namespace MySQL.GUI.Workbench.Plugins
       this.subpartManual = new System.Windows.Forms.CheckBox();
       this.partManual = new System.Windows.Forms.CheckBox();
       this.fkModelOnlyCheck = new System.Windows.Forms.CheckBox();
-      this.indicesTreeView = new Aga.Controls.Tree.TreeViewAdv();
+      this.indicesTreeView = new MySQL.GUI.Workbench.Plugins.ClassicObjectTreeView();
       this.collapsePictureBox = new System.Windows.Forms.PictureBox();
       this.virtualRadioButton = new System.Windows.Forms.RadioButton();
       this.storedRadioButton = new System.Windows.Forms.RadioButton();
@@ -175,14 +175,14 @@ namespace MySQL.GUI.Workbench.Plugins
       this.label51 = new System.Windows.Forms.Label();
       this.label53 = new System.Windows.Forms.Label();
       this.subpartCount = new System.Windows.Forms.TextBox();
-      this.partitionTreeView = new Aga.Controls.Tree.TreeViewAdv();
+      this.partitionTreeView = new MySQL.GUI.Workbench.Plugins.ClassicObjectTreeView();
       this.triggersTabPage = new System.Windows.Forms.TabPage();
       this.foreignKeysTabPage = new System.Windows.Forms.TabPage();
       this.foreignKeyWarningPanel = new System.Windows.Forms.Panel();
       this.label11 = new System.Windows.Forms.Label();
       this.foreignKeyPageSplitContainer = new System.Windows.Forms.SplitContainer();
-      this.fkTreeView = new Aga.Controls.Tree.TreeViewAdv();
-      this.fkColumnsTreeView = new Aga.Controls.Tree.TreeViewAdv();
+      this.fkTreeView = new MySQL.GUI.Workbench.Plugins.ClassicObjectTreeView();
+      this.fkColumnsTreeView = new MySQL.GUI.Workbench.Plugins.ClassicObjectTreeView();
       this.panel3 = new System.Windows.Forms.Panel();
       this.splitContainer6 = new System.Windows.Forms.SplitContainer();
       this.label21 = new System.Windows.Forms.Label();
@@ -201,7 +201,7 @@ namespace MySQL.GUI.Workbench.Plugins
       this.splitContainer3 = new System.Windows.Forms.SplitContainer();
       this.label8 = new System.Windows.Forms.Label();
       this.bevel3 = new MySQL.Utilities.Bevel();
-      this.indexColumnsTreeView = new Aga.Controls.Tree.TreeViewAdv();
+      this.indexColumnsTreeView = new MySQL.GUI.Workbench.Plugins.ClassicObjectTreeView();
       this.panel2 = new System.Windows.Forms.Panel();
       this.splitContainer5 = new System.Windows.Forms.SplitContainer();
       this.indexParserText = new System.Windows.Forms.TextBox();
@@ -219,7 +219,7 @@ namespace MySQL.GUI.Workbench.Plugins
       this.indexCommentText = new System.Windows.Forms.TextBox();
       this.columnsTabPage = new System.Windows.Forms.TabPage();
       this.columnListSplitContainer = new System.Windows.Forms.SplitContainer();
-      this.columnsTreeView = new Aga.Controls.Tree.TreeViewAdv();
+      this.columnsTreeView = new MySQL.GUI.Workbench.Plugins.ClassicObjectTreeView();
       this.pkTreeColumn = new Aga.Controls.Tree.TreeColumn();
       this.uqTreeColumn = new Aga.Controls.Tree.TreeColumn();
       this.binTreeColumn = new Aga.Controls.Tree.TreeColumn();

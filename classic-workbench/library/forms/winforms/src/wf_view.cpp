@@ -1273,7 +1273,12 @@ void ViewWrapper::Initialize() {
   // Can be null, e.g. for non-control objects like dialogs.
   if (control != nullptr) {
     control->AutoSize = false;
-    control->Font = gcnew Font(DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, FontStyle::Regular, GraphicsUnit::Pixel);
+    control->Font = gcnew Font("Segoe UI", 9.75f, FontStyle::Regular, GraphicsUnit::Point);
+    if (!SystemInformation::HighContrast) {
+      control->ForeColor = Color::FromArgb(16, 38, 41);
+      if (is<Panel>(control) || is<Form>(control))
+        control->BackColor = Color::FromArgb(237, 242, 244);
+    }
 
     bool hookEvents = is<TabControl>(control) || (Panel::typeid == control->GetType()) || is<TreeViewAdv>(control) ||
                       is<CanvasControl>(control)

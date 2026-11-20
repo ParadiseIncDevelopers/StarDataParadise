@@ -7,6 +7,13 @@ set(PY_FILES
     wb_utils_grt.py
     wb_model_utils.py
     wb_catalog_utils.py
+    sdp_tools_grt.py
+    sdp_tools_backend.py
+    sdp_compat_decision.py
+    sdp_compat_jobs.py
+    sdp_compat_cpu.py
+    sdp_compat_logical.py
+    sdp_compat_physical.py
 )
 
 install(FILES ${PY_FILES} DESTINATION ${WB_PYTHON_MODULES_DIR})

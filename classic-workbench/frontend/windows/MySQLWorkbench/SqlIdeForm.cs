@@ -53,9 +53,12 @@ namespace MySQL.GUI.Workbench
     private bool outputVisibilySetInAdmin = false;
     private bool outputIsVisible = true;
     private bool restoreOutputArea = false;
+    private ToolStripButton[] outputViewButtons;
     private bool secondarySidebarVisibilySetInAdmin = false;
-    private bool secondarySidebarIsVisible = true;
+    private bool secondarySidebarIsVisible = false;
     private bool restoreSeconarySidebar = false;
+    private bool restoreTaskSidebar = false;
+    private bool taskSidebarManuallySet = false;
 
     #region Initialization
 
@@ -73,9 +76,57 @@ namespace MySQL.GUI.Workbench
       Logger.LogInfo("WQE.net", "Launching SQL IDE\n");
 
       InitializeComponent();
+      Font = new Font("Segoe UI", 9.75f, FontStyle.Regular, GraphicsUnit.Point);
+      mainContentTabControl.Font = Font;
+      mainContentTabControl.RenderWithGlow = false;
+      mainContentTabControl.ContentPadding = Padding.Empty;
+      mainContentTabControl.TabStyle = FlatTabControl.TabStyleType.QueryDocument;
+      mainContentTabControl.BackgroundColor = Color.FromArgb(231, 238, 239);
+      mainContentTabControl.ItemPadding = new Padding(10, 0, 5, 0);
+      float queryScale;
+      using (Graphics graphics = CreateGraphics())
+        queryScale = graphics.DpiX / 96f;
+      editorTabImageList.ImageSize = new Size((int)Math.Round(16 * queryScale), (int)Math.Round(16 * queryScale));
+      string queryIcon = System.IO.Path.Combine(Application.StartupPath, "images", "ui", queryScale > 1 ? "sdp_file-code@2x.png" : "sdp_file-code.png");
+      if (System.IO.File.Exists(queryIcon))
+      {
+        using (Image source = Image.FromFile(queryIcon))
+          editorTabImageList.Images.Add(new Bitmap(source));
+      }
+      outputHeader.Text = SdpLanguage.Translate("Output");
+      outputSelector.Items.Clear();
+      outputSelector.Items.AddRange(new object[] { SdpLanguage.Translate("Messages"), SdpLanguage.Translate("Text output"), SdpLanguage.Translate("Query history") });
 
       Logger.LogDebug("WQE.net", 1, "Setup of generated UI done\n");
       outputSelector.SelectedIndex = 0;
+      outputHeader.Text = String.Empty;
+      outputHeader.Padding = Padding.Empty;
+      outputHeader.HeaderPadding = Padding.Empty;
+      outputSelector.Visible = false;
+      outputPaneIcon.Visible = false;
+      outputPageToolStrip.Padding = new Padding(6, 0, 6, 0);
+      outputPageToolStrip.Height = (int)Math.Round(32 * queryScale);
+      outputViewButtons = new ToolStripButton[3];
+      string[] outputNames = { "Messages", "Query history", "Text output" };
+      string[] outputIcons = { "message", "history", "file-code" };
+      int[] outputIndices = { 0, 2, 1 };
+      for (int outputIndex = 0; outputIndex < outputViewButtons.Length; ++outputIndex)
+      {
+        ToolStripButton button = new ToolStripButton(SdpLanguage.Translate(outputNames[outputIndex]));
+        button.Name = "workspace.output." + outputIndex;
+        button.Tag = outputIndices[outputIndex];
+        button.Padding = new Padding(8, 3, 8, 3);
+        button.Margin = new Padding(0, 0, 4, 0);
+        button.Checked = outputIndices[outputIndex] == outputSelector.SelectedIndex;
+        button.ImageScaling = ToolStripItemImageScaling.None;
+        string imagePath = System.IO.Path.Combine(Application.StartupPath, "images", "ui", "sdp_" + outputIcons[outputIndex] + (queryScale > 1 ? "@2x.png" : ".png"));
+        if (System.IO.File.Exists(imagePath))
+          using (Image source = Image.FromFile(imagePath))
+            button.Image = new Bitmap(source, new Size((int)Math.Round(16 * queryScale), (int)Math.Round(16 * queryScale)));
+        button.Click += delegate(object sender, EventArgs args) { outputSelector.SelectedIndex = (int)((ToolStripButton)sender).Tag; };
+        outputViewButtons[outputIndex] = button;
+        outputPageToolStrip.Items.Add(button);
+      }
 
       TabText = dbSqlEditorBE.get_title();
 
@@ -88,7 +139,7 @@ namespace MySQL.GUI.Workbench
 
       // Some visual setup of the header.
       logView.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single;
-      logView.ColumnHeadersDefaultCellStyle.Font = ControlUtilities.GetFont("Segoe UI", 7.5f);
+      logView.ColumnHeadersDefaultCellStyle.Font = ControlUtilities.GetFont("Segoe UI", 9.75f);
       logView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
 
       dbSqlEditorBE.log().refresh_ui_cb(logView.ProcessModelRowsChange);
@@ -167,6 +218,15 @@ namespace MySQL.GUI.Workbench
 
       ManagedNotificationCenter.AddObserver(this, "GNFormTitleDidChange");
 
+      SdpLanguage.Apply(outputPageToolStrip);
+      for (int i = 0; i < outputSelector.Items.Count; ++i)
+        outputSelector.Items[i] = SdpLanguage.Translate(outputSelector.Items[i].ToString());
+
+      SdpLanguage.Apply(outputPageToolStrip);
+      foreach (DataGridView grid in new DataGridView[] { logView, historyEntriesView, historyDetailsView })
+        foreach (DataGridViewColumn column in grid.Columns)
+          column.HeaderText = SdpLanguage.Translate(column.HeaderText);
+
       Logger.LogDebug("WQE.net", 1, "Initialization done\n");
     }
 
@@ -208,6 +268,7 @@ namespace MySQL.GUI.Workbench
       switch (command)
       {
         case "wb.toggleSidebar":
+          if (IsAdminActive()) taskSidebarManuallySet = true;
           mainSplitContainer.Panel1Collapsed = !mainSplitContainer.Panel1Collapsed;
           wbContext.save_state("sidebar_visible", "query_editor", !mainSplitContainer.Panel1Collapsed);
           break;
@@ -299,6 +360,12 @@ namespace MySQL.GUI.Workbench
       // those were not explicitly switched on previously. Restore them when switching away.
       if (IsAdminActive())
       {
+        if (!taskSidebarManuallySet && !mainSplitContainer.Panel1Collapsed)
+        {
+          restoreTaskSidebar = true;
+          mainSplitContainer.Panel1Collapsed = true;
+          dbSqlEditorBE.set_tool_item_checked("wb.toggleSidebar", false);
+        }
         if (!outputVisibilySetInAdmin && outputIsVisible)
         {
           restoreOutputArea = true;
@@ -318,6 +385,12 @@ namespace MySQL.GUI.Workbench
       }
       else
       {
+        if (restoreTaskSidebar && !taskSidebarManuallySet)
+        {
+          restoreTaskSidebar = false;
+          mainSplitContainer.Panel1Collapsed = false;
+          dbSqlEditorBE.set_tool_item_checked("wb.toggleSidebar", true);
+        }
         if (restoreOutputArea) // Only set if not manually adjusted in an admin page and it was visible previously.
         {
           restoreOutputArea = false;
@@ -619,6 +692,9 @@ namespace MySQL.GUI.Workbench
     void outputPaneIndexChanged(object sender, System.EventArgs e)
     {
       ToolStripComboBox selector = sender as ToolStripComboBox;
+      if (outputViewButtons != null)
+        foreach (ToolStripButton button in outputViewButtons)
+          button.Checked = (int)button.Tag == selector.SelectedIndex;
       if (outputPageContent.Controls.Count > 0)
         outputPageContent.Controls.RemoveAt(0);
       switch (selector.SelectedIndex)
@@ -668,21 +744,26 @@ namespace MySQL.GUI.Workbench
     private void LoadFormState()
     {
       Logger.LogDebug("WQE.net", 1, "Loading form state\n");
+      float scale;
+      using (Graphics graphics = CreateGraphics())
+        scale = graphics.DpiX / 96f;
+      int sidebarDefault = (int)Math.Round(220 * scale);
+      mainContentTabControl.ItemSize = new Size((int)Math.Round(120 * scale), (int)Math.Round(32 * scale));
 
       // Object side bar.
-      int splitterDistance = wbContext.read_state("sidebar_width", "query_editor", 200);
+      int splitterDistance = wbContext.read_state("sidebar_width", "query_editor", sidebarDefault);
       if (splitterDistance < 0)
-        splitterDistance = 200;
+        splitterDistance = sidebarDefault;
 
       SafeAssignSplitterDistance(mainSplitContainer, splitterDistance);
 
       // Output tab. Distance measured from bottom (for easy default value).
-      int storedSize = wbContext.read_state("output_height", "query_editor", 200);
+      int storedSize = wbContext.read_state("output_height", "query_editor", (int)Math.Round(180 * scale));
       SafeAssignSplitterDistance(contentSplitContainer,
         contentSplitContainer.Height - contentSplitContainer.SplitterWidth - storedSize);
 
       // Support side bar. Distance measured from right (for easy default value).
-      storedSize = wbContext.read_state("support_sidebar_width", "query_editor", 200);
+      storedSize = wbContext.read_state("support_sidebar_width", "query_editor", (int)Math.Round(280 * scale));
       SafeAssignSplitterDistance(mainContentSplitContainer,
         mainContentSplitContainer.Width - mainContentSplitContainer.SplitterWidth - storedSize);
 
@@ -695,7 +776,7 @@ namespace MySQL.GUI.Workbench
       dbSqlEditorBE.set_tool_item_checked("wb.toggleOutputArea", outputIsVisible);
       contentSplitContainer.Panel2Collapsed = !outputIsVisible;
 
-      secondarySidebarIsVisible = wbContext.read_state("support_sidebar_visible", "query_editor", true);
+      secondarySidebarIsVisible = wbContext.read_state("support_sidebar_visible", "query_editor", false);
       dbSqlEditorBE.set_tool_item_checked("wb.toggleSecondarySidebar", secondarySidebarIsVisible);
       mainContentSplitContainer.Panel2Collapsed = !secondarySidebarIsVisible;
     }
@@ -710,7 +791,12 @@ namespace MySQL.GUI.Workbench
         (document as DockablePlugin).UpdateColors();
 
       if (!mainContentTabControl.HasDocument(document))
-        mainContentTabControl.AddDocument(document);
+      {
+        int index = mainContentTabControl.AddDocument(document);
+        var appView = document as AppViewDockContent;
+        if (appView != null && appView.GetContextName() == "db.query.QueryBuffer" && editorTabImageList.Images.Count > 0)
+          mainContentTabControl.TabPages[index].ImageIndex = 0;
+      }
       if (activate)
         document.Activate();
 
@@ -751,7 +837,14 @@ namespace MySQL.GUI.Workbench
       base.UpdateColors();
 
       Logger.LogDebug("WQE.net", 1, "Updating display colors\n");
-      outputPageToolStrip.Renderer = new FlatSubToolStripRenderer();
+      outputPageToolStrip.Renderer = new FlatMainToolStripRenderer();
+      outputPageToolStrip.Font = Font;
+      outputPageToolStrip.GripStyle = ToolStripGripStyle.Hidden;
+      outputPageToolStrip.BackColor = SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(231, 238, 239);
+      outputPageToolStrip.ForeColor = SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(16, 38, 41);
+      StyleWorkspaceGrid(logView);
+      StyleWorkspaceGrid(historyEntriesView);
+      StyleWorkspaceGrid(historyDetailsView);
 
       mainSplitContainer.BackColor = Conversions.GetApplicationColor(ApplicationColor.AppColorMainBackground, false);
       contentSplitContainer.BackColor = Conversions.GetApplicationColor(ApplicationColor.AppColorMainBackground, false);
@@ -762,6 +855,21 @@ namespace MySQL.GUI.Workbench
       // The side area has the sidebar which is rooted on a split container.
       if (sideArea.Controls.Count > 0)
         sideArea.Controls[0].BackColor = Conversions.GetApplicationColor(ApplicationColor.AppColorMainBackground, false);
+    }
+
+    private void StyleWorkspaceGrid(DataGridView grid)
+    {
+      if (grid == null) return;
+      grid.EnableHeadersVisualStyles = false;
+      grid.BorderStyle = BorderStyle.None;
+      grid.BackgroundColor = SystemInformation.HighContrast ? SystemColors.Window : Color.White;
+      grid.GridColor = SystemInformation.HighContrast ? SystemColors.WindowText : Color.FromArgb(209, 220, 224);
+      grid.Font = Font;
+      grid.ColumnHeadersDefaultCellStyle.Font = Font;
+      grid.ColumnHeadersDefaultCellStyle.BackColor = SystemInformation.HighContrast ? SystemColors.Control : Color.FromArgb(231, 238, 239);
+      grid.ColumnHeadersDefaultCellStyle.ForeColor = SystemInformation.HighContrast ? SystemColors.ControlText : Color.FromArgb(16, 38, 41);
+      grid.DefaultCellStyle.SelectionBackColor = SystemInformation.HighContrast ? SystemColors.Highlight : Color.FromArgb(221, 235, 228);
+      grid.DefaultCellStyle.SelectionForeColor = SystemInformation.HighContrast ? SystemColors.HighlightText : Color.FromArgb(16, 38, 41);
     }
 
     public override bool CanCloseDocument()
@@ -780,7 +888,8 @@ namespace MySQL.GUI.Workbench
       ITabDocument document = mainContentTabControl.ActiveDocument;
       if (document is AppViewDockContent)
       {
-        if ((document as AppViewDockContent).GetContextName() == "administrator")
+        string context = (document as AppViewDockContent).GetContextName();
+        if (context == "administrator" || context == "sdp_tools")
           return true;
       }
       return false;

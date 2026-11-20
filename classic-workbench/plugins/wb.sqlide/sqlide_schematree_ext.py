@@ -25,6 +25,7 @@ import grt
 import mforms
 from workbench.db_utils import escape_sql_identifier
 from workbench.plugins import insert_item_to_plugin_context_menu
+from workbench.sdp_i18n import tr as _
 
 from table_templates import TableTemplateManager
 
@@ -38,9 +39,6 @@ def esc_ident(s):
         return "`%s`" % escape_sql_identifier(s)
     return s
 
-
-def _(s):
-    return s
 
 template_manager = None
 def init():
@@ -63,25 +61,25 @@ def handleLiveTreeContextMenu(name, sender, args):
     column_selected = False
     if len(selection) == 1:
         object_type_caption = {
-            'db.Schema' : "Schema",
-            'db.Table' : "Table",
-            'db.View' : "View",
-            'db.Function' : "Function",
-            'db.StoredProcedure' : "Stored Procedure",
-            'db.Index' : "Index",
-            'db.Trigger' : "Trigger",
-            'db.ForeignKey' : "Foreign Key",
+            'db.Schema' : _("Schema"),
+            'db.Table' : _("Table"),
+            'db.View' : _("View"),
+            'db.Function' : _("Function"),
+            'db.StoredProcedure' : _("Stored Procedure"),
+            'db.Index' : _("Index"),
+            'db.Trigger' : _("Trigger"),
+            'db.ForeignKey' : _("Foreign Key"),
         }
     else:
         object_type_caption = {
-            'db.Schema' : "Schemas",
-            'db.Table' : "Tables",
-            'db.View' : "Views",
-            'db.Function' : "Functions",
-            'db.StoredProcedure' : "Stored Procedures",
-            'db.Index' : "Indexes",
-            'db.Trigger' : "Triggers",
-            'db.ForeignKey' : "Foreign Keys",
+            'db.Schema' : _("Schemas"),
+            'db.Table' : _("Tables"),
+            'db.View' : _("Views"),
+            'db.Function' : _("Functions"),
+            'db.StoredProcedure' : _("Stored Procedures"),
+            'db.Index' : _("Indexes"),
+            'db.Trigger' : _("Triggers"),
+            'db.ForeignKey' : _("Foreign Keys"),
         }
     unique_tables = set()
     selection_db_type = None
@@ -177,13 +175,13 @@ def handleLiveTreeContextMenu(name, sender, args):
                           (_("Select Row References"), "Select Row References", 'build_cascaded_select', ['db.Table'], len(selection) == 1, False),
                           ]
 
-            copy_submenu = mforms.newMenuItem("Copy to Clipboard")
+            copy_submenu = mforms.newMenuItem(_("Copy to Clipboard"))
             copy_submenu.set_name("Copy to Clipboard")
             copy_submenu.setInternalName("copy_to_clipboard")
             menu.insert_item(index, copy_submenu)
             index += 1
 
-            send_submenu = mforms.newMenuItem("Send to SQL Editor")
+            send_submenu = mforms.newMenuItem(_("Send to SQL Editor"))
             send_submenu.set_name("Send to Editor")
             send_submenu.setInternalName("send_to_editor")
             menu.insert_item(index, send_submenu)
@@ -216,13 +214,13 @@ def handleLiveTreeContextMenu(name, sender, args):
                 index += 1
                 needs_separator = False
 
-            item = mforms.newMenuItem("Create %s..." % object_type_caption.get(selection_db_type, selection_db_type))
+            item = mforms.newMenuItem(_("Create %s...") % object_type_caption.get(selection_db_type, selection_db_type))
             item.add_clicked_callback(lambda: do_create_object(sender, selection[0].schemaName, selection_db_type))
             menu.insert_item(index, item)
             index+= 1
 
             if selection_type in ('db.Table', 'tables'):
-                item = mforms.newMenuItem("Create Table Like...")
+                item = mforms.newMenuItem(_("Create Table Like..."))
                 menu.insert_item(index, item)
                 index += 1
                 #        it = item.add_item_with_title("Selected Table", lambda: template_manager.create_table_like(sender, selection[0].schemaName, selection[0].name))
@@ -231,7 +229,7 @@ def handleLiveTreeContextMenu(name, sender, args):
                 for templ in template_manager.templates:
                     item.add_item_with_title(templ.name, lambda templ=templ, schema=selection[0].schemaName: template_manager.create_table_like_template(sender, schema, templ), templ.name, "")
                 item.add_separator()
-                item.add_item_with_title("Edit Templates...", template_manager.edit_templates, "Edit Templates", "")
+                item.add_item_with_title(_("Edit Templates..."), template_manager.edit_templates, "Edit Templates", "")
                 
         if selection_type is None:
             if needs_separator:
@@ -239,7 +237,7 @@ def handleLiveTreeContextMenu(name, sender, args):
                 index += 1
                 needs_separator = False
 
-            item = mforms.newMenuItem("Create Schema...")
+            item = mforms.newMenuItem(_("Create Schema..."))
             item.add_clicked_callback(lambda: do_create_object(sender, None, "db.Schema"))
             menu.insert_item(index, item)
             index+= 1
@@ -251,16 +249,16 @@ def handleLiveTreeContextMenu(name, sender, args):
                 needs_separator = False
 
             if object_selected_count == 1:
-                item = mforms.newMenuItem("Alter %s..." % object_type_caption.get(selection_type, selection_type))
+                item = mforms.newMenuItem(_("Alter %s...") % object_type_caption.get(selection_type, selection_type))
             else:
-                item = mforms.newMenuItem("Alter %i %s..." % (object_selected_count, object_type_caption.get(selection_type, selection_type)))
+                item = mforms.newMenuItem(_("Alter %i %s...") % (object_selected_count, object_type_caption.get(selection_type, selection_type)))
             item.add_clicked_callback(lambda: do_alter_object(sender, selection))
             menu.insert_item(index, item)
             index+= 1
             needs_separator = True
 
         if selection_type == 'db.Table' and object_selected:
-            item = mforms.newMenuItem("Table Maintenance...")
+            item = mforms.newMenuItem(_("Table Maintenance..."))
             item.add_clicked_callback(lambda: show_schema_manager(sender, set([obj.schemaName for obj in selection]), True))
             menu.insert_item(index, item)
             index += 1
@@ -272,21 +270,22 @@ def handleLiveTreeContextMenu(name, sender, args):
                 needs_separator = False
 
             if object_selected_count == 1:
-                item = mforms.newMenuItem("Drop %s..." % object_type_caption.get(selection_type, selection_type))
+                item = mforms.newMenuItem(_("Drop %s...") % object_type_caption.get(selection_type, selection_type))
             else:
-                item = mforms.newMenuItem("Drop %i %s..." % (object_selected_count, object_type_caption.get(selection_type, selection_type)))
+                item = mforms.newMenuItem(_("Drop %i %s...") % (object_selected_count, object_type_caption.get(selection_type, selection_type)))
             item.add_clicked_callback(lambda: do_drop_object(sender, selection))
             menu.insert_item(index, item)
             index+= 1
 
         if selection_type == 'db.Table' and object_selected:
-            item = mforms.newMenuItem("Truncate %s..." % ("Table" if object_selected_count == 1 else "%i Tables" % object_selected_count))
+            item = mforms.newMenuItem(_("Truncate Table...") if object_selected_count == 1
+                                     else _("Truncate %i Tables...") % object_selected_count)
             item.add_clicked_callback(lambda: do_truncate_table(sender, selection))
             menu.insert_item(index, item)
             index += 1
 
         if selection_type in ('db.Table', 'db.Schema', 'tables'):
-            item = mforms.newMenuItem("Search Table Data...")
+            item = mforms.newMenuItem(_("Search Table Data..."))
             item.add_clicked_callback(lambda: open_search(sender))
             insert_item_to_plugin_context_menu(menu, item)
 
@@ -295,7 +294,7 @@ def handleLiveTreeContextMenu(name, sender, args):
                 menu.insert_item(index, mforms.newMenuItem("", mforms.SeparatorMenuItem))
                 index += 1
                 needs_separator = False
-            item = mforms.newMenuItem("Create Index...")
+            item = mforms.newMenuItem(_("Create Index..."))
             item.add_clicked_callback(lambda: do_create_index(sender, selection))
             menu.insert_item(index, item)
             index += 1
@@ -319,13 +318,13 @@ def do_alter_object(editor, selection):
 
 def review_sql_code(code):
     form = mforms.Form(mforms.Form.main_form(), mforms.FormNormal)
-    form.set_title("Review SQL Code to Execute")
+    form.set_title(_("Review SQL Code to Execute"))
     box = mforms.newBox(False)
     box.set_padding(12)
     form.set_content(box)
 
     box.set_spacing(8)
-    box.add(mforms.newLabel("Review the SQL code to be executed."), False, True)
+    box.add(mforms.newLabel(_("Review the SQL code to be executed.")), False, True)
 
     editor = mforms.CodeEditor()
     box.add(editor, True, True)
@@ -334,9 +333,9 @@ def review_sql_code(code):
     editor.set_features(mforms.FeatureReadOnly, True)
 
     ok = mforms.newButton()
-    ok.set_text("Execute")
+    ok.set_text(_("Execute"))
     cancel = mforms.newButton()
-    cancel.set_text("Cancel")
+    cancel.set_text(_("Cancel"))
 
     bbox = mforms.newBox(True)
     bbox.set_spacing(8)
@@ -356,11 +355,11 @@ def do_truncate_table(editor, selection):
             tables.append("%s.%s" % (esc_ident(obj.schemaName), esc_ident(obj.name)))
 
     if len(tables) == 1:
-        res = mforms.Utilities.show_message("Truncate Table", "Please confirm permanent deletion of all rows from table `%s`." % tables[0],
-                                         "Review SQL", "Cancel", "Truncate")
+        res = mforms.Utilities.show_message(_("Truncate Table"), _("Please confirm permanent deletion of all rows from table `%s`.") % tables[0],
+                                         _("Review SQL"), _("Cancel"), _("Truncate"))
     elif len(tables) > 1:
-        res = mforms.Utilities.show_message("Truncate Tables", "Please confirm permanent deletion of all rows from %s selected tables." % len(tables),
-                                         "Review SQL", "Cancel", "Truncate")
+        res = mforms.Utilities.show_message(_("Truncate Tables"), _("Please confirm permanent deletion of all rows from %s selected tables.") % len(tables),
+                                         _("Review SQL"), _("Cancel"), _("Truncate"))
     else:
         return
     if res == mforms.ResultCancel:
@@ -377,12 +376,12 @@ def do_truncate_table(editor, selection):
             count += 1
         except Exception as exc:
             if count < len(tables)-1:
-                if mforms.Utilities.show_error("Could not Truncate Table", str(exc)+"\nClick Cancel to stop truncating other tables.\n\n"+stmt, "OK", "Cancel", "") == mforms.ResultCancel:
+                if mforms.Utilities.show_error(_("Could not Truncate Table"), str(exc)+_("\nClick Cancel to stop truncating other tables.\n\n")+stmt, _("OK"), _("Cancel"), "") == mforms.ResultCancel:
                     break
             else:
-                if mforms.Utilities.show_error("Could not Truncate Table", str(exc)+"\n\n"+stmt, "OK", "", "") == mforms.ResultCancel:
+                if mforms.Utilities.show_error(_("Could not Truncate Table"), str(exc)+"\n\n"+stmt, _("OK"), "", "") == mforms.ResultCancel:
                     break
-    mforms.App.get().set_status_text("%i tables truncated" % count)
+    mforms.App.get().set_status_text(_("%i tables truncated") % count)
 
 
 def do_create_index(editor, selection):
@@ -391,10 +390,10 @@ def do_create_index(editor, selection):
     table = None
     for node in selection:
         if schema and schema != node.schemaName:
-            mforms.Utilities.show_error("Create Index", "Please select one or more columns from the same table.", "OK", "", "")
+            mforms.Utilities.show_error(_("Create Index"), _("Please select one or more columns from the same table."), _("OK"), "", "")
             return
         if table and (not node.owner or table != node.owner.name):
-            mforms.Utilities.show_error("Create Index", "Please select one or more columns from the same table.", "OK", "", "")
+            mforms.Utilities.show_error(_("Create Index"), _("Please select one or more columns from the same table."), _("OK"), "", "")
             return
         schema = node.schemaName
         table = node.owner.name
@@ -450,36 +449,36 @@ def do_drop_object(editor, selection):
 
     # don't let dropping tables or schemas mixed with other objects to make the confirmation message clearer and reduce risk of accident
     if len(object_types) > 1:
-        mforms.Utilities.show_message("Drop Objects", "Multiple objects of different types are selected. To avoid accidents, please drop one type of object at a time.", "OK", "", "")
+        mforms.Utilities.show_message(_("Drop Objects"), _("Multiple objects of different types are selected. To avoid accidents, please drop one type of object at a time."), _("OK"), "", "")
         return
 
     res = None
     if "Table" in object_types:
         if count == 1:
-            res = mforms.Utilities.show_message("Drop Table",
-                                             "Please confirm permanent deletion of table `%s` and its data." % (selection[0].name),
-                                             "Review SQL", "Cancel", "Drop Now")
+            res = mforms.Utilities.show_message(_("Drop Table"),
+                                             _("Please confirm permanent deletion of table `%s` and its data.") % (selection[0].name),
+                                             _("Review SQL"), _("Cancel"), _("Drop Now"))
         else:
-            res = mforms.Utilities.show_message("Drop %i Tables" % len(table_names),
-                                             "Please confirm permanent deletion of tables %s and their data." % ", ".join(table_names),
-                                             "Review SQL", "Cancel", "Drop Now")
+            res = mforms.Utilities.show_message(_("Drop %i Tables") % len(table_names),
+                                             _("Please confirm permanent deletion of tables %s and their data.") % ", ".join(table_names),
+                                             _("Review SQL"), _("Cancel"), _("Drop Now"))
     elif "Schema" in object_types:
         if count == 1:
-            res = mforms.Utilities.show_message("Drop Schema",
-                                             "Please confirm permanent deletion of schema `%s` and all its data." % (selection[0].name),
-                                             "Review SQL", "Cancel", "Drop Now")
+            res = mforms.Utilities.show_message(_("Drop Schema"),
+                                             _("Please confirm permanent deletion of schema `%s` and all its data.") % (selection[0].name),
+                                             _("Review SQL"), _("Cancel"), _("Drop Now"))
         else:
-            res = mforms.Utilities.show_message("Drop %i Schemas" % count,
-                                             "Please confirm permanent deletion of schemas %s and all their data." % (", ".join([s.name for s in selection])),
-                                             "Review SQL", "Cancel", "Drop Now")
+            res = mforms.Utilities.show_message(_("Drop %i Schemas") % count,
+                                             _("Please confirm permanent deletion of schemas %s and all their data.") % (", ".join([s.name for s in selection])),
+                                             _("Review SQL"), _("Cancel"), _("Drop Now"))
     else:
         if count == 1:
-            res = mforms.Utilities.show_message("Drop %s" % list(object_types)[0],
-                                             "Please confirm permanent deletion of %s `%s`." % (list(object_types)[0].lower(), selection[0].name),
-                                             "Review SQL", "Cancel", "Drop Now")
+            res = mforms.Utilities.show_message(_("Drop %s") % _(list(object_types)[0]),
+                                             _("Please confirm permanent deletion of %s `%s`.") % (_(list(object_types)[0]), selection[0].name),
+                                             _("Review SQL"), _("Cancel"), _("Drop Now"))
         else:
-            res = mforms.Utilities.show_message("Drop Objects", "Please confirm permanent deletion of %s %s objects: %s" % (count, ", ".join(list(object_types)), ", ".join([s.name for s in selection])),
-                                             "Review SQL", "Cancel", "Drop Now")
+            res = mforms.Utilities.show_message(_("Drop Objects"), _("Please confirm permanent deletion of %s %s objects: %s") % (count, ", ".join(_(kind) for kind in object_types), ", ".join([s.name for s in selection])),
+                                             _("Review SQL"), _("Cancel"), _("Drop Now"))
     if res is None or res == mforms.ResultCancel:
         return
 
@@ -495,12 +494,12 @@ def do_drop_object(editor, selection):
             drop_count += c
         except Exception as exc:
             if i < len(statements)-1:
-                if mforms.Utilities.show_error("Could not Drop Object", str(exc)+"\nClick Cancel to stop dropping other objects.\n\n"+stmt, "OK", "Cancel", "") == mforms.ResultCancel:
+                if mforms.Utilities.show_error(_("Could not Drop Object"), str(exc)+_("\nClick Cancel to stop dropping other objects.\n\n")+stmt, _("OK"), _("Cancel"), "") == mforms.ResultCancel:
                     break
             else:
-                if mforms.Utilities.show_error("Could not Drop Object", str(exc)+"\n\n"+stmt, "OK", "", "") == mforms.ResultCancel:
+                if mforms.Utilities.show_error(_("Could not Drop Object"), str(exc)+"\n\n"+stmt, _("OK"), "", "") == mforms.ResultCancel:
                     break
-    mforms.App.get().set_status_text("%i objects dropped" % drop_count)
+    mforms.App.get().set_status_text(_("%i objects dropped") % drop_count)
 
 
 class DependencyAnalyzer:
@@ -622,19 +621,19 @@ class DependencyAnalyzer:
 def dependencyInfoForSchemaInEditor(editor, schema):
     catalog = editor.customData.get("sqlide_grt:Catalog:%s" % schema, None)
     if not catalog:
-        mforms.App.get().set_status_text("Reverse engineering schema for %s..." % schema)
+        mforms.App.get().set_status_text(_("Reverse engineering schema for %s...") % schema)
 
         info = DependencyAnalyzer(None, schema)
         catalog = info.load_data(editor.connection)
         if not catalog:
-            mforms.App.get().set_status_text("Cancelled.")
+            mforms.App.get().set_status_text(_("Cancelled."))
             return
 
-        mforms.App.get().set_status_text("%s reverse engineered" % schema)
+        mforms.App.get().set_status_text(_("%s reverse engineered") % schema)
 
         editor.customData["sqlide_grt:Catalog:%s" % schema] = catalog
     else:
-        mforms.App.get().set_status_text("Reusing reverse engineered schema for %s..." % schema)
+        mforms.App.get().set_status_text(_("Reusing reverse engineered schema for %s...") % schema)
         info = DependencyAnalyzer(catalog, schema)
     return info
 
@@ -901,25 +900,25 @@ class CodeGenerator:
                 tables.append(table)
 
         if len(tables) != len(selection):
-            mforms.Utilities.show_error("Join Selected Tables", "Could reverse engineer some of the selected tables.", "OK", "", "")
+            mforms.Utilities.show_error(_("Join Selected Tables"), _("Could reverse engineer some of the selected tables."), _("OK"), "", "")
             return
 
         query = join_tables(info, tables, False)
         if query:
             self.send(query)
         else:
-            if mforms.Utilities.show_error("Join Selected Tables", "Some of the tables could not be joined together.\nShould missing intermediate tables be searched and added?", "Add Missing", "Cancel", "") == mforms.ResultOk:
+            if mforms.Utilities.show_error(_("Join Selected Tables"), _("Some of the tables could not be joined together.\nShould missing intermediate tables be searched and added?"), _("Add Missing"), _("Cancel"), "") == mforms.ResultOk:
                 query = join_tables(info, tables, True)
                 if query:
                     self.send(query)
                 else:
-                    mforms.Utilities.show_error("Join Selected Tables", "Could not join selected tables.", "OK", "", "")
+                    mforms.Utilities.show_error(_("Join Selected Tables"), _("Could not join selected tables."), _("OK"), "", "")
                     return
             else:
                 return
 
         if not self.to_editor:
-          mforms.App.get().set_status_text("Select statement for joined selection was copied to clipboard")
+          mforms.App.get().set_status_text(_("Select statement for joined selection was copied to clipboard"))
 
     def build_cascaded_select(self):
         editor = self.editor
@@ -932,12 +931,12 @@ class CodeGenerator:
         the_table = info.table_with_name(object.schemaName, object.name)
 
         if not the_table:
-            mforms.Utilities.show_error("Select Row References", "Could not find reverse engineered %s" % object.name, "OK", "", "")
+            mforms.Utilities.show_error(_("Select Row References"), _("Could not find reverse engineered %s") % object.name, _("OK"), "", "")
             return
 
         if not the_table.primaryKey:
-            mforms.Utilities.show_error("Select Row References", "Unable to find referencing tables for %s because the table has no primary key." % object.name,
-                                      "OK", "", "")
+            mforms.Utilities.show_error(_("Select Row References"), _("Unable to find referencing tables for %s because the table has no primary key.") % object.name,
+                                      _("OK"), "", "")
             return
 
         # expression to match the row
@@ -978,7 +977,7 @@ class CodeGenerator:
         self.send(query)
         
         if not self.to_editor:
-          mforms.App.get().set_status_text("Select statements for %s references was copied to clipboard" % the_table.name)
+          mforms.App.get().set_status_text(_("Select statements for %s references was copied to clipboard") % the_table.name)
 
 
     def build_cascaded_delete(self):
@@ -998,12 +997,12 @@ class CodeGenerator:
         the_table = info.table_with_name(object.schemaName, object.name)
 
         if not the_table:
-            mforms.Utilities.show_error("Cascading DELETE", "Could not find reverse engineered %s" % object.name, "OK", "", "")
+            mforms.Utilities.show_error(_("Cascading DELETE"), _("Could not find reverse engineered %s") % object.name, _("OK"), "", "")
             return
 
         if not the_table.primaryKey:
-            mforms.Utilities.show_error("Cascading DELETE", "Unable to create a DELETE statement for %s because the table has no primary key." % object.name,
-                                        "OK", "", "")
+            mforms.Utilities.show_error(_("Cascading DELETE"), _("Unable to create a DELETE statement for %s because the table has no primary key.") % object.name,
+                                        _("OK"), "", "")
             return
 
         # expression to match the row to be deleted
@@ -1054,5 +1053,5 @@ COMMIT;
         self.send(query)
 
         if not self.to_editor:
-          mforms.App.get().set_status_text("DELETE statement for %s was copied to clipboard" % the_table.name)
+          mforms.App.get().set_status_text(_("DELETE statement for %s was copied to clipboard") % the_table.name)
         

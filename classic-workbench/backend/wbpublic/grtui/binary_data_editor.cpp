@@ -105,17 +105,17 @@ public:
     _box.add(&_last, false, true);
     _box.add(&_label, true, true);
 
-    _label.set_text("Viewing Range 0 to 16KB");
-    _first.set_text("<< First");
-    _back.set_text("< Previous");
-    _next.set_text("Next >");
-    _last.set_text("Last >>");
+    _label.set_text("Bayt aralığı");
+    _first.set_text("İlk");
+    _back.set_text("Önceki");
+    _next.set_text("Sonraki");
+    _last.set_text("Son");
     scoped_connect(_first.signal_clicked(), std::bind(&HexDataViewer::go, this, -2));
     scoped_connect(_back.signal_clicked(), std::bind(&HexDataViewer::go, this, -1));
     scoped_connect(_next.signal_clicked(), std::bind(&HexDataViewer::go, this, 1));
     scoped_connect(_last.signal_clicked(), std::bind(&HexDataViewer::go, this, 2));
 
-    _tree.add_column(mforms::StringColumnType, "Offset", 100, true);
+    _tree.add_column(mforms::StringColumnType, "Adres", 100, false);
 
     for (int i = 0; i < 16; i++)
       _tree.add_column(mforms::StringColumnType, base::strfmt("%X", i), 25, !read_only);
@@ -127,7 +127,7 @@ public:
 
   virtual void data_changed() {
     if (_offset >= _owner->length())
-      _offset = (_owner->length() / _block_size) * _block_size;
+      _offset = _owner->length() ? ((_owner->length() - 1) / _block_size) * _block_size : 0;
 
     refresh();
   }
@@ -146,10 +146,10 @@ public:
       case 1:
         _offset += _block_size;
         if (_offset >= _owner->length())
-          _offset = (_owner->length() / _block_size) * _block_size;
+          _offset = _owner->length() ? ((_owner->length() - 1) / _block_size) * _block_size : 0;
         break;
       case 2:
-        _offset = (_owner->length() / _block_size) * _block_size;
+        _offset = _owner->length() ? ((_owner->length() - 1) / _block_size) * _block_size : 0;
         break;
     }
     refresh();
@@ -172,7 +172,8 @@ public:
       }
     }
     resume_layout();
-    _label.set_text(base::strfmt("Viewing Range %i to %i", (int)_offset, (int)(_offset + _block_size)));
+    _label.set_text(base::strfmt("Bayt aralığı %llu–%llu / %llu",
+      (unsigned long long)_offset, (unsigned long long)length, (unsigned long long)_owner->length()));
 
     if (_offset == 0) {
       _back.set_enabled(false);
@@ -181,7 +182,7 @@ public:
       _back.set_enabled(true);
       _first.set_enabled(true);
     }
-    if (_offset + _block_size < _owner->length() - 1) {
+    if (_offset + _block_size < _owner->length()) {
       _next.set_enabled(true);
       _last.set_enabled(true);
     } else {
@@ -469,10 +470,10 @@ BinaryDataEditor::BinaryDataEditor(const char *data, size_t length, bool read_on
   setup();
   assign_data(data, length);
 
-  add_viewer(new HexDataViewer(this, read_only), "Binary");
-  add_viewer(new TextDataViewer(this, "LATIN1", read_only), "Text");
+  add_viewer(new HexDataViewer(this, read_only), "Hex");
+  add_viewer(new TextDataViewer(this, "LATIN1", read_only), "Metin");
   if (ImageDataViewer::can_display(data, length))
-    add_viewer(new ImageDataViewer(this, read_only), "Image");
+    add_viewer(new ImageDataViewer(this, read_only), "Görsel");
 
   int activeTab = 0;
   if (tab.is_valid())
@@ -500,14 +501,14 @@ BinaryDataEditor::BinaryDataEditor(const char *data, size_t length, const std::s
   grt::IntegerRef tab = grt::IntegerRef::cast_from(bec::GRTManager::get()->get_app_option("BlobViewer:DefaultTab"));
 
   setup();
-  add_viewer(new HexDataViewer(this, read_only), "Binary");
+  add_viewer(new HexDataViewer(this, read_only), "Hex");
   if (datatype == "GEOMETRY") {
-    add_viewer(new GeomTextDataViewer(this, read_only), "Text");
-    add_viewer(new GeomDataViewer(this, read_only), "Image");
+    add_viewer(new GeomTextDataViewer(this, read_only), "Metin");
+    add_viewer(new GeomDataViewer(this, read_only), "Görsel");
   } else
-    add_viewer(new TextDataViewer(this, text_encoding, read_only), "Text");
+    add_viewer(new TextDataViewer(this, text_encoding, read_only), "Metin");
   if (ImageDataViewer::can_display(data, length))
-    add_viewer(new ImageDataViewer(this, read_only), "Image");
+    add_viewer(new ImageDataViewer(this, read_only), "Görsel");
 
   assign_data(data, length);
   add_json_viewer(read_only, text_encoding, "JSON");
@@ -531,10 +532,10 @@ BinaryDataEditor::~BinaryDataEditor() {
 }
 
 void BinaryDataEditor::setup() {
-  set_title("Edit Data");
+  set_title(_read_only ? "Hücre ayrıntısı - Salt okunur" : "Hücre ayrıntısı");
   set_content(&_box);
   _box.set_padding(12);
-  _box.set_spacing(12);
+  _box.set_spacing(8);
 
   _box.add(&_tab_view, true, true);
   _box.add(&_length_text, false, true);
@@ -547,12 +548,12 @@ void BinaryDataEditor::setup() {
   if (!_read_only)
     _hbox.add_end(&_save, false, true);
   _hbox.add_end(&_close, false, true);
-  _hbox.set_spacing(12);
+  _hbox.set_spacing(8);
 
-  _save.set_text("Apply");
-  _close.set_text("Close");
-  _export.set_text("Save...");
-  _import.set_text("Load...");
+  _save.set_text("Taslağa aktar");
+  _close.set_text("Kapat");
+  _export.set_text("Dosyaya kaydet…");
+  _import.set_text("Dosyadan yükle…");
 
   scoped_connect(_tab_view.signal_tab_changed(), std::bind(&BinaryDataEditor::tab_changed, this));
 
@@ -566,7 +567,7 @@ void BinaryDataEditor::setup() {
 }
 
 void BinaryDataEditor::notify_edit() {
-  _length_text.set_text(base::strfmt("Data Length: %i bytes", (int)_length));
+  _length_text.set_text(base::strfmt("Uzunluk: %llu bayt", (unsigned long long)_length));
 }
 
 void BinaryDataEditor::assign_data(const char *data, size_t length, bool steal_pointer) {
@@ -585,7 +586,7 @@ void BinaryDataEditor::assign_data(const char *data, size_t length, bool steal_p
   }
   _length = length;
 
-  _length_text.set_text(base::strfmt("Data Length: %i bytes", (int)_length));
+  _length_text.set_text(base::strfmt("Uzunluk: %llu bayt", (unsigned long long)_length));
 }
 
 void BinaryDataEditor::tab_changed() {

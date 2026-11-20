@@ -514,6 +514,19 @@ std::string Color::getApplicationColorAsString(ApplicationColor color, bool fore
 
   base::MutexLock lock(*color_mutex);
 
+  // One flat palette for native page families. Keep custom and high contrast schemes explicit.
+  if (active_scheme != ColorSchemeCustom && active_scheme != ColorSchemeHighContrast && !high_contrast_active) {
+    static const std::pair<std::string, std::string> classic_colors[] = {
+      {"#DDEBE4", "#102629"}, {"#EDF2F4", "#102629"},
+      {"#E7EEEF", "#102629"}, {"#DDEBE4", "#102629"},
+      {"#EDF2F4", "#102629"}, {"#FFFFFF", "#102629"},
+      {"#E7EEEF", "#4F5759"}, {"#DDEBE4", "#102629"},
+      {"#DDEBE4", "#102629"}, {"#E7EEEF", "#4F5759"},
+      {"#E7EEEF", "#4F5759"}
+    };
+    return foreground ? classic_colors[color].second : classic_colors[color].first;
+  }
+
   switch (active_scheme) {
     case ColorSchemeCustom:
       if (foreground)

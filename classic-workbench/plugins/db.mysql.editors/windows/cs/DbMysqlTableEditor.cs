@@ -24,12 +24,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 using Aga.Controls.Tree;
 using Aga.Controls.Tree.NodeControls;
 
 using MySQL.Forms;
+using MySQL.Controls;
 using MySQL.Grt;
 using MySQL.Grt.Db;
 using MySQL.GUI.Workbench.Plugins.Properties;
@@ -75,20 +77,214 @@ namespace MySQL.GUI.Workbench.Plugins
       : base(manager)
     {
       InitializeComponent();
+      schemaLabel.Tag = "sdp.data";
       ReinitWithArguments(value);
+      ConfigureClassicObjectEditor(mainTabControl);
+      columnNameTreeColumn.Header = SdpLanguage.Translate("Column name");
+      datatypeTreeColumn.Header = SdpLanguage.Translate("Data type");
+      defaultTreeColumn.Header = SdpLanguage.Translate("Default / expression");
+      indexNameColumn.Header = SdpLanguage.Translate("Index name");
+      indexTypeColumn.Header = SdpLanguage.Translate("Type");
+      indexColumnNameTreeColumn.Header = SdpLanguage.Translate("Column");
+      indexColumnStorageTreeColumn.Header = SdpLanguage.Translate("Order");
+      indexColumnLengthTreeColumn.Header = SdpLanguage.Translate("Length");
+      nameFkColumn.Header = SdpLanguage.Translate("Foreign key");
+      targetFkColumn.Header = SdpLanguage.Translate("Target table");
+      columnFkColumn.Header = SdpLanguage.Translate("Column");
+      targetColumnFkColumn.Header = SdpLanguage.Translate("Target column");
 
       if (IsEditingLiveObject)
         AdjustEditModeControls(mainTabControl);
-      else
-        collapsePictureBox_Click(null, null); // Start with a collapsed header section.
-      //  AdjustToSmallerLayout(); TODO: can go
-
       topPanel.Parent = mainTabControl.Parent;
+      ConfigureClassicTableLayout();
     }
 
     #endregion
 
     #region ObjectEditorPlugin Overrides
+
+    private Label ClassicFieldLabel(string text)
+    {
+      return new Label { Text = SdpLanguage.Translate(text), AutoSize = true, Dock = DockStyle.Fill,
+        TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0, 4, 8, 4) };
+    }
+
+    private void ConfigureClassicTableLayout()
+    {
+      // Reuse the original fields and their native change handlers. The old collapsed
+      // header hid the schema, engine and collation when the editor first opened.
+      Control[] headerFields = { schemaLabel, nameTextBox, optCharset, optEngine, optCollation, optComments };
+      foreach (Control field in headerFields) field.Parent = null;
+      headingLayoutPanel.Controls.Clear();
+      headingLayoutPanel.ColumnStyles.Clear();
+      headingLayoutPanel.RowStyles.Clear();
+      headingLayoutPanel.ColumnCount = 4;
+      headingLayoutPanel.RowCount = 3;
+      headingLayoutPanel.Padding = new Padding(8, 4, 8, 4);
+      headingLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 124));
+      headingLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+      headingLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 124));
+      headingLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+      string[] labels = { "Schema:", "Table name:", "Character set:", "Storage engine:", "Collation:", "Comment:" };
+      for (int row = 0; row < 3; row++)
+      {
+        headingLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, Math.Max(32, Font.Height + 14)));
+        for (int side = 0; side < 2; side++)
+        {
+          int index = row * 2 + side;
+          headingLayoutPanel.Controls.Add(ClassicFieldLabel(labels[index]), side * 2, row);
+          Control field = headerFields[index];
+          field.Dock = DockStyle.Fill;
+          field.Margin = new Padding(0, 3, side == 0 ? 16 : 0, 3);
+          field.MinimumSize = Size.Empty;
+          headingLayoutPanel.SetColumnSpan(field, 1);
+          headingLayoutPanel.SetRowSpan(field, 1);
+          headingLayoutPanel.Controls.Add(field, side * 2 + 1, row);
+        }
+      }
+      schemaLabel.TextAlign = ContentAlignment.MiddleLeft;
+      optComments.ScrollBars = ScrollBars.Vertical;
+      headingLayoutPanel.AutoSize = true;
+      headingCollapsed = false;
+
+      columnsTabPage.Padding = new Padding(8);
+      bevel2.Visible = false;
+      columnListSplitContainer.Panel2Collapsed = true;
+      columnListSplitContainer.Padding = Padding.Empty;
+      columnsTreeView.RowHeight = Math.Max(28, Font.Height + 10);
+      columnNameTreeColumn.Width = 200;
+      datatypeTreeColumn.Width = 160;
+      nnTreeColumn.Header = SdpLanguage.Translate("Not null");
+      nnTreeColumn.Width = 82;
+      uqTreeColumn.Header = SdpLanguage.Translate("Unique");
+      uqTreeColumn.Width = 82;
+      aiTreeColumn.Header = SdpLanguage.Translate("Auto increment");
+      aiTreeColumn.Width = 120;
+      defaultTreeColumn.Width = 190;
+
+      var commands = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = false,
+        Padding = new Padding(0, 4, 0, 6), Margin = Padding.Empty };
+      var addColumn = new Button { Text = SdpLanguage.Translate("Column"), Image = ClassicEditorIcon("plus"),
+        TextImageRelation = TextImageRelation.ImageBeforeText, AutoSize = true, FlatStyle = FlatStyle.Flat,
+        BackColor = Color.FromArgb(237, 242, 244), ForeColor = Color.FromArgb(16, 38, 41), Padding = new Padding(8, 2, 8, 2) };
+      addColumn.FlatAppearance.BorderSize = 0;
+      addColumn.Click += delegate {
+        if (columnsTreeView.Root.Children.Count == 0) return;
+        columnsTreeView.SelectedNode = columnsTreeView.Root.Children[columnsTreeView.Root.Children.Count - 1];
+        columnsTreeView.Focus();
+        nameNodeControl.BeginEdit();
+      };
+      addColumn.Disposed += delegate { if (addColumn.Image != null) addColumn.Image.Dispose(); };
+      commands.Controls.Add(addColumn);
+      foreach (int direction in new int[] { -1, 1 })
+      {
+        int step = direction;
+        var move = new Button { Text = step < 0 ? "↑" : "↓", AutoSize = true,
+          AutoSizeMode = AutoSizeMode.GrowAndShrink, Size = new Size(32, 28),
+          MinimumSize = new Size(32, 28), FlatStyle = FlatStyle.Flat, Margin = new Padding(4, 3, 0, 3) };
+        move.AccessibleName = SdpLanguage.Translate(step < 0 ? "Move column up" : "Move column down");
+        move.Click += delegate { MoveClassicColumn(step); };
+        commands.Controls.Add(move);
+      }
+
+      // Keep the original editable controls, including independent generated/NULL/PK
+      // flags. Reparenting changes presentation without substituting the SQL model.
+      Control[] detailFields = { columnNameTextBox, columnDataTypeTextBox, columnDefaultTextBox,
+        columnCommentTextBox, columnCharsetCollationPanel, pkCheckBox, nnCheckBox, uniqueCheckBox,
+        binaryCheckBox, unsignedCheckBox, zeroFillCheckBox, aiCheckBox, generatedCheckbox,
+        virtualRadioButton, storedRadioButton, defaultLabel };
+      foreach (Control field in detailFields) field.Parent = null;
+      tableLayoutPanel1.Controls.Clear();
+      tableLayoutPanel1.ColumnStyles.Clear();
+      tableLayoutPanel1.RowStyles.Clear();
+      tableLayoutPanel1.ColumnCount = 4;
+      tableLayoutPanel1.RowCount = 4;
+      tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 124));
+      tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 52));
+      tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
+      tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 48));
+      tableLayoutPanel1.Padding = new Padding(0, 8, 0, 0);
+      tableLayoutPanel1.Controls.Add(ClassicFieldLabel("Column name:"), 0, 0);
+      tableLayoutPanel1.Controls.Add(columnNameTextBox, 1, 0);
+      tableLayoutPanel1.Controls.Add(ClassicFieldLabel("Data type:"), 2, 0);
+      tableLayoutPanel1.Controls.Add(columnDataTypeTextBox, 3, 0);
+      defaultLabel.Text = SdpLanguage.Translate("Default:");
+      defaultLabel.TextAlign = ContentAlignment.MiddleLeft;
+      tableLayoutPanel1.Controls.Add(defaultLabel, 0, 1);
+      tableLayoutPanel1.Controls.Add(columnDefaultTextBox, 1, 1);
+      tableLayoutPanel1.Controls.Add(ClassicFieldLabel("Storage:"), 2, 1);
+      var storage = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, WrapContents = true, Margin = Padding.Empty };
+      storage.Controls.Add(generatedCheckbox);
+      storage.Controls.Add(virtualRadioButton);
+      storage.Controls.Add(storedRadioButton);
+      tableLayoutPanel1.Controls.Add(storage, 3, 1);
+      tableLayoutPanel1.Controls.Add(ClassicFieldLabel("Comment:"), 0, 2);
+      tableLayoutPanel1.Controls.Add(columnCommentTextBox, 1, 2);
+      columnCommentTextBox.MinimumSize = new Size(0, 54);
+      tableLayoutPanel1.Controls.Add(ClassicFieldLabel("Flags:"), 2, 2);
+      var flags = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, WrapContents = true, Margin = Padding.Empty };
+      foreach (CheckBox flag in new CheckBox[] { pkCheckBox, nnCheckBox, uniqueCheckBox, binaryCheckBox,
+          unsignedCheckBox, zeroFillCheckBox, aiCheckBox })
+      {
+        flag.AutoSize = true;
+        flag.Anchor = AnchorStyles.Left;
+        flag.Margin = new Padding(0, 2, 12, 2);
+        flags.Controls.Add(flag);
+      }
+      tableLayoutPanel1.Controls.Add(flags, 3, 2);
+      tableLayoutPanel1.Controls.Add(ClassicFieldLabel("Character set / collation:"), 0, 3);
+      tableLayoutPanel1.Controls.Add(columnCharsetCollationPanel, 1, 3);
+      foreach (Control field in detailFields)
+      {
+        if (field.Parent != tableLayoutPanel1) continue;
+        tableLayoutPanel1.SetColumnSpan(field, 1);
+        tableLayoutPanel1.SetRowSpan(field, 1);
+      }
+      tableLayoutPanel1.SetColumnSpan(columnCharsetCollationPanel, 3);
+      foreach (Control field in new Control[] { columnNameTextBox, columnDataTypeTextBox, columnDefaultTextBox,
+          columnCommentTextBox, columnCharsetCollationPanel })
+      {
+        field.Dock = DockStyle.Fill;
+        field.Margin = new Padding(0, 3, 8, 3);
+      }
+      for (int row = 0; row < 4; row++) tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+      // Give the result list its own expanding row. Auto-sized wrapped property
+      // controls must not consume the grid's entire height at high DPI.
+      columnListSplitContainer.Parent = null;
+      tableLayoutPanel1.Parent = null;
+      columnsTabPage.Controls.Clear();
+      var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3,
+        Margin = Padding.Empty, Padding = Padding.Empty };
+      layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+      layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+      layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+      layout.RowStyles.Add(new RowStyle(SizeType.Absolute, Math.Max(112, Font.Height * 5)));
+      commands.Dock = DockStyle.Fill;
+      layout.Controls.Add(commands, 0, 0);
+      columnListSplitContainer.Margin = Padding.Empty;
+      columnListSplitContainer.Dock = DockStyle.Fill;
+      columnListSplitContainer.Panel1Collapsed = false;
+      layout.Controls.Add(columnListSplitContainer, 0, 1);
+      var detailsHost = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Margin = Padding.Empty };
+      tableLayoutPanel1.Dock = DockStyle.Top;
+      detailsHost.Controls.Add(tableLayoutPanel1);
+      layout.Controls.Add(detailsHost, 0, 2);
+      columnsTabPage.Controls.Add(layout);
+      SdpLanguage.Apply(this);
+    }
+
+    private void MoveClassicColumn(int step)
+    {
+      TreeNodeAdv selected = columnsTreeView.SelectedNode;
+      if (selected == null || selected.Index >= columnsTreeView.Root.Children.Count - 1) return;
+      int target = selected.Index + step;
+      if (target < 0 || target >= columnsTreeView.Root.Children.Count - 1) return;
+      tableEditorBE.get_columns().reorder(new NodeIdWrapper(selected.Index), target);
+      columnsListModel.RefreshModel();
+      if (target < columnsTreeView.Root.Children.Count)
+        columnsTreeView.SelectedNode = columnsTreeView.Root.Children[target];
+    }
 
     public override bool ReinitWithArguments(GrtValue value)
     {
@@ -743,7 +939,7 @@ namespace MySQL.GUI.Workbench.Plugins
 
         if (isGenerated == 0)
         {
-          defaultLabel.Text = "Default:";
+          defaultLabel.Text = SdpLanguage.Translate("Default:");
           if (columnsListModel.GrtList.get_field(nodeId,
             (int)MySQLTableColumnsListWrapper.MySQLColumnListColumns.Default, out stringValue))
           {
@@ -859,7 +1055,7 @@ namespace MySQL.GUI.Workbench.Plugins
         generatedCheckbox.Checked = isGenerated != 0;
         if (isGenerated != 0)
         {
-          defaultLabel.Text = "Expression:";
+          defaultLabel.Text = SdpLanguage.Translate("Expression:");
           
           if (columnsListModel.GrtList.get_field(nodeId,
             (int)MySQLTableColumnsListWrapper.MySQLColumnListColumns.GeneratedStorageType, out stringValue))
@@ -1089,7 +1285,7 @@ namespace MySQL.GUI.Workbench.Plugins
           if (!virtualRadioButton.Checked && !storedRadioButton.Checked)
             virtualRadioButton.Checked = true; // Default value.
 
-          defaultLabel.Text = "Expression:";
+          defaultLabel.Text = SdpLanguage.Translate("Expression:");
           if (columnsListModel.GrtList.get_field(nodeId,
             (int)MySQLTableColumnsListWrapper.MySQLColumnListColumns.GeneratedExpression, out stringValue))
           {
@@ -1100,7 +1296,7 @@ namespace MySQL.GUI.Workbench.Plugins
         }
         else
         {
-          defaultLabel.Text = "Default:";
+          defaultLabel.Text = SdpLanguage.Translate("Default:");
           if (columnsListModel.GrtList.get_field(nodeId,
             (int)MySQLTableColumnsListWrapper.MySQLColumnListColumns.Default, out stringValue))
           {

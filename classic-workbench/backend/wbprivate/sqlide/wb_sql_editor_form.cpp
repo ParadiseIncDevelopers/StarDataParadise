@@ -1310,21 +1310,39 @@ std::string SqlEditorForm::get_client_lib_version() {
 
 //----------------------------------------------------------------------------------------------------------------------
 
-/**
- * Formats a single text line for the connection info output.
- */
-std::string createTableRow(const std::string &name, const std::string &value = "") {
-  if (value.empty()) // Empty value means: heading row.
-    return "<tr class='heading'>"s +
-      "<td style='border:none; padding-left: 0px;' colspan=2>" + name + "</td>"
-      "</tr>";
-
-  return "<tr>"s +
-    "<td style='border:none; padding-left: 15px;'>" + name + "</td>"
-    "<td style='border:none;'>" + value + "</td>"
-    "</tr>";
-
+namespace {
+std::string connection_info_escape(const std::string &value) {
+  std::string escaped;
+  escaped.reserve(value.size());
+  for (char c : value) {
+    switch (c) {
+      case '&': escaped += "&amp;"; break;
+      case '<': escaped += "&lt;"; break;
+      case '>': escaped += "&gt;"; break;
+      case '"': escaped += "&quot;"; break;
+      case '\'': escaped += "&#39;"; break;
+      default: escaped += c;
+    }
+  }
+  return escaped;
 }
+
+std::string connection_info_body() {
+  return "<body style='margin:0; padding:10px; font-family:Segoe UI; font-size:9.75pt; color:#102629;'>";
+}
+
+std::string connection_info_heading(const std::string &name) {
+  return "<div style='font-weight:bold; margin:0 0 8px 0;'>" + connection_info_escape(name) + "</div>";
+}
+
+std::string connection_info_field(const std::string &name, const std::string &value) {
+  // Stack labels above values: the session inspector is often only 220px wide.
+  return "<div style='margin:0 0 8px 0;'>"
+         "<div style='font-size:9pt; color:#60747c;'>" + connection_info_escape(name) + "</div>"
+         "<div style='white-space:normal; word-wrap:break-word; overflow-wrap:anywhere; word-break:break-all;'>" +
+         connection_info_escape(value) + "</div></div>";
+}
+} // namespace
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -1348,10 +1366,11 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
     // During the connection process create also a description about the connection details that can be shown
     // in the SQL IDE. Only the body content is created here. Surrounding code is added by the tree controller.
     // Start with the default content, in case we cannot connect.
-    _connectionInfo = "<b><span style='color: red'>No connection established</span></b>";
+    _connectionInfo = connection_info_body() + connection_info_heading(_("Connection")) +
+                      connection_info_field(_("Status"), _("No connection established")) + "</body>";
 
-    std::string newConnectionInfo = "<body><table style='border: none; border-collapse: collapse;'>" +
-       createTableRow("Connection Details") + createTableRow("Name: ", _connection->name());
+    std::string newConnectionInfo = connection_info_body() + connection_info_heading(_("Connection details")) +
+       connection_info_field(_("Name"), _connection->name());
 
     _tunnel = tunnel;
     if (_tunnel == nullptr) {
@@ -1366,10 +1385,10 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
           name = "UNIX socket";
       #endif
 
-        newConnectionInfo += createTableRow("Host:", "localhost (" + name + ")");
+        newConnectionInfo += connection_info_field(_("Host"), "localhost (" + name + ")");
       } else {
-        newConnectionInfo += createTableRow("Host:", _connection->parameterValues().get_string("hostName"));
-        newConnectionInfo += createTableRow("Port:", std::to_string(_connection->parameterValues().get_int("port")));
+        newConnectionInfo += connection_info_field(_("Host"), _connection->parameterValues().get_string("hostName"));
+        newConnectionInfo += connection_info_field(_("Port"), std::to_string(_connection->parameterValues().get_int("port")));
       }
     }
 
@@ -1396,7 +1415,7 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
       if (editor.is_valid()) // this will be valid only on reconnections
         editor->serverVersion(_version);
 
-      newConnectionInfo += createTableRow("Login User:", _connection->parameterValues().get_string("userName"));
+      newConnectionInfo += connection_info_field(_("Login user"), _connection->parameterValues().get_string("userName"));
 
       // check the actual user we're logged in as
       bool sdpModelSyntax = false;
@@ -1405,7 +1424,7 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
         {
           const std::unique_ptr<sql::ResultSet> rs(statement->executeQuery("SELECT current_user()"));
           if (rs->next())
-            newConnectionInfo += createTableRow("Current User:", rs->getString(1));
+            newConnectionInfo += connection_info_field(_("Current user"), rs->getString(1));
         }
 
         if (bec::is_stardataparadise_server(_connection_details["dbmsProductVersion"])) {
@@ -1420,25 +1439,25 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
         }
       }
 
-      newConnectionInfo += createTableRow(
-        "SSL cipher:", _usr_dbc_conn->ssl_cipher.empty() ? "SSL not used" : _usr_dbc_conn->ssl_cipher);
+      newConnectionInfo += connection_info_field(
+        _("TLS cipher"), _usr_dbc_conn->ssl_cipher.empty() ? _("TLS not used") : _usr_dbc_conn->ssl_cipher);
 
       if (_tunnel != nullptr) {
         auto &config = _tunnel->getConfig();
-        newConnectionInfo += createTableRow("SSH Tunnel");
-        newConnectionInfo += createTableRow("Target:", config.remoteSSHhost + ":" + std::to_string(config.remoteSSHport));
-        newConnectionInfo += createTableRow("Local port:", std::to_string(config.localport));
-        newConnectionInfo += createTableRow("Remote port:", std::to_string(config.remoteport));
-        newConnectionInfo += createTableRow("Remote host:", config.remotehost);
-        newConnectionInfo += createTableRow("Config file:", config.configFile);
+        newConnectionInfo += connection_info_heading(_("SSH tunnel"));
+        newConnectionInfo += connection_info_field(_("Target"), config.remoteSSHhost + ":" + std::to_string(config.remoteSSHport));
+        newConnectionInfo += connection_info_field(_("Local port"), std::to_string(config.localport));
+        newConnectionInfo += connection_info_field(_("Remote port"), std::to_string(config.remoteport));
+        newConnectionInfo += connection_info_field(_("Remote host"), config.remotehost);
+        newConnectionInfo += connection_info_field(_("Config file"), config.configFile);
       }
 
-      newConnectionInfo += createTableRow("Server");
-      newConnectionInfo += createTableRow("Product:", _connection_details["dbmsProductName"]);
-      newConnectionInfo += createTableRow("Version:", _connection_details["dbmsProductVersion"]);
+      newConnectionInfo += connection_info_heading(_("Server"));
+      newConnectionInfo += connection_info_field(_("Product"), _connection_details["dbmsProductName"]);
+      newConnectionInfo += connection_info_field(_("Version"), _connection_details["dbmsProductVersion"]);
 
-      newConnectionInfo += createTableRow("Connector");
-      newConnectionInfo += createTableRow("Version:", get_client_lib_version());
+      newConnectionInfo += connection_info_heading(_("Connector"));
+      newConnectionInfo += connection_info_field(_("Version"), get_client_lib_version());
 
       if (_usr_dbc_conn && get_session_variable(_usr_dbc_conn->ref.get(), "lower_case_table_names", value))
         _lower_case_table_names = base::atoi<int>(value, 0);
@@ -1449,7 +1468,7 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
       _work_parser_context->updateSdpModelSyntax(sdpModelSyntax);
 
       // If we came so far, we probably have a valid connection.
-      _connectionInfo = newConnectionInfo + "</table>";
+      _connectionInfo = newConnectionInfo + "</body>";
     }
     CATCH_ANY_EXCEPTION_AND_DISPATCH(_("Get connection information"));
   } catch (sql::AuthenticationError &authException) {
@@ -1468,7 +1487,7 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
       case 2013:
       case 2003:
       case 2002: { // ERROR 2003 (HY000): Can't connect to MySQL server on X.Y.Z.W (or via socket)
-        add_log_message(WarningMsg, exc.what(), "Could not connect, server may not be running.", "");
+        add_log_message(WarningMsg, exc.what(), _("Could not connect, server may not be running."), "");
 
         err_ptr->server_probably_down = true;
 
@@ -1499,7 +1518,7 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
       case 3032: {
         err_ptr->serverIsOffline = true;
         _serverIsOffline = true;
-        add_log_message(WarningMsg, exc.what(), "Could not connect, server is in offline mode.", "");
+        add_log_message(WarningMsg, exc.what(), _("Could not connect, server is in offline mode."), "");
 
         if (_connection.is_valid()) {
           // if there's no connection, then we continue anyway if this is a local connection or
@@ -1528,12 +1547,9 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
       }
     }
 
-    _connectionInfo += "</body>";
     throw;
   }
 
-  _connectionInfo += "</body>";
-  
   return grt::StringRef();
 }
 
@@ -1825,13 +1841,8 @@ void SqlEditorForm::explain_current_statement() {
   SqlEditorPanel *panel = active_sql_editor_panel();
   if (panel) {
     SqlEditorResult *result = panel->add_panel_for_recordset(Recordset::Ref());
-    result->set_title("Explain");
-
-    grt::BaseListRef args(true);
-    args.ginsert(panel->grtobj());
-    args.ginsert(result->grtobj());
-    // run the visual explain plugin, so it will fill the result panel
-    grt::GRT::get()->call_module_function("SQLIDEQueryAnalysis", "visualExplain", args);
+    result->set_title("Sorgu planı");
+    result->show_execution_plan();
   }
 }
 
@@ -2694,6 +2705,13 @@ bool SqlEditorForm::run_data_changes_commit_wizard(Recordset::Ptr rs_ptr, bool s
 
   // No need for online DDL settings or callback as we are dealing with data here, not metadata.
   SqlScriptRunWizard wizard(rdbms_version(), "", "");
+  wizard.values().gset("change_kind", "data");
+  if (connection_descriptor().is_valid())
+    wizard.values().gset("target_connection", connection_descriptor()->name());
+  if (auto storage = std::dynamic_pointer_cast<Recordset_cdbc_storage>(data_storage_ref)) {
+    wizard.values().gset("target_schema", storage->schema_name());
+    wizard.values().gset("target_object", storage->table_name());
+  }
 
   scoped_connection c1(
     on_sql_script_run_error.connect(std::bind(&SqlScriptApplyPage::on_error, wizard.apply_page, std::placeholders::_1,
@@ -2707,7 +2725,7 @@ bool SqlEditorForm::run_data_changes_commit_wizard(Recordset::Ptr rs_ptr, bool s
     std::bind(&SqlEditorForm::apply_data_changes_commit, this, std::placeholders::_1, rs_ptr, skip_commit);
   wizard.run_modal();
 
-  return !wizard.has_errors();
+  return wizard.applied() && !wizard.has_errors();
 }
 
 //----------------------------------------------------------------------------------------------------------------------

@@ -25,14 +25,17 @@
 #include "wb_sql_editor_form.h"
 #include "wb_sql_editor_form_ui.h"
 #include "wb_sql_editor_panel.h"
+#include "wb_sql_editor_result_panel.h"
 #include "query_side_palette.h"
 #include "workbench/wb_context_names.h"
 #include "objimpl/db.query/db_query_Resultset.h"
 #include "grtdb/editor_dbobject.h"
 #include "grtdb/db_helpers.h"
+#include "grt/icon_manager.h"
 
 #include "sqlide/wb_sql_editor_tree_controller.h"
 #include "sqlide/sql_script_run_wizard.h"
+#include "sqlide/recordset_cdbc_storage.h"
 
 #include "workbench/wb_command_ui.h"
 #include "workbench/wb_context_ui.h"
@@ -55,7 +58,141 @@ DEFAULT_LOG_DOMAIN("SQL Editor Form")
 
 using boost::signals2::scoped_connection;
 
+namespace {
+  using WorkspaceAction = std::pair<std::string, std::string>;
+
+  // All entries call the same command handlers as the menus. Switching areas
+  // never closes query buffers or changes the connection transaction.
+  std::vector<WorkspaceAction> workspace_actions(const std::string &section) {
+    if (section == "data")
+      return {{"Open selected table data", "workspace:select_data"},
+              {"Search table data", "plugin:com.mysql.wb.menu.database.search"},
+              {"Inspect selected object", "builtin:query.show_inspector"}};
+    if (section == "schema")
+      return {{"Object inspector", "builtin:query.show_inspector"},
+              {"New schema", "builtin:query.new_schema"}, {"New table", "builtin:query.new_table"},
+              {"New view", "builtin:query.new_view"}, {"New procedure", "builtin:query.new_routine"},
+              {"New function", "builtin:query.new_function"},
+              {"Reverse engineer server", "plugin:wb.file.newDocumentFromDB"},
+              {"Migrate schema", "plugin:wb.db.copy.open"},
+              {"Data type mapping", "plugin:wb.migration.showTypeMapEditor"}};
+    if (section == "performance")
+      return {{"Live monitoring", "plugin:wb.admin.open_into:admin_dashboard"},
+              {"Query reports", "plugin:wb.admin.open_into:admin_performance_reports"},
+              {"Instrumentation settings", "plugin:wb.admin.open_into:admin_instrumentation_setup"}};
+    if (section == "management")
+      return {{"Overview", "plugin:wb.admin.open_into:admin_server_status"},
+              {"Sessions", "plugin:wb.admin.open_into:admin_connections"},
+              {"Users and privileges", "plugin:wb.admin.open_into:admin_manage_privs"},
+              {"Variables", "plugin:wb.admin.open_into:admin_status_vars"},
+              {"SQL export", "plugin:wb.admin.open_into:admin_export"},
+              {"SQL import", "plugin:wb.admin.open_into:admin_restore_data"},
+              {"Service", "plugin:wb.admin.open_into:admin_start_stop"},
+              {"Logs", "plugin:wb.admin.open_into:admin_server_logs"},
+              {"Configuration", "plugin:wb.admin.open_into:admin_option_file"}};
+    if (section == "tools")
+      return {{"Data history", "plugin:sdp.tools.history"}, {"Decision rules", "plugin:sdp.tools.decision"},
+              {"CPU models", "plugin:sdp.tools.models"}, {"Compute jobs", "plugin:sdp.tools.jobs"},
+              {"Verified backups", "plugin:sdp.tools.backups"},
+              {"Scripts and plugins", "plugin:wb.form.showGRTShell"},
+              {"Preferences", "plugin:wb.form.showOptions"}};
+    return {{"New SQL buffer", "builtin:query.newFile"}, {"Open SQL file", "builtin:query.openFile"},
+            {"Run SQL script", "plugin:wb.sqlide.runScript"},
+            {"Reconnect", "builtin:query.reconnect"}};
+  }
+}
+
+void SqlEditorForm::select_workspace_section(const std::string &section, bool open_page) {
+  _workspace_section = section;
+  for (int i = 0; _tabdock && i < _tabdock->view_count(); ++i) {
+    if (auto panel = dynamic_cast<SqlEditorPanel *>(_tabdock->view_at_index(i)))
+      panel->set_data_mode(section == "data");
+  }
+  for (const std::string &key : {"sql", "data", "schema", "performance", "management", "tools"})
+    _toolbar->set_item_checked("workspace." + key, key == section);
+  std::vector<std::string> labels;
+  for (const auto &action : workspace_actions(section))
+    labels.push_back(_(action.first));
+  _workspace_action->set_selector_items(labels);
+  _workspace_action->set_text(labels.front());
+
+  if (!open_page)
+    return;
+
+  if (section == "data") {
+    // Changing area is navigation, not a request to run the tree selection
+    // again. Keep the visible table result and any pending row edits in place.
+    if (auto panel = active_sql_editor_panel()) {
+      if (auto result = panel->active_result_panel()) {
+        if (auto recordset = result->recordset()) {
+          auto storage = std::dynamic_pointer_cast<Recordset_cdbc_storage>(recordset->data_storage());
+          if (storage && !storage->table_name().empty())
+            return;
+        }
+      }
+    }
+  } else if (section == "schema") {
+    // Windows object editors are native dock documents rather than AppViews.
+    // Their selected_view() is null even though the dock contains a selected
+    // document. Toolbar focus can replace the global active form with this
+    // SQL workspace, so use the dock selection before that focus-based fallback.
+    if (_tabdock && _tabdock->view_count() > 0 && !_tabdock->selected_view())
+      return;
+    // An open definition editor already belongs to the Schema area. The
+    // explicit Open action remains available for opening another inspector.
+    if (auto editor = dynamic_cast<bec::DBObjectEditorBE *>(WBContextUI::get()->get_active_form())) {
+      if (editor->is_editing_live_object())
+        return;
+    }
+  }
+
+  if (section == "sql") {
+    // Data and SQL share the active query document. Keep its result and
+    // pending edits instead of jumping to the first query in the dock.
+    if (active_sql_editor_panel())
+      return;
+    // Select an existing query document, preserving all other docked pages.
+    for (int i = 0; i < _tabdock->view_count(); ++i) {
+      auto panel = dynamic_cast<SqlEditorPanel *>(_tabdock->view_at_index(i));
+      if (panel) {
+        _tabdock->select_view(panel);
+        return;
+      }
+    }
+    activate_command("builtin:query.newFile");
+  } else
+    open_workspace_action();
+}
+
+void SqlEditorForm::open_workspace_action() {
+  for (const auto &action : workspace_actions(_workspace_section)) {
+    if (_(action.first) == _workspace_action->get_text()) {
+      activate_command(action.second);
+      return;
+    }
+  }
+}
+
 void SqlEditorForm::activate_command(const std::string &command) {
+  if (command == "workspace:select_data") {
+    auto tree = _live_tree->get_schema_tree();
+    auto objects = grt::ListRef<db_query_LiveDBObject>::cast_from(tree->get_selected_objects());
+    std::list<mforms::TreeNodeRef> nodes;
+    GRTLIST_FOREACH(db_query_LiveDBObject, objects, object) {
+      const std::string type = (*object)->type();
+      if (type == "db.Table" || type == "db.View") {
+        auto node = tree->get_node_for_object((*object)->schemaName(),
+          type == "db.Table" ? LiveSchemaTree::Table : LiveSchemaTree::View, (*object)->name());
+        if (node)
+          nodes.push_back(node);
+      }
+    }
+    if (nodes.empty())
+      mforms::Utilities::show_message(_("Table data"), _("Select a table or view in the schema explorer."), _("Close"));
+    else
+      tree->activate_popup_item_for_nodes("select_data", nodes);
+    return;
+  }
   _wbsql->get_cmdui()->activate_command(command);
 }
 
@@ -64,6 +201,35 @@ mforms::ToolBar *SqlEditorForm::get_toolbar() {
     _toolbar = _wbsql->get_cmdui()->create_toolbar(
       "data/dbquery_toolbar.xml", std::bind(&SqlEditorForm::activate_command, this, std::placeholders::_1));
     _toolbar->set_name("SQL IDE Toolbar");
+
+    const std::vector<WorkspaceAction> areas = {{"sql", "SQL"}, {"data", "Data"}, {"schema", "Schema"},
+      {"performance", "Performance"}, {"management", "Management"}, {"tools", "Tools"}};
+    const std::vector<std::string> area_icons = {"database", "table", "sitemap", "gauge", "settings", "tool"};
+    int position = 0;
+    for (const auto &area : areas) {
+      auto tab = mforms::manage(new mforms::ToolBarItem(mforms::ToggleItem));
+      tab->set_name(_(area.second));
+      tab->setInternalName("workspace." + area.first);
+      tab->set_text(_(area.second));
+      tab->set_icon(IconManager::get_instance()->get_icon_path("sdp_" + area_icons[position] + ".png"));
+      tab->set_tooltip(_(area.second));
+      scoped_connect(tab->signal_activated(), [this, area](mforms::ToolBarItem *) {
+        select_workspace_section(area.first, true);
+      });
+      _toolbar->insert_item(position++, tab);
+    }
+    _toolbar->insert_item(position++, mforms::manage(new mforms::ToolBarItem(mforms::SeparatorItem)));
+    _workspace_action = mforms::manage(new mforms::ToolBarItem(mforms::SelectorItem));
+    _workspace_action->set_name(_("Workspace page"));
+    _workspace_action->setInternalName("workspace.page");
+    _workspace_action->set_tooltip(_("Page or action in the selected area"));
+    _toolbar->insert_item(position++, _workspace_action);
+    auto open = mforms::manage(new mforms::ToolBarItem(mforms::TextActionItem));
+    open->set_name(_("Open selected page"));
+    open->set_text(_("Open"));
+    scoped_connect(open->signal_activated(), [this](mforms::ToolBarItem *) { open_workspace_action(); });
+    _toolbar->insert_item(position, open);
+    select_workspace_section("sql", false);
 
     update_menu_and_toolbar();
     update_toolbar_icons();
@@ -75,7 +241,8 @@ mforms::ToolBar *SqlEditorForm::get_toolbar() {
 
 void SqlEditorForm::limit_rows(const std::string &limit_text) {
   int limit;
-  if (sscanf(limit_text.c_str(), _("Limit to %i rows"), &limit) < 1)
+  if (sscanf(limit_text.c_str(), "Limit to %i rows", &limit) < 1 &&
+      sscanf(limit_text.c_str(), _("Limit to %i rows"), &limit) < 1)
     limit = 0; // Don't Limit
 
   mforms::MenuItem *menu = _menu->find_item("limit_rows");
@@ -99,12 +266,15 @@ void SqlEditorForm::limit_rows(const std::string &limit_text) {
   // special handling for custom values not in the predefined list
   mforms::MenuItem *citem = menu->find_item("custom");
   if (!found) {
-    std::string caption = base::strfmt("Limit to %i rows", limit);
-    std::string accessibilityName = base::strfmt("Limit to %i Rows", limit);
+    std::string caption = base::strfmt(_("Limit to %i rows"), limit);
+    std::string action = base::strfmt("Limit to %i rows", limit);
+    std::string accessibilityName = caption;
     if (!citem)
-      citem = menu->add_item_with_title(caption, std::bind(&SqlEditorForm::limit_rows, this, caption), accessibilityName, caption);
-    else
+      citem = menu->add_item_with_title(caption, std::bind(&SqlEditorForm::limit_rows, this, action), accessibilityName, action);
+    else {
       citem->set_title(caption);
+      citem->setInternalName(action);
+    }
     citem->set_checked(true);
   } else {
     if (citem)
@@ -336,7 +506,7 @@ void SqlEditorForm::setup_side_palette() {
 #ifdef _MSC_VER
   mforms::Panel *panel;
   panel = mforms::manage(new mforms::Panel(mforms::StyledHeaderPanel));
-  panel->set_title(_("SQL Additions"));
+  panel->set_title(_("SQL help and snippets"));
   panel->add(_side_palette);
   _side_palette_host = panel;
 #else
@@ -479,6 +649,13 @@ bool SqlEditorForm::run_live_object_alteration_wizard(const std::string &alter_s
   wb::WBContextUI::get()->get_wb_options_value("", "DbSqlEditor:OnlineDDLLock", lock);
 
   SqlScriptRunWizard wizard(rdbms_version(), algorithm, lock);
+  if (connection_descriptor().is_valid())
+    wizard.values().gset("target_connection", connection_descriptor()->name());
+  if (obj_editor && obj_editor->get_dbobject().is_valid()) {
+    wizard.values().gset("target_object", obj_editor->get_dbobject()->name());
+    wizard.values().gset("target_schema", obj_editor->get_schema_name());
+  }
+  wizard.values().gset("change_kind", "schema");
   if (obj_editor)
     wizard.regenerate_script = std::bind(&SqlEditorTreeController::generate_alter_script, get_live_tree(), rdbms(),
                                          obj_editor->get_dbobject(), std::placeholders::_1, std::placeholders::_2);
@@ -508,6 +685,8 @@ bool SqlEditorForm::run_live_object_alteration_wizard(const std::string &alter_s
 
   if (wizard.applied() && !wizard.has_errors())
     set_log_message(log_id, DbSqlEditorLog::OKMsg, _("Changes applied"), log_context, "");
+  else if (!wizard.applied() && !wizard.has_errors() && errors.empty())
+    set_log_message(log_id, DbSqlEditorLog::NoteMsg, _("Changes cancelled before execution"), log_context, "");
   else
     set_log_message(log_id, DbSqlEditorLog::ErrorMsg, errors, log_context, "");
 
