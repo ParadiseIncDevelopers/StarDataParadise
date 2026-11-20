@@ -149,6 +149,7 @@
     </Compile>
     <Compile Include="WbToolStripRenderers.cs" />
     <Compile Include="SdpLanguage.cs" />
+    <Compile Include="SdpModalStyle.cs" />
     <EmbeddedResource Include="FindPanel.resx">
       <DependentUpon>FindPanel.cs</DependentUpon>
     </EmbeddedResource>

@@ -41,3 +41,11 @@ Sonuç ve sansürlenmiş süreç günlükleri varsayılan olarak `out/mysql-migr
 `model_gui_probe.py`, Classic'in `--run-script=<tam yol>` seçeneğiyle yeni ve ayrı bir `--configdir=<test profili>` altında çalıştırılır. Gerçek GRT model API'leriyle iki tablo, beş alan, iki birincil anahtar ve bir dış anahtar ilişkisi oluşturur; diyagrama yerleştirir ve `.mwb` dosyasını kaydeder. Açık bir model varsa veya çıktı dosyası zaten varsa üzerine yazmadan durur.
 
 Varsayılan çıktı `out/classic-home-acceptance/kitaplik.mwb` ve `model-fixture-result.json` dosyalarıdır. Tekrar çalıştırmak için `SDP_MODEL_PROBE_OUTPUT` ortam değişkeniyle yeni bir test çıktı dizini verilebilir. Testin model renk/font ayarları yalnız oluşturulan belgeye aittir; kullanıcının genel tercihlerini değiştirmez. Kaydedilen dosya **Modeller → Model aç** yolundan yeniden açılarak diyagram ve ilişki görsel olarak denetlenir.
+
+## Ortak modal düğme stili
+
+```powershell
+& packaging/classic-workbench/tests/Test-ModalStyle.ps1 -Runtime out/classic-ai-hist-ui
+```
+
+Gerçek paketlenmiş `WBControls.dll` kullanılır. İç içe bir modalda normal/iptal düğmeleri, disabled/reenabled durumu, sonradan eklenen düğme, native güvenlik çizimi, gerçek odak, tab sırası, varsayılan/iptal sonucu ve native piksel dolgusu kontrol edilir. Probe kendi kısa ömürlü formunu açıp kapatır; sunucuya bağlanmaz. Çıktı `out/classic-modal-acceptance/probe-runtime.log` altındadır. Windows yüksek kontrast ayarı değiştirilmez; gerçek yüksek kontrast/DPI matrisi ayrıca sınanır.

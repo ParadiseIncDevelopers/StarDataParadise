@@ -343,6 +343,7 @@ void WizardWrapper::set_title(mforms::Wizard *backend, const std::string &title)
 
 void WizardWrapper::run_modal(mforms::Wizard *backend) {
   WizardWrapper *wrapper = backend->get_data<WizardWrapper>();
+  MySQL::Controls::SdpModalStyle::Apply(wrapper->GetManagedObject<Form>());
   wrapper->GetManagedObject<Form>()->ShowDialog(wrapper->_owner);
 }
 

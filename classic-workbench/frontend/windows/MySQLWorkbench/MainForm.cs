@@ -186,6 +186,7 @@ namespace MySQL.GUI.Workbench
     /// </summary>
     private MainForm()
     {
+      SdpModalStyle.Initialize();
       InitializeComponent();
     }
 

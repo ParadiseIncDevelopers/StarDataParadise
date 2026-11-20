@@ -40,6 +40,8 @@ Ana sayfadaki EER girişinin önerilen etiketi **Şema modelleri**, makine öğr
 
 İki ayrı başlık veya bilgi parçası ` - ` ile ayrılır. Görsel metin ayıracı olarak nokta veya orta nokta kullanılmaz.
 
+Bu kural pencere ve modal başlıklarında, sekmelerde ve yan yana gösterilen bilgi özetlerinde de geçerlidir: `Knowledge - Parametreler ve sonuç`, `Yetkiler ve onay - siparis_iptal` ve `HIST - İşlem geçmişi` gibi. Kısa çizginin iki yanında birer boşluk bulunur. Tarih, ondalık sayı, dosya uzantısı, SQL sözdizimi ve nesne adındaki noktalar bu görsel ayraç kuralının dışındadır.
+
 Önceki [ana sayfa paleti](../ANA_SAYFA.md) sürdürülür.
 
 | Rol | sRGB |
@@ -65,6 +67,19 @@ Ana sayfadaki EER girişinin önerilen etiketi **Şema modelleri**, makine öğr
 | Yardımcı metin | Segoe UI | 12 DIP |
 
 Font ölçümü, çizimi ve isabet alanı aynı DPI dönüşümünü kullanır. Etkin sekmenin yarı kalın ölçüsü önceden ayrılır. Türkçe karakterler tek kod noktası dizisi olarak korunur. GDI ve native metin ölçümü arasında farklı genişlik hesabı kullanılmaz.
+
+## Modal düğmeleri
+
+Kullanıcının 20 Kasım 2026 tarihli kuralı: bütün modal pencerelerde etkin işlem düğmeleri ana koyu petrol yeşili `#043133`, yazıları `#FFFFFF` olur. Bu kural yalnız birincil eyleme değil, `Planı doğrula`, `Uygula`, `Kaydet`, `Vazgeç`, `Geri` ve `İleri` gibi bütün modal işlem düğmelerine uygulanır. Açık nane, açık gri, gradyan veya kırmızı dolgu ile ayrı modal düğme ailesi oluşturulmaz. İşlemin önemi metin, sıralama ve gerektiğinde açıklama/ikonla belirtilir; yıkıcı işlemin kapsamı onay içeriğinde görünür.
+
+- Normal: `#043133` dolgu, beyaz yazı, düz kenar. Hover ve basılı durum aynı koyu renk ailesindedir.
+- Devre dışı: tıklanamaz durum korunur ve metin okunur kalır; etkin bir eylem görünümü verilmez.
+- Klavye odağı: görünür odak çerçevesi korunur. Enter yalnız tanımlı varsayılan eylemi, Escape tanımlı iptal eylemini çalıştırır.
+- Windows yüksek kontrast modu: işletim sisteminin erişilebilir renkleri önceliklidir. Koyu renk kuralı erişilebilir sistem paletini zorlamaz.
+- Windows güvenlik/elevation kalkanı için açıkça sistem çizimi isteyen düğmeler native çizimlerini korur.
+- Modal açılmadan önce ve sonradan eklenen düğmeler aynı ortak stil yolundan geçer. Toolbar ikonları, alan seçimleri ve pencerenin native kapatma düğmesi işlem düğmesi sayılmaz.
+
+Bu madde önceki tasarım görsellerindeki açık renkli modal düğmelerinin üzerindedir. Uygulama ve sonraki görsel revizyonlarında bu kural esas alınır.
 
 ## Boşluk ve kontrol ölçüleri
 

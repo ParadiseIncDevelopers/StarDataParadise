@@ -322,6 +322,7 @@ bool FormWrapper::run_modal(mforms::Form *backend, mforms::Button *accept, mform
     form->CancelButton->DialogResult = System::Windows::Forms::DialogResult::Cancel;
   }
 
+  MySQL::Controls::SdpModalStyle::Apply(form);
   ViewWrapper::set_full_auto_resize(form);
 
   System::Windows::Forms::DialogResult dialog_result;
