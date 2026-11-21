@@ -140,6 +140,7 @@ public:
   std::string sql_mode();
   void set_sql_mode(const std::string &value);
   void set_sdp_model_syntax(bool enabled);
+  void set_sdp_language_features(unsigned features);
   void setServerVersion(GrtVersionRef version);
 
   void restrict_content_to(ContentType type);

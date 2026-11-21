@@ -274,6 +274,28 @@ $describe("SQL code completion tests") {
     $expect(validSyntax("PREDICT MODEL USING '{}';")).toBeFalse();
   });
 
+  $it("Keeps verified native syntax server-authoritative and preserves lexical errors", [this]() {
+    auto services = parsers::MySQLParserServices::get();
+    auto context = services->createParserContext(data->tester->getRdbms()->characterSets(),
+                                                bec::intToVersion(261000), "", false);
+    auto valid = [&](const std::string &sql) {
+      return services->checkSqlSyntax(context, sql.data(), sql.size(), MySQLParseUnit::PuGeneric) == 0;
+    };
+    $expect(valid("HIST STATUS")).toBeFalse();
+    $expect(valid("SELECT * EXCLUDE(description) FROM sakila.film")).toBeFalse();
+    context->updateSdpLanguageFeatures(7);
+    $expect(valid("HIST STATUS")).toBeTrue();
+    $expect(valid("EXECUTE KNOWLEDGE sakila.film_knowledge(1)")).toBeTrue();
+    $expect(valid("SELECT * EXCLUDE(description) FROM sakila.film")).toBeTrue();
+    $expect(valid("CREATE PROCEDURE p() AS LET n=1;WHEN n>0 DO SELECT :n;END")).toBeTrue();
+    $expect(valid("SELECT * EXCLUDE(description) FROM sakila.film WHERE title='unfinished")).toBeFalse();
+    $expect(valid("SELECT * EXCLUDE(description) FROM sakila.film /* unfinished")).toBeFalse();
+    $expect(valid("SELECT FROM")).toBeFalse();
+    $expect(valid("SELECT 'HIST EXCLUDE QUALIFY' FROM sakila.film")).toBeTrue();
+    context->updateSdpLanguageFeatures(0);
+    $expect(valid("HIST STATUS")).toBeFalse();
+  });
+
   $it("Testing proper symbol retrieval in symbol tables", [this]() {
     auto tables = data->mainSymbols.getSymbolsOfType<TableSymbol>();
     $expect(tables.size()).toBe(0U, "Test 10.1");

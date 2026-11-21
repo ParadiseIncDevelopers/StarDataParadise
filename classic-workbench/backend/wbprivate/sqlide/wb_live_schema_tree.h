@@ -111,7 +111,9 @@ namespace wb {
       ForeignKeyColumn,
       IndexColumn,
       Any,
-      NoneType
+      NoneType,
+      WorkspaceCollection,
+      WorkspaceObject
     };
 
     // This will be used on different object type validations
@@ -337,6 +339,21 @@ namespace wb {
       }
     };
 
+    class MYSQLWBBACKEND_PUBLIC_FUNC WorkspaceData : public LSTData {
+    public:
+      std::string kind;
+      bool collection;
+      bool available;
+      WorkspaceData(const std::string& object_kind, bool is_collection, bool is_available)
+        : kind(object_kind), collection(is_collection), available(is_available) {}
+      ObjectType get_type() override { return collection ? WorkspaceCollection : WorkspaceObject; }
+      std::string get_object_name() override { return kind; }
+      std::string get_details(bool full, const mforms::TreeNodeRef& node) override;
+    };
+
+    // nullptr means the server explicitly does not advertise this family.
+    typedef std::map<std::string, base::StringListPtr> WorkspaceObjects;
+
     typedef std::function<void(const std::string& schema_name, base::StringListPtr tables, base::StringListPtr views,
                                base::StringListPtr procedures, base::StringListPtr functions, bool just_append)>
       NewSchemaContentArrivedSlot;
@@ -398,6 +415,7 @@ namespace wb {
     void filter_children_collection(mforms::TreeNodeRef& source, mforms::TreeNodeRef& target);
     bool filter_children(ObjectType type, mforms::TreeNodeRef& source, mforms::TreeNodeRef& target,
                          GPatternSpec* pattern = NULL);
+    bool copy_workspace_children(const mforms::TreeNodeRef& source, const mforms::TreeNodeRef& target);
     bool is_object_type(ObjectTypeValidation validation, ObjectType type);
 
   public:
@@ -463,6 +481,7 @@ namespace wb {
     void update_node_icon(mforms::TreeNodeRef node);
 
     void update_schemata(base::StringListPtr schema_list);
+    void workspace_objects_arrived(const std::string& schema_name, const WorkspaceObjects& objects);
     mforms::TreeNodeRef binary_search_node(const mforms::TreeNodeRef& parent, int first, int last,
                                            const std::string& name, ObjectType type, int& position);
     mforms::TreeNodeRef get_child_node(const mforms::TreeNodeRef& parent, const std::string& name,

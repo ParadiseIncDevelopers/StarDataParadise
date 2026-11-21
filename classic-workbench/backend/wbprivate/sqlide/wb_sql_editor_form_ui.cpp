@@ -69,7 +69,11 @@ namespace {
               {"Search table data", "plugin:com.mysql.wb.menu.database.search"},
               {"Inspect selected object", "builtin:query.show_inspector"}};
     if (section == "schema")
-      return {{"Object inspector", "builtin:query.show_inspector"},
+      return {{"Stored Knowledge", "plugin:sdp.workspace.knowledge"},
+              {"AI conversations", "plugin:sdp.workspace.conversations"},
+              {"Behavior", "plugin:sdp.workspace.behaviors"}, {"AI models", "plugin:sdp.workspace.models"},
+              {"Response schemas", "plugin:sdp.workspace.responseSchemas"},
+              {"Object inspector", "builtin:query.show_inspector"},
               {"New schema", "builtin:query.new_schema"}, {"New table", "builtin:query.new_table"},
               {"New view", "builtin:query.new_view"}, {"New procedure", "builtin:query.new_routine"},
               {"New function", "builtin:query.new_function"},
@@ -91,7 +95,9 @@ namespace {
               {"Logs", "plugin:wb.admin.open_into:admin_server_logs"},
               {"Configuration", "plugin:wb.admin.open_into:admin_option_file"}};
     if (section == "tools")
-      return {{"Data history", "plugin:sdp.tools.history"}, {"Decision rules", "plugin:sdp.tools.decision"},
+      return {{"AI ve SQL", "plugin:sdp.workspace.open"},
+              {"SQL ve PL/SQL", "plugin:sdp.workspace.language"},
+              {"Data history", "plugin:sdp.tools.history"}, {"Decision rules", "plugin:sdp.tools.decision"},
               {"CPU models", "plugin:sdp.tools.models"}, {"Compute jobs", "plugin:sdp.tools.jobs"},
               {"Verified backups", "plugin:sdp.tools.backups"},
               {"Scripts and plugins", "plugin:wb.form.showGRTShell"},
@@ -99,6 +105,20 @@ namespace {
     return {{"New SQL buffer", "builtin:query.newFile"}, {"Open SQL file", "builtin:query.openFile"},
             {"Run SQL script", "plugin:wb.sqlide.runScript"},
             {"Reconnect", "builtin:query.reconnect"}};
+  }
+}
+
+void SqlEditorForm::open_sdp_workspace(const std::string &kind, const std::string &schema, const std::string &name) {
+  try {
+    auto module = grt::GRT::get()->get_module("SdpWorkspace");
+    if (!module) throw std::runtime_error("AI ve SQL çalışma alanı paketi yüklenemedi.");
+    grt::BaseListRef args(true);
+    args.ginsert(grtobj()); args.ginsert(grt::StringRef(kind));
+    args.ginsert(grt::StringRef(schema.empty() ? active_schema() : schema));
+    args.ginsert(grt::StringRef(name));
+    module->call_function("openObject", args);
+  } catch (const std::exception &error) {
+    mforms::Utilities::show_error("AI ve SQL", error.what(), "Kapat");
   }
 }
 

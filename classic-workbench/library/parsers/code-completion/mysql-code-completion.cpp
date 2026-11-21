@@ -47,11 +47,129 @@
 #include "SymbolTable.h"
 
 #include "mysql-code-completion.h"
+#include "sdp-editor-tokens.h"
+#include "sdp-local-symbols.h"
+#include <mutex>
 
 using namespace parsers;
 using namespace antlr4;
 
 DEFAULT_LOG_DOMAIN("MySQL code completion");
+
+static std::vector<std::pair<std::string,std::string>> sdpLocalEntries(
+    const SdpCompletionContext &context,unsigned features,const std::string &defaultSchema,SymbolTable &symbols) {
+  const auto request=sdpLocalRequest(context,features);
+  if (!request.active) return {};
+  std::vector<std::pair<std::string,std::string>> result;
+  const auto prefix=sdpUpper(sdpUnquoteLocal(context.prefix));
+  for (const auto &symbol:sdpVisibleLocals(context)) {
+    if (request.row.empty()) {
+      if (sdpUpper(symbol.name).compare(0,prefix.size(),prefix) == 0)
+        result.emplace_back(symbol.name,":"+symbol.name+"\n"+
+          (symbol.declaredType.empty()?"Tür: derleme sırasında çıkarılır":"Tür: "+symbol.declaredType));
+    } else if (symbol.row && sdpUpper(symbol.name) == sdpUpper(request.row)) {
+      std::map<std::string,std::pair<std::string,unsigned>> fields;
+      for (const auto &name:symbol.fields) {auto &field=fields[name];++field.second;}
+      if (symbol.star && !symbol.table.empty()) {
+        for (auto *schema:symbols.getSymbolsOfType<SchemaSymbol>()) {
+          if (schema->name != (symbol.schema.empty()?defaultSchema:symbol.schema)) continue;
+          if (!symbol.knowledge) for (auto *table:schema->getSymbolsOfType<TableSymbol>()) if (table->name == symbol.table)
+            for (auto *column:table->getSymbolsOfType<ColumnSymbol>()) {
+              auto &field=fields[column->name];++field.second;
+              if (column->type) field.first=column->type->name;
+            }
+          if (symbol.knowledge && (features&SdpAiSql)) for (auto *object:schema->getSymbolsOfType<SdpCatalogSymbol>())
+            if (object->kind == "knowledge" && object->name == symbol.table && object->typedMetadata)
+              for (const auto &column:object->resultColumns) {
+                auto &field=fields[column.first];++field.second;field.first=column.second;
+              }
+        }
+      }
+      for (const auto &entry:fields) if (entry.second.second == 1 && sdpUpper(entry.first).compare(0,prefix.size(),prefix) == 0)
+        result.emplace_back(entry.first,":"+symbol.name+"."+entry.first+"\n"+
+          (entry.second.first.empty()?"FOR kayıt alanı":"Tür: "+entry.second.first));
+    }
+  }
+  return result;
+}
+
+static std::string sdpKnowledgeSignature(const std::vector<std::string> &before,
+    const std::string &name,const std::string &defaultSchema,SymbolTable &symbols) {
+  std::string schema=defaultSchema;
+  if (before.empty()) return {};
+  size_t marker=before.size()-1;
+  if (before.back() == "." && before.size()>=3) {schema=sdpUnquoteLocal(before[before.size()-2]);marker-=2;}
+  if (sdpUpper(before[marker]) != "KNOWLEDGE") return {};
+  if (marker == 0) return {};
+  const auto command=sdpUpper(before[marker-1]);
+  if (command != "EXECUTE" && command != "FROM" && command != "JOIN" && command != "DESCRIBE") return {};
+  for (auto *scope:symbols.getSymbolsOfType<SchemaSymbol>()) {
+    if (scope->name != schema) continue;
+    for (auto *object:scope->getSymbolsOfType<SdpCatalogSymbol>()) {
+      if (object->kind != "knowledge" || object->name != sdpUnquoteLocal(name) || !object->typedMetadata) continue;
+      std::string result=schema+"."+object->name+"(";
+      for (const auto &parameter:object->parameters) {
+        if (result.back() != '(') result+=", ";
+        result+=parameter.first+" "+parameter.second;
+      }
+      result+=")\nRETURNS TABLE (";
+      for (const auto &column:object->resultColumns) {
+        if (result.back() != '(') result+=", ";
+        result+=column.first+" "+column.second;
+      }
+      return result+")";
+    }
+  }
+  return {};
+}
+
+std::string getSdpLocalHover(size_t line,size_t column,const std::string &sql,
+    const std::string &defaultSchema,unsigned features,long serverVersion,
+    const std::string &sqlMode,SymbolTable &symbols) {
+  if (!(features&(SdpSqlShort|SdpAiSql))) return {};
+  ANTLRInputStream input(sql);MySQLLexer lexer(&input);
+  lexer.serverVersion=serverVersion;lexer.sqlModeFromString(sqlMode);lexer.removeErrorListeners();
+  CommonTokenStream stream(&lexer);stream.fill();
+  for (auto *token:stream.getTokens()) {
+    if (token->getChannel() != Token::DEFAULT_CHANNEL || token->getType() == Token::EOF) continue;
+    const auto text=token->getText();
+    if (!sdpLocalIdentifier(text) || text.find_first_of("'\"") != std::string::npos) continue;
+    size_t end=token->getCharPositionInLine();
+    for (unsigned char c:text) if ((c&0xc0) != 0x80) ++end;
+    if (token->getLine() != line+1 || column<token->getCharPositionInLine() || column>=end) continue;
+    auto context=sdpEditorTokens(&stream,token->getLine(),token->getCharPositionInLine());
+    context.prefix=sdpUnquoteLocal(text);
+    const std::lock_guard<SymbolTable> guard(symbols);
+    for (const auto &entry:sdpLocalEntries(context,features,defaultSchema,symbols))
+      if (sdpUpper(entry.first) == sdpUpper(context.prefix)) return entry.second;
+    if ((features&SdpAiSql) && !context.blocked)
+      return sdpKnowledgeSignature(context.tokens,text,defaultSchema,symbols);
+    return {};
+  }
+  return {};
+}
+
+std::string getSdpKnowledgeCalltip(size_t line,size_t column,const std::string &sql,
+    const std::string &defaultSchema,unsigned features,long serverVersion,
+    const std::string &sqlMode,SymbolTable &symbols) {
+  if (!(features&SdpAiSql)) return {};
+  ANTLRInputStream input(sql);MySQLLexer lexer(&input);
+  lexer.serverVersion=serverVersion;lexer.sqlModeFromString(sqlMode);lexer.removeErrorListeners();
+  CommonTokenStream stream(&lexer);
+  const auto context=sdpEditorTokens(&stream,line+1,column);
+  if (context.blocked) return {};
+  std::vector<std::string> stack;
+  const std::lock_guard<SymbolTable> guard(symbols);
+  for (size_t i=0;i<context.tokens.size();++i) {
+    if (context.tokens[i] == "(") {
+      std::string signature;
+      if (i>0) signature=sdpKnowledgeSignature({context.tokens.begin(),context.tokens.begin()+i-1},context.tokens[i-1],defaultSchema,symbols);
+      stack.push_back(std::move(signature));
+    } else if (context.tokens[i] == ")" && !stack.empty()) stack.pop_back();
+  }
+  for (auto it=stack.rbegin();it!=stack.rend();++it) if (!it->empty()) return *it;
+  return {};
+}
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -236,6 +354,14 @@ struct AutoCompletionContext {
   }
 
   //--------------------------------------------------------------------------------------------------------------------
+
+  void collectNativeColumnReferences(MySQLParser *parser, Scanner &scanner) {
+    if (!references.empty()) return;
+    collectLeadingTableReferences(parser, scanner, caretIndex, false);
+    takeReferencesSnapshot();
+    collectRemainingTableReferences(parser, scanner);
+    takeReferencesSnapshot();
+  }
 
 private:
   // A listener to handle references as we traverse a parse tree.
@@ -736,6 +862,7 @@ std::vector<std::pair<int, std::string>> getCodeCompletionList(size_t caretLine,
   CompletionSet tablespaceEntries;
   CompletionSet systemVarEntries;
   CompletionSet keywordEntries;
+  CompletionSet nativeObjectEntries;
   CompletionSet collationEntries;
   CompletionSet charsetEntries;
   CompletionSet eventEntries;
@@ -855,6 +982,19 @@ std::vector<std::pair<int, std::string>> getCodeCompletionList(size_t caretLine,
         }
     }
   }
+
+  const auto nativeContext = sdpEditorTokens(dynamic_cast<BufferedTokenStream *>(parser->getTokenStream()),
+                                            caretLine + 1, caretOffset);
+  for (auto entry : sdpContextKeywords(nativeContext, parser->sdpLanguageFeatures)) {
+    if (!uppercaseKeywords) entry = base::tolower(entry);
+    keywordEntries.insert({ AC_KEYWORD_IMAGE, entry });
+  }
+  const bool nativeColumns = (parser->sdpLanguageFeatures & SdpSqlShort) != 0 && !nativeContext.blocked &&
+      std::any_of(nativeContext.tokens.begin(), nativeContext.tokens.end(), [](const std::string &token) {
+        const auto word = sdpUpper(token);
+        return word == "EXCLUDE" || word == "REPLACE";
+      });
+  if (nativeColumns) context.collectNativeColumnReferences(parser, scanner);
 
   symbolTable.lock();
   for (auto &candidate : context.completionCandidates.rules) {
@@ -1225,11 +1365,33 @@ std::vector<std::pair<int, std::string>> getCodeCompletionList(size_t caretLine,
     }
   }
 
+  if (nativeColumns) {
+    for (const auto &reference : context.references) {
+      insertColumns(symbolTable, columnEntries,
+                    {reference.schema.empty() ? defaultSchema : reference.schema}, {reference.table});
+    }
+  }
+  const auto nativeRequest = sdpCatalogRequest(nativeContext, parser->sdpLanguageFeatures);
+  for (const auto &entry:sdpLocalEntries(nativeContext,parser->sdpLanguageFeatures,defaultSchema,symbolTable))
+    userVarEntries.insert({AC_USER_VAR_IMAGE,entry.first});
+  if (!nativeRequest.kind.empty()) {
+    for (auto *schema : symbolTable.getSymbolsOfType<SchemaSymbol>()) {
+      if (!nativeRequest.schema.empty() && schema->name != nativeRequest.schema) continue;
+      for (auto *object : schema->getSymbolsOfType<SdpCatalogSymbol>()) {
+        if (object->kind != nativeRequest.kind) continue;
+        std::string name = object->name;
+        if (nativeRequest.schema.empty() && schema->name != defaultSchema) name = schema->name + "." + name;
+        if (sdpUpper(name).compare(0,nativeContext.prefix.size(),sdpUpper(nativeContext.prefix)) == 0)
+          nativeObjectEntries.insert({AC_ROUTINE_IMAGE,name});
+      }
+    }
+  }
   symbolTable.unlock();
   scanner.pop(); // Clear the scanner stack.
 
   // Insert the groups "inside out", that is, most likely ones first + most inner first (columns before tables etc).
   std::copy(keywordEntries.begin(), keywordEntries.end(), std::back_inserter(result));
+  std::copy(nativeObjectEntries.begin(), nativeObjectEntries.end(), std::back_inserter(result));
   std::copy(columnEntries.begin(), columnEntries.end(), std::back_inserter(result));
   std::copy(userVarEntries.begin(), userVarEntries.end(), std::back_inserter(result));
   std::copy(labelEntries.begin(), labelEntries.end(), std::back_inserter(result));

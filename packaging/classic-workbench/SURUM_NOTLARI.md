@@ -1,5 +1,19 @@
 # Classic sürüm notları
 
+## v0.3.0 - AI ve Knowledge çalışma alanı
+
+Ürün sürümü 0.3.0, kanal stable olur. Classic kaynak tabanı 8.0.47'dir.
+
+- Knowledge parametreleri ve sonuçları, bağımlılık diyagramı ve sürüm timeline'ı aynı native çalışma alanında bulunur.
+- Konuşmalar, Behavior, yanıt şemaları, AI modelleri, SQL/PLSQL, yetkiler/onay ve ayrı AI SQL yürütme ekranı eklenir. Konuşma formunun ardından SQL düzenlenip kullanıcı tarafından çalıştırılır.
+- Model seçenekleri OpenAI, Claude/Anthropic ve kullanıcının içe aktardığı yerel GGUF modelidir. Credential Manager kaydı ile worker erişiminin doğrulanması ayrı gösterilir.
+- Parametreli Knowledge/araç çağrıları, onay önizlemesi ve eylem kimliğine bağlı onay/ret/yürütme SQL'i hazırlanır. Görülen eylem değişirse eski önizleme geçersizleşir.
+- Normal SQL/PLSQL kısa biçimleri için capability tabanlı tamamlama, tür bilgisi ve hover eklenir. Compact ayrı bir SQL modu değildir.
+- Katalog sorgularının çoklu sonuçları ve son OK yanıtı tamamıyla tüketilir. Yenileme sırasında ana bağlantı ve etkin rol korunur; ilk buffered sonuç okunabilir kalır ve sonraki SQL hataları kaybolmaz.
+- Modal işlem düğmeleri ana koyu yeşil `#043133` rengi ve beyaz metin kullanır. Başlık ve parametre ayıracı ` - ` olur.
+
+HIST/Git ve yeni SQL JOB komutları/ekranları sonraki etaba ertelendi. Önceki tasarım görselleri gelecekteki çalışma için korunur. Ayrıntılı gerçek test sonuçları ve çalıştırılmayan dış sağlayıcı kontrolleri [ortak kabul kaydındadır](https://github.com/ParadiseIncDevelopers/StarDataParadiseServer/blob/v0.5.0/docs/coordination/STABLE_RELEASE_2026_11_21.md).
+
 ## v0.3.0-preview.5 - Classic Birleşik Çalışma Alanı
 
 Tarih: 20 Kasım 2026. Dal: `master`. Bu kaynak önizlemesinin amacı, onaylanan arayüz tasarımlarını çalışan native Classic ekranlarına uygulamak ve veri düzenleme/onay sınırlarını canlı doğrulamaktır. Classic kaynak tabanı 8.0.47 olarak korunur; bu etiket ürün deposunun önizleme sürümüdür.

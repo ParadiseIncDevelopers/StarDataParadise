@@ -44,6 +44,7 @@
 #include "grts/structs.db.sdp.h"
 
 #include "SymbolTable.h"
+#include "code-completion/mysql-code-completion.h"
 
 #include "sql_editor_be.h"
 #include <mutex>
@@ -638,6 +639,13 @@ void MySQLEditor::set_sdp_model_syntax(bool enabled) {
   start_sql_processing();
 }
 
+void MySQLEditor::set_sdp_language_features(unsigned features) {
+  features &= 27; // AI/SQL plus separately accepted Action and role ACL profiles; bit 4 stays unused.
+  d->parserContext->updateSdpLanguageFeatures(features);
+  if (d->autocompletionContext) d->autocompletionContext->updateSdpLanguageFeatures(features);
+  start_sql_processing();
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 
 /**
@@ -744,6 +752,22 @@ void MySQLEditor::char_added(int char_code) {
     std::string text = getWrittenPart(d->codeEditor->get_caret_pos());
     update_auto_completion(text);
   }
+  if ((char_code=='(' || char_code==',' || char_code==')') &&
+      (d->parserContext->sdpLanguageFeaturesEnabled() & 1)) {
+    size_t first,last;
+    const size_t position=d->codeEditor->get_caret_pos();
+    if (get_current_statement_range(first,last,true) && position>=first && position<=last && last-first<=1024*1024) {
+      const auto statement=d->codeEditor->get_text_in_range(first,last);
+      const auto before=d->codeEditor->get_text_in_range(first,position);
+      size_t line=0,column=0;
+      for (unsigned char c:before) {if(c=='\n'){++line;column=0;}else if((c&0xc0)!=0x80)++column;}
+      const auto version=d->parserContext->serverVersion();
+      const long numeric=version.is_valid()?version->majorNumber()*10000+version->minorNumber()*100+version->releaseNumber():261000;
+      const auto tip=getSdpKnowledgeCalltip(line,column,statement,d->currentSchema,
+        d->parserContext->sdpLanguageFeaturesEnabled(),numeric,d->parserContext->sqlMode(),d->symbolTable);
+      d->codeEditor->show_calltip(!tip.empty(),position,tip);
+    }
+  }
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -758,6 +782,22 @@ void MySQLEditor::dwell_event(bool started, size_t position, int x, int y) {
           d->codeEditor->show_calltip(true, position, entry.message);
           break;
         }
+      }
+    } else if (d->parserContext->sdpLanguageFeaturesEnabled() & 3) {
+      size_t first,last;
+      if (get_current_statement_range(first,last,true) && position>=first && position<last) {
+        const auto statement=d->codeEditor->get_text_in_range(first,last);
+        const auto before=d->codeEditor->get_text_in_range(first,position);
+        size_t line=0,column=0;
+        for (unsigned char c:before) {
+          if (c=='\n') {++line;column=0;}
+          else if ((c&0xc0) != 0x80) ++column;
+        }
+        const auto version=d->parserContext->serverVersion();
+        const long numeric=version.is_valid()?version->majorNumber()*10000+version->minorNumber()*100+version->releaseNumber():261000;
+        const auto tip=getSdpLocalHover(line,column,statement,d->currentSchema,
+          d->parserContext->sdpLanguageFeaturesEnabled(),numeric,d->parserContext->sqlMode(),d->symbolTable);
+        if (!tip.empty()) d->codeEditor->show_calltip(true,position,tip);
       }
     }
   } else

@@ -62,6 +62,7 @@ namespace parsers {
     long serverVersion;
     SqlMode sqlMode; // A collection of flags indicating which of relevant SQL modes are active.
     bool sdpModelSyntax = false;
+    unsigned sdpLanguageFeatures = 0;
 
     // Returns true if the given mode (one of the enums above) is set.
     bool isSqlModeActive(size_t mode);

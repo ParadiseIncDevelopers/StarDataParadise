@@ -268,6 +268,9 @@ TypeAlias::TypeAlias(std::string const &name, Type const *target) : Type(name, t
 
 //----------------- SymbolTable ----------------------------------------------------------------------------------------
 
+SdpCatalogSymbol::SdpCatalogSymbol(std::string const &name, std::string const &aKind) : Symbol(name), kind(aKind) {
+}
+
 class SymbolTable::Private {
 public:
   std::recursive_mutex mutex; // Must be in private class for use in C++/CLI code.

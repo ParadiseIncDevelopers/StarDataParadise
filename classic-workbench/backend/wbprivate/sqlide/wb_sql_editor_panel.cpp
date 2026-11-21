@@ -97,6 +97,7 @@ SqlEditorPanel::SqlEditorPanel(SqlEditorForm *owner, bool is_scratch, bool start
     owner->rdbms()->characterSets(), owner->rdbms_version(), owner->sql_mode(), owner->lower_case_table_names() != 0);
   auto completionContext = owner->work_parser_context();
   context->updateSdpModelSyntax(completionContext && completionContext->sdpModelSyntaxEnabled());
+  context->updateSdpLanguageFeatures(completionContext ? completionContext->sdpLanguageFeaturesEnabled() : 0);
 
   parsers::SymbolTable *functionSymbols = parsers::functionSymbolsForVersion(bec::versionToEnum(owner->rdbms_version()));
   _editor = MySQLEditor::create(context, completionContext, { functionSymbols, owner->databaseSymbols() }, grtobj);

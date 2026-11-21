@@ -493,6 +493,8 @@ grt::StringRef SqlEditorTreeController::do_fetch_live_schema_contents(
     StringListPtr views(new std::list<std::string>());
     StringListPtr procedures(new std::list<std::string>());
     StringListPtr functions(new std::list<std::string>());
+    auto workspace_objects = std::make_shared<wb::LiveSchemaTree::WorkspaceObjects>();
+    bool has_workspace_catalog = false;
 
     MutexLock schema_contents_mutex(_schema_contents_mutex);
     if (!arrived_slot)
@@ -534,12 +536,59 @@ grt::StringRef SqlEditorTreeController::do_fetch_live_schema_contents(
             functions->push_back(name);
           }
         }
+      // Native catalog queries keep the authenticated auxiliary identity. An
+      // ordinary MySQL server keeps its existing four schema collections.
+      try {
+        const char* kinds[] = {"conversation", "knowledge", "behavior", "model", "response_schema"};
+        const char* plurals[] = {"CONVERSATIONS", "KNOWLEDGES", "BEHAVIORS", "MODELS", "RESPONSE SCHEMAS"};
+        const char* capabilities[] = {"ai_conversation_v1", "stored_knowledge_v1", "behavior_v1", "ai_models_v1", "response_schema_v1"};
+        std::string query = "SELECT ";
+        for (int i = 0; i < 5; ++i) {
+          if (i) query += ",";
+          query += "JSON_UNQUOTE(JSON_EXTRACT(STARDATAPARADISE_CAPABILITIES(),'$.features.";
+          query += capabilities[i]; query += "'))";
+        }
+        std::vector<bool> enabled;
+        {
+          std::unique_ptr<sql::ResultSet> caps(stmt->executeQuery(query));
+          if (caps->next()) {
+            has_workspace_catalog = true;
+            for (int i = 0; i < 5; ++i) enabled.push_back(caps->getString(i + 1) == "true");
+          }
+        }
+        if (has_workspace_catalog) {
+          for (int i = 0; i < 5; ++i) {
+            StringListPtr names;
+            if (enabled[i]) {
+              try {
+                names = std::make_shared<std::list<std::string>>();
+                std::unique_ptr<sql::ResultSet> objects(stmt->executeQuery(std::string("SHOW ") + plurals[i]));
+                while (objects->next())
+                  if (objects->getString(3) == schema_name) names->push_back(objects->getString(2));
+                names->sort();
+              } catch (const sql::SQLException& error) {
+                names.reset();
+                logWarning("AI catalog %s could not be read: %s\n", kinds[i], error.what());
+              }
+            }
+            (*workspace_objects)[kinds[i]] = names;
+          }
+        }
+      } catch (const sql::SQLException&) {
+        // Feature discovery is optional. Do not break ordinary table/routine
+        // metadata when the server does not implement this native function.
+      }
     }
 
     if (arrived_slot) {
       std::function<void()> schema_contents_arrived =
         std::bind(arrived_slot, schema_name, tables, views, procedures, functions, false);
       bec::GRTManager::get()->run_once_when_idle(this, schema_contents_arrived);
+    }
+    if (has_workspace_catalog) {
+      bec::GRTManager::get()->run_once_when_idle(this, [self, schema_name, workspace_objects]() {
+        self->_schema_tree->workspace_objects_arrived(schema_name, *workspace_objects);
+      });
     }
 
     // Let the owner form know we got fresh schema meta data. Can be used to update caches.
@@ -1236,6 +1285,10 @@ void SqlEditorTreeController::tree_activate_objects(const std::string &action,
   try {
     for (size_t i = 0; i < changes.size(); i++) {
       std::string sql;
+      if (changes[i].type == LiveSchemaTree::WorkspaceObject || changes[i].type == LiveSchemaTree::WorkspaceCollection) {
+        _owner->open_sdp_workspace(changes[i].detail, changes[i].schema, changes[i].name);
+        continue;
+      }
       switch (changes[i].type) {
         case LiveSchemaTree::Schema:
           if (real_action == "filter") {

@@ -52,8 +52,9 @@ AboutBox::AboutBox(const std::string &edition)
   _title.set_text("StarDataParadise Classic");
   _title.set_style(mforms::BigBoldStyle);
   _title_box.add(&_title, false, true);
-  std::string version = base::strfmt("%i.%i.%i - yapı %i - %s - %i bit", APP_MAJOR_NUMBER, APP_MINOR_NUMBER,
-    APP_RELEASE_NUMBER, APP_BUILD_NUMBER, APP_RELEASE_TYPE, static_cast<int>(sizeof(void *) * 8));
+  std::string version = base::strfmt("Sürüm %s - %i bit\nClassic tabanı %i.%i.%i - yapı %i",
+    SDP_PRODUCT_VERSION, static_cast<int>(sizeof(void *) * 8), APP_MAJOR_NUMBER,
+    APP_MINOR_NUMBER, APP_RELEASE_NUMBER, APP_BUILD_NUMBER);
   _version.set_text(version);
   _title_box.add(&_version, false, true);
   _heading.add(&_title_box, true, true);

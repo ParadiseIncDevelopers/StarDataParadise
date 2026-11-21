@@ -29,6 +29,7 @@
 
 #define APP_BUILD_NUMBER 0
 #define APP_RELEASE_TYPE ""
+#define SDP_PRODUCT_VERSION "0.3.0"
 
 #define APP_LICENSE_TYPE "GPL"
-#define APP_EDITION_NAME "development"
+#define APP_EDITION_NAME "Community"

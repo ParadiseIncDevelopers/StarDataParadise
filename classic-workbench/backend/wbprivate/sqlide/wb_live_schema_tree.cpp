@@ -541,6 +541,69 @@ LiveSchemaTree::~LiveSchemaTree() {
   clean_filter();
 }
 
+std::string LiveSchemaTree::WorkspaceData::get_details(bool full, const mforms::TreeNodeRef& node) {
+  return "<b>" + info_html(node->get_string(0)) + "</b><br>" +
+    info_html(available ? "Bağlı sunucunun yetkili AI kataloğu" : "Bu özellik bağlı sunucuda kullanılamıyor");
+}
+
+void LiveSchemaTree::workspace_objects_arrived(const std::string& schema_name, const WorkspaceObjects& objects) {
+  if (_base) {
+    _base->workspace_objects_arrived(schema_name, objects);
+    filter_data();
+    return;
+  }
+  if (!_model_view) return;
+  auto schema = get_child_node(_model_view->root_node(), schema_name);
+  if (!schema) return;
+  for (int i = schema->count() - 1; i >= 0; --i)
+    if (dynamic_cast<WorkspaceData*>(schema->get_child(i)->get_data()))
+      schema->get_child(i)->remove_from_parent();
+  const std::pair<const char*, const char*> kinds[] = {
+    {"conversation", "Konuşmalar"}, {"knowledge", "Stored Knowledge"}, {"behavior", "Behavior"},
+    {"model", "AI Modelleri"}, {"response_schema", "Yanıt Şemaları"}};
+  for (const auto& kind : kinds) {
+    auto found = objects.find(kind.first);
+    if (found == objects.end()) continue;
+    auto folder = schema->add_child();
+    folder->set_string(0, std::string(kind.second) + (found->second ? "" : " - Kullanılamıyor"));
+    folder->set_tag(std::string("_SDP_") + kind.first);
+    folder->set_data(new WorkspaceData(kind.first, true, static_cast<bool>(found->second)));
+    folder->set_icon_path(0, _icon_paths[FunctionCollection]);
+    if (found->second) {
+      for (const auto& name : *found->second) {
+        auto child = folder->add_child();
+        child->set_string(0, name);
+        child->set_data(new WorkspaceData(kind.first, false, true));
+        child->set_icon_path(0, _icon_paths[Function]);
+      }
+    }
+  }
+}
+
+bool LiveSchemaTree::copy_workspace_children(const mforms::TreeNodeRef& source, const mforms::TreeNodeRef& target) {
+  bool found = false;
+  for (int index = 0; index < source->count(); ++index) {
+    auto original = source->get_child(index);
+    auto data = dynamic_cast<WorkspaceData*>(original->get_data());
+    if (!data || !data->collection) continue;
+    auto folder = target->add_child();
+    folder->set_string(0, original->get_string(0));
+    folder->set_tag(original->get_tag());
+    folder->set_data(data);
+    folder->set_icon_path(0, _icon_paths[FunctionCollection]);
+    for (int item = 0; item < original->count(); ++item) {
+      auto object = original->get_child(item);
+      if (_object_pattern && !g_pattern_match_string(_object_pattern, base::toupper(object->get_string(0)).c_str())) continue;
+      auto child = folder->add_child(); child->set_string(0, object->get_string(0));
+      child->set_data(object->get_data()); child->set_icon_path(0, _icon_paths[Function]);
+      found = true;
+    }
+    if (_object_pattern && folder->count() == 0) folder->remove_from_parent();
+    else if (original->is_expanded()) folder->expand();
+  }
+  return found;
+}
+
 void LiveSchemaTree::set_fetch_delegate(std::shared_ptr<FetchDelegate> delegate) {
   _fetch_delegate = delegate;
 }
@@ -1791,7 +1854,8 @@ void LiveSchemaTree::filter_children_collection(mforms::TreeNodeRef& source, mfo
         target_collection = target->get_child(FUNCTIONS_NODE_INDEX);
         bool found_functions = filter_children(Function, source_collection, target_collection, _object_pattern);
 
-        if (_object_pattern && !(found_tables || found_views || found_procedures || found_functions))
+        bool found_workspace = copy_workspace_children(source, target);
+        if (_object_pattern && !(found_tables || found_views || found_procedures || found_functions || found_workspace))
           target->remove_from_parent();
       } break;
       case Table:
@@ -2101,6 +2165,13 @@ void LiveSchemaTree::expand_toggled(mforms::TreeNodeRef node, bool value) {
 //--------------------------------------------------------------------------------------------------
 
 void LiveSchemaTree::node_activated(mforms::TreeNodeRef node, int column) {
+  if (auto workspace = dynamic_cast<WorkspaceData*>(node->get_data())) {
+    if (auto delegate = _delegate.lock()) {
+      ChangeRecord record = {WorkspaceObject, get_schema_name(node), workspace->collection ? "" : node->get_string(0), workspace->kind};
+      delegate->tree_activate_objects("sdp_workspace", {record});
+    }
+    return;
+  }
   LSTData* node_data = dynamic_cast<LSTData*>(node->get_data());
 
   if (node_data) {

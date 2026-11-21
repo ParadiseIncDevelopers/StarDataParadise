@@ -2132,6 +2132,8 @@
                   <File Id="file_man00004" Name="wb_utils_grt.py" />
                   <File Id="file_sdp_tools_grt" Name="sdp_tools_grt.py" />
                   <File Id="file_sdp_tools_backend" Name="sdp_tools_backend.py" />
+              <File Id="file_sdp_workspace_grt" Name="sdp_workspace_grt.py" />
+              <File Id="file_sdp_workspace_backend" Name="sdp_workspace_backend.py" />
                   <File Id="file_sdp_compat_decision" Name="sdp_compat_decision.py" />
                   <File Id="file_sdp_compat_jobs" Name="sdp_compat_jobs.py" />
                   <File Id="file_sdp_compat_cpu" Name="sdp_compat_cpu.py" />

@@ -22,6 +22,7 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 #pragma once
+#include "sdp-language-keywords.h"
 
 /*
   This file is generated, do not edit.
@@ -736,4 +737,7 @@ static const keyword_t keyword_list80[]= {
   { "STREAM", 0 },
   { "OFF", 0 },
 
+#define SDP_CONTEXTUAL_KEYWORD(word) { #word, 0 },
+  SDP_LANGUAGE_KEYWORDS(SDP_CONTEXTUAL_KEYWORD)
+#undef SDP_CONTEXTUAL_KEYWORD
 };/*keyword_list*/

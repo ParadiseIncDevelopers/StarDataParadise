@@ -1131,6 +1131,7 @@ void MySQLBaseLexer::emitDot() {
                                                tokenStartCharIndex, tokenStartCharIndex, tokenStartLine,
                                                tokenStartCharPositionInLine));
   ++tokenStartCharIndex;
+  ++tokenStartCharPositionInLine;
 }
 
 //----------------------------------------------------------------------------------------------------------------------

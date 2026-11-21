@@ -285,6 +285,15 @@ namespace parsers {
     }
   };
 
+  // Names returned by capability-gated, ACL-filtered native catalog commands.
+  class PARSERS_PUBLIC_TYPE SdpCatalogSymbol : public Symbol {
+  public:
+    std::string kind;
+    std::vector<std::pair<std::string,std::string>> parameters, resultColumns;
+    bool typedMetadata = false;
+    SdpCatalogSymbol(std::string const &name, std::string const &kind);
+  };
+
   class PARSERS_PUBLIC_TYPE IndexSymbol : public Symbol { // Made of columns, but doesn't contain them. Hence not a scope.
   public:
     IndexSymbol(std::string const &name) : Symbol(name) {

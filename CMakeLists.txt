@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.2)
-project(StarDataParadise VERSION 0.1.0 LANGUAGES CXX RC)
+project(StarDataParadise VERSION 0.3.0 LANGUAGES CXX RC)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

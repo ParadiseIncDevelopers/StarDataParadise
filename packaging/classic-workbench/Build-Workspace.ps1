@@ -152,12 +152,14 @@ if (!$drive) { throw 'No free workspace drive alias.' }
 $alias = "${drive}:"
 $previousPath = $env:PATH
 $previousDeps = $env:WB_3DPARTY_PATH
+$previousJavaExecutable = $env:SDP_JAVA_EXECUTABLE
 subst.exe $alias $workspace
 if ($LASTEXITCODE -ne 0) { throw 'Build drive alias failed.' }
 try {
     $sourceAlias = "$alias\" + [IO.Path]::GetRelativePath($workspace, $native).Replace('/', '\') + '\'
     $outputAlias = "$alias\" + [IO.Path]::GetRelativePath($workspace, $output).Replace('/', '\') + '\'
     $env:WB_3DPARTY_PATH = "$alias\out\workbench8-deps"
+    $env:SDP_JAVA_EXECUTABLE = $java
     $env:PATH = "$(Split-Path -Parent $swig);$(Split-Path -Parent $java);$previousPath"
     Push-Location $sourceAlias
     try {
@@ -179,6 +181,7 @@ try {
 } finally {
     $env:PATH = $previousPath
     $env:WB_3DPARTY_PATH = $previousDeps
+    $env:SDP_JAVA_EXECUTABLE = $previousJavaExecutable
     subst.exe $alias /D
 }
 

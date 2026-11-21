@@ -64,6 +64,8 @@ namespace parsers {
     virtual bool isIdentifier(size_t type) const = 0;
     virtual void updateSdpModelSyntax(bool enabled) = 0;
     virtual bool sdpModelSyntaxEnabled() const = 0;
+    virtual void updateSdpLanguageFeatures(unsigned features) = 0;
+    virtual unsigned sdpLanguageFeaturesEnabled() const = 0;
   };
 
   /**

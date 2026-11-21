@@ -37,6 +37,8 @@
 #include "objimpl/wrapper/parser_ContextReference_impl.h"
 #include "grtdb/db_object_helpers.h"
 #include "code-completion/mysql-code-completion.h"
+#include "sdp-routine-boundary.h"
+#include "sdp-editor-tokens.h"
 
 #include "ObjectListeners.h"
 
@@ -114,6 +116,7 @@ struct MySQLParserContextImpl : public MySQLParserContext {
 
   bool caseSensitive;
   std::atomic<bool> sdpModelSyntax{false};
+  std::atomic<unsigned> sdpLanguageFeatures{0};
   std::vector<ParserErrorInfo> errors;
 
   MySQLParserContextImpl(GrtCharacterSetsRef charsets, GrtVersionRef version_, bool caseSensitive)
@@ -171,6 +174,9 @@ struct MySQLParserContextImpl : public MySQLParserContext {
   bool sdpModelSyntaxEnabled() const override {
     return sdpModelSyntax.load();
   }
+
+  void updateSdpLanguageFeatures(unsigned features) override { sdpLanguageFeatures.store(features); }
+  unsigned sdpLanguageFeaturesEnabled() const override { return sdpLanguageFeatures.load(); }
 
   virtual GrtVersionRef serverVersion() const override {
     return version;
@@ -246,6 +252,7 @@ struct MySQLParserContextImpl : public MySQLParserContext {
 
     input.load(sql);
     parser.sdpModelSyntax = lexer.sdpModelSyntax = sdpModelSyntax.load();
+    parser.sdpLanguageFeatures = lexer.sdpLanguageFeatures = sdpLanguageFeatures.load();
     lexer.setInputStream(&input);
     tokens.setTokenSource(&lexer);
     return getCodeCompletionList(caret.second, caret.first, defaultSchema, uppercaseKeywords, &parser, symbolTable);
@@ -268,6 +275,7 @@ private:
   ParseTree *startParsing(bool fast, MySQLParseUnit unit) {
     errors.clear();
     parser.sdpModelSyntax = lexer.sdpModelSyntax = sdpModelSyntax.load();
+    parser.sdpLanguageFeatures = lexer.sdpLanguageFeatures = sdpLanguageFeatures.load();
     lexer.reset();
     lexer.setInputStream(&input); // Not just reset(), which only rewinds the current position.
     tokens.setTokenSource(&lexer);
@@ -2101,6 +2109,18 @@ size_t MySQLParserServicesImpl::checkSqlSyntax(MySQLParserContext::Ref context, 
                                                MySQLParseUnit type) {
   MySQLParserContextImpl *impl = dynamic_cast<MySQLParserContextImpl *>(context.get());
   impl->errorCheck({sql, length}, type);
+  if (type == MySQLParseUnit::PuGeneric && !impl->errors.empty() && impl->sdpLanguageFeatures.load() != 0) {
+    // The legacy MySQL 8 client grammar cannot validate these verified native
+    // families. Keep their server errors authoritative instead of false marks.
+    auto tokens = sdpEditorTokens(&impl->tokens, std::numeric_limits<size_t>::max(), std::numeric_limits<size_t>::max());
+    if (sdpUsesServerValidation(tokens, impl->sdpLanguageFeatures.load())) {
+      // Token type zero marks lexer errors (unfinished quotes/comments or an
+      // invalid character). A server grammar extension does not make them valid.
+      impl->errors.erase(std::remove_if(impl->errors.begin(), impl->errors.end(),
+                                      [](const ParserErrorInfo &error) { return error.tokenType != 0; }),
+                         impl->errors.end());
+    }
+  }
 
   return impl->errors.size();
 }
@@ -2302,8 +2322,10 @@ size_t MySQLParserServicesImpl::determineStatementRanges(const char *sql, size_t
   size_t currentLine = 0;
   size_t statementStart = 0;
   bool haveContent = false; // Set when anything else but comments were found for the current statement.
+  SdpRoutineBoundary shortRoutine;
 
   while (tail < end) {
+    shortRoutine.observe(tail, start, end);
     switch (*tail) {
       case '/': { // Possible multi line comment or hidden (conditional) command.
         if (*(tail + 1) == '*') {
@@ -2396,7 +2418,7 @@ size_t MySQLParserServicesImpl::determineStatementRanges(const char *sql, size_t
         bool is_identifier_char = previous >= 0x80 || (previous >= '0' && previous <= '9') ||
                                   ((previous | 0x20) >= 'a' && (previous | 0x20) <= 'z') || previous == '$' ||
                                   previous == '_';
-        if (tail == start || !is_identifier_char) {
+        if (!shortRoutine.protectsDelimiter() && (tail == start || !is_identifier_char)) {
           const unsigned char *run = tail + 1;
           const unsigned char *kw = keyword + 1;
           int count = 9;
@@ -2439,7 +2461,7 @@ size_t MySQLParserServicesImpl::determineStatementRanges(const char *sql, size_t
         break;
     }
 
-    if (*tail == *delimiterHead) {
+    if (tail < end && *tail == *delimiterHead && !shortRoutine.protectsDelimiter()) {
       // Found possible start of the delimiter. Check if it really is.
       size_t count = delimiter.size();
       if (count == 1) {
@@ -2450,6 +2472,7 @@ size_t MySQLParserServicesImpl::determineStatementRanges(const char *sql, size_t
         head = ++tail;
         statementStart = currentLine;
         haveContent = false;
+        shortRoutine.reset();
       } else {
         const unsigned char *run = tail + 1;
         const unsigned char *del = delimiterHead + 1;
@@ -2466,6 +2489,7 @@ size_t MySQLParserServicesImpl::determineStatementRanges(const char *sql, size_t
           head = run;
           statementStart = currentLine;
           haveContent = false;
+          shortRoutine.reset();
         }
       }
     }

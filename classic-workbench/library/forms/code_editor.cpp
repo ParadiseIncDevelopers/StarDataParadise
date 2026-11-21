@@ -39,6 +39,7 @@
 
 #include "mysql/MySQLRecognizerCommon.h"
 #include "SymbolTable.h"
+#include "../../res/server/sdp-language-keywords.h"
 
 DEFAULT_LOG_DOMAIN(DOMAIN_MFORMS_BE)
 
@@ -959,6 +960,9 @@ void CodeEditor::loadConfiguration(SyntaxHighlighterLanguage language) {
     list = "";
     for (auto const& name : keywords)
       list += base::tolower(name) + " ";
+#define SDP_COLOR_WORD(word) list += base::tolower(#word) + " ";
+    SDP_LANGUAGE_KEYWORDS(SDP_COLOR_WORD)
+#undef SDP_COLOR_WORD
 
     _code_editor_impl->send_editor(this, SCI_SETKEYWORDS, 1, (sptr_t)list.c_str());
 

@@ -164,6 +164,7 @@ public:
   }
 
   db_query_EditorRef grtobj();
+  void open_sdp_workspace(const std::string &kind, const std::string &schema = "", const std::string &name = "");
 
   void validate_menubar();
 

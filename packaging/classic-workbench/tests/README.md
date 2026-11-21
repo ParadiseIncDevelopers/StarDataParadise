@@ -49,3 +49,28 @@ Varsayılan çıktı `out/classic-home-acceptance/kitaplik.mwb` ve `model-fixtur
 ```
 
 Gerçek paketlenmiş `WBControls.dll` kullanılır. İç içe bir modalda normal/iptal düğmeleri, disabled/reenabled durumu, sonradan eklenen düğme, native güvenlik çizimi, gerçek odak, tab sırası, varsayılan/iptal sonucu ve native piksel dolgusu kontrol edilir. Probe kendi kısa ömürlü formunu açıp kapatır; sunucuya bağlanmaz. Çıktı `out/classic-modal-acceptance/probe-runtime.log` altındadır. Windows yüksek kontrast ayarı değiştirilmez; gerçek yüksek kontrast/DPI matrisi ayrıca sınanır.
+
+## AI/Knowledge canlı çalışma alanı ve protokol kabulü
+
+```powershell
+python -B packaging/classic-workbench/tests/workspace_live_acceptance.py --runtime out/classic-language-typed-native-acceptance --mysqld ../StarDataParadiseServer/out/ai-native-check/build18-runtime/mysqld.exe --output out/classic-provider-form-acceptance/live-result.json
+python -B packaging/classic-workbench/tests/workspace_live_acceptance.py --runtime out/classic-language-typed-native-acceptance --mysqld ../StarDataParadiseServer/out/ai-native-check/build18-runtime/mysqld.exe --probe-script packaging/classic-workbench/tests/query_completion_probe.py --output out/classic-provider-form-acceptance/completion-result.json
+```
+
+Her koşu kendi TLS sunucusunu, hesaplarını, şemasını ve Workbench profilini açar.
+İlk komut gerçek bağlantının capability'leriyle sekiz sayfayı, Knowledge diyagramı/
+timeline'ını, ana oturum rolünü, Action önizlemesini ve ayrı AI SQL ekranını sınar.
+Provider çağrısı veya Credential Manager yazımı yapmaz; business satırı değişmemelidir.
+
+İkinci komut native GRT sorgu API'sinin çoklu sonuçlarını doğrular: ana ve yönetim
+bağlantı kimliği/rolü korunmalı, ilk buffered sonuç sonraki sorgudan sonra okunmalı,
+CALL son sonuçları tüketilmeli ve geç gelen SIGNAL1644 saklanmamalıdır. Session
+counter1 komutun otomatik tekrarlanmadığını kanıtlar. Bu probe çalışma alanı UI
+kapısının yerine geçmez.
+
+Yalnız tamamlanmış `ok: true` sonucu kabul edilir. Parent yalnız kendi açtığı PID'yi
+sonuçtan sonra kapatabilir; `*.lifecycle.json` gerçek süreç çıkışını, zorunlu test
+temizliğini ve normal GUI kapanışının sınanmadığını ayrı kaydeder. Hatalı/eksik JSON
+ve sonuç öncesi süreç çökmesi başarısızdır. Progress, SQL/session izi ve native loglar
+hata veya timeout durumunda da korunur. Kullanıcı profilleri ve mevcut sunuculara
+bağlanılmaz.

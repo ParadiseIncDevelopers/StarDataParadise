@@ -5,7 +5,7 @@ StarDataParadise için Windows x64 masaüstü SQL istemcisi. Bağlantı profille
 | Çalıştırmak istediğiniz istemci | Bağlantı | Başlangıç |
 | --- | --- | --- |
 | Qt Workbench | TLS üzerinden StarDataParadise wire v1, örnek port `7443` | [Bağlantı kılavuzu](CONNECTIONS.md) ve [derleme](BUILD.md) |
-| Classic Workbench 8.0.47 kaynak önizlemesi | MySQL Classic TCP, ortak yerel dinleyici için örnek `localhost:3197` | [Kaynak yaması, Windows derlemesi ve paketleme](packaging/classic-workbench/README.md) |
+| Classic Workbench (8.0.47 tabanı) | MySQL Classic TCP, ortak yerel dinleyici için örnek `localhost:3197` | [Kaynak yaması, Windows derlemesi ve paketleme](packaging/classic-workbench/README.md) |
 
 ## Tam Classic kaynakları
 
@@ -13,7 +13,13 @@ Classic Workbench 8.0.47 kaynaklarının tamamı [classic-workbench/](classic-wo
 
 ## Güncel kaynak sürümü
 
-`v0.3.0-preview.5 - Classic Birleşik Çalışma Alanı`, onaylanan tasarımları SQL/Veri/Şema ve yönetim ekranlarına uygular. Sekmeler, bağlantı beklemesi, ortak ikonlar, Türkçe/İngilizce dil paketi, tablo düzenleme ve SQL önizlemesi, gerçek SDP ölçümleri ve ürün araçları birlikte yayımlanır. 66 Python sınaması, 21 derlenmiş kabul kontrolü ve canlı veri/DDL iptal akışları doğrulandı. [Sürüm adı, amacı ve bütün değişiklikler](packaging/classic-workbench/SURUM_NOTLARI.md) - [Canlı kabul ve ekranlar](packaging/classic-workbench/tasarim/sql-calisma-alani/VERI-SEMA-YONETIM.md)
+**v0.3.0**, preview olmayan kararlı sürümdür. AI/Knowledge ekranları, kullanıcının
+OpenAI/Claude anahtarı veya kendi yerel LLM dosyası, ayrı AI SQL yürütme ekranı
+ve normal SQL/PLSQL için typed IntelliSense/hover bu sürümde birlikte bulunur.
+Modal işlem düğmeleri ortak koyu petrol yeşilini kullanır. HIST/Git ve yeni
+SQL JOB ekranları sonraki etaba ertelendi; tasarım görselleri korunur.
+[Ürün sürümü](release.json) · [Sürüm notları](packaging/classic-workbench/SURUM_NOTLARI.md)
+· [Önceki veri/DDL ekranlarının kabulü](packaging/classic-workbench/tasarim/sql-calisma-alani/VERI-SEMA-YONETIM.md)
 
 ## İlk bağlantı
 
@@ -27,7 +33,7 @@ SQL çalışma sayfası seçili metni veya betiği çalıştırır ve transactio
 
 ### Classic Workbench
 
-[Classic kaynak önizlemesi](packaging/classic-workbench/README.md) MySQL Workbench 8.0.47 yamasını, üçüncü taraf bağımlılıklarını ve Windows paketleme betiklerini açıklar. Ortak yerel dinleyici yapılandırılmışsa **Standard (TCP/IP)** ile `localhost:3197` adresini kullanın. **Test Connection** sunucuyu doğrular. **Query 1** editöründe `Ctrl+Space` ile tamamlamayı açabilirsiniz. [Classic sunucu kurulumu ve uyumluluk](https://github.com/ParadiseIncDevelopers/StarDataParadiseServer/tree/master/compatibility)
+[Classic kaynak kılavuzu](packaging/classic-workbench/README.md) MySQL Workbench 8.0.47 yamasını, üçüncü taraf bağımlılıklarını ve Windows paketleme betiklerini açıklar. Ortak yerel dinleyici yapılandırılmışsa **Standard (TCP/IP)** ile `localhost:3197` adresini kullanın. **Test Connection** sunucuyu doğrular. **Query 1** editöründe `Ctrl+Space` ile tamamlamayı açabilirsiniz. [Classic sunucu kurulumu ve uyumluluk](https://github.com/ParadiseIncDevelopers/StarDataParadiseServer/tree/master/compatibility)
 
 ## Qt istemcisini derleme
 

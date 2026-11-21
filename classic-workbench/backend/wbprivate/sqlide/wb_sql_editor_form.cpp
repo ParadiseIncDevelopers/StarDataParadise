@@ -63,6 +63,8 @@
 #include "workbench/wb_context.h"
 
 #include <mysql_connection.h>
+#include <rapidjson/document.h>
+#include "sdp-catalog-metadata.h"
 
 #include <boost/signals2/connection.hpp>
 
@@ -80,6 +82,7 @@
 #include "wb_tunnel.h"
 
 #include <math.h>
+#include <limits>
 #include <mutex>
 #include <thread>
 
@@ -1289,6 +1292,8 @@ void SqlEditorForm::update_connected_state() {
   for (int i = 0; i < sql_editor_count(); ++i) {
     if (auto panel = sql_editor_panel(i))
       panel->editor_be()->set_sdp_model_syntax(sdpModelSyntax);
+    if (auto panel = sql_editor_panel(i))
+      panel->editor_be()->set_sdp_language_features(_work_parser_context ? _work_parser_context->sdpLanguageFeaturesEnabled() : 0);
   }
 
   grt::DictRef args(true);
@@ -1419,6 +1424,7 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
 
       // check the actual user we're logged in as
       bool sdpModelSyntax = false;
+      unsigned sdpLanguageFeatures = 0;
       if (_usr_dbc_conn && _usr_dbc_conn->ref.get()) {
         const std::unique_ptr<sql::Statement> statement(_usr_dbc_conn->ref->createStatement());
         {
@@ -1431,8 +1437,18 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
           try {
             const std::unique_ptr<sql::ResultSet> rs(statement->executeQuery(
               "SELECT JSON_CONTAINS(STARDATAPARADISE_CAPABILITIES(), "
-              "'[\"create_model\",\"train_model\",\"predict_model\"]', '$.commands')"));
-            sdpModelSyntax = rs->next() && rs->getInt(1) == 1;
+              "'[\"create_model\",\"train_model\",\"predict_model\"]', '$.commands'), "
+              "JSON_UNQUOTE(JSON_EXTRACT(STARDATAPARADISE_CAPABILITIES(),'$.native_language.ai_sql'))='true', "
+              "JSON_UNQUOTE(JSON_EXTRACT(STARDATAPARADISE_CAPABILITIES(),'$.native_language.sql_short'))='true', "
+              "JSON_UNQUOTE(JSON_EXTRACT(STARDATAPARADISE_CAPABILITIES(),'$.native_language.ai_action_v1'))='true', "
+              "JSON_UNQUOTE(JSON_EXTRACT(STARDATAPARADISE_CAPABILITIES(),'$.native_language.ai_role_acl_v1'))='true'"));
+            if (rs->next()) {
+              sdpModelSyntax = rs->getInt(1) == 1;
+              if (rs->getInt(2) == 1) sdpLanguageFeatures |= 1;
+              if (rs->getInt(3) == 1) sdpLanguageFeatures |= 2;
+              if (rs->getInt(4) == 1) sdpLanguageFeatures |= 8;
+              if (rs->getInt(5) == 1) sdpLanguageFeatures |= 16;
+            }
           } catch (const sql::SQLException &exc) {
             logDebug("Could not read StarDataParadise model SQL capability: %s\n", exc.what());
           }
@@ -1466,6 +1482,7 @@ grt::StringRef SqlEditorForm::do_connect(std::shared_ptr<SSHTunnel> tunnel, sql:
       _work_parser_context =
         services->createParserContext(rdbms()->characterSets(), _version, _sql_mode, _lower_case_table_names != 0);
       _work_parser_context->updateSdpModelSyntax(sdpModelSyntax);
+      _work_parser_context->updateSdpLanguageFeatures(sdpLanguageFeatures);
 
       // If we came so far, we probably have a valid connection.
       _connectionInfo = newConnectionInfo + "</body>";
@@ -2534,6 +2551,23 @@ void SqlEditorForm::handle_command_side_effects(const std::string &sql) {
 
 //----------------------------------------------------------------------------------------------------------------------
 
+static std::shared_ptr<sql::ResultSet> execute_buffered_query_and_drain(sql::Statement *statement,
+                                                                       const std::string &query) {
+  // Connector/C++ scrollable results own their buffered MYSQL_RES independently
+  // of the statement. Keep the first result readable after advancing the wire.
+  statement->setResultSetType(sql::ResultSet::TYPE_SCROLL_INSENSITIVE);
+  std::shared_ptr<sql::ResultSet> first(statement->executeQuery(query));
+  for (;;) {
+    if (statement->getMoreResults()) {
+      // Fetch and release every additional buffered rowset before advancing.
+      std::unique_ptr<sql::ResultSet> trailing(statement->getResultSet());
+    } else if (statement->getUpdateCount() == std::numeric_limits<uint64_t>::max()) {
+      break;
+    }
+  }
+  return first;
+}
+
 db_query_ResultsetRef SqlEditorForm::exec_management_query(const std::string &sql, bool log) {
   sql::Dbc_connection_handler::Ref conn;
   base::RecMutexLock lock(ensure_valid_aux_connection(conn));
@@ -2542,7 +2576,7 @@ db_query_ResultsetRef SqlEditorForm::exec_management_query(const std::string &sq
     const std::unique_ptr<sql::Statement> stmt(conn->ref->createStatement());
     Timer statement_exec_timer(false);
     try {
-      std::shared_ptr<sql::ResultSet> results(stmt->executeQuery(sql));
+      std::shared_ptr<sql::ResultSet> results(execute_buffered_query_and_drain(stmt.get(), sql));
 
       if (log)
         set_log_message(rid, DbSqlEditorLog::OKMsg, _("OK"), sql, statement_exec_timer.duration_formatted());
@@ -2567,7 +2601,7 @@ db_query_ResultsetRef SqlEditorForm::exec_main_query(const std::string &sql, boo
     const std::unique_ptr<sql::Statement> stmt(_usr_dbc_conn->ref->createStatement());
     Timer statement_exec_timer(false);
     try {
-      std::shared_ptr<sql::ResultSet> results(stmt->executeQuery(sql));
+      std::shared_ptr<sql::ResultSet> results(execute_buffered_query_and_drain(stmt.get(), sql));
 
       if (log)
         set_log_message(rid, DbSqlEditorLog::OKMsg, _("OK"), sql, statement_exec_timer.duration_formatted());
@@ -2983,6 +3017,56 @@ void SqlEditorForm::schema_meta_data_refreshed(const std::string &schema_name, b
       for (auto function : *functions) {
         _databaseSymbols.addNewSymbol<StoredRoutineSymbol>(schemaSymbol, function, nullptr);
       }
+
+      // Native SHOW lists apply the server's object visibility rules. Refresh
+      // alongside normal schema metadata; no catalog tables are read directly.
+      const unsigned nativeFeatures = _work_parser_context ? _work_parser_context->sdpLanguageFeaturesEnabled() : 0;
+      if (_usr_dbc_conn->ref.get() && (nativeFeatures & 1)) {
+        size_t knowledgeMetadataBudget=32;
+        const std::pair<const char *,const char *> catalogs[] = {
+          {"SHOW KNOWLEDGES","knowledge"},{"SHOW BEHAVIORS","behavior"},
+          {"SHOW MODELS","model"},{"SHOW CONVERSATIONS","conversation"},
+          {"SHOW RESPONSE SCHEMAS","response_schema"}
+        };
+        for (const auto &catalog : catalogs) {
+          try {
+            std::vector<SdpCatalogSymbol *> typedObjects;
+            {
+            const std::unique_ptr<sql::Statement> nativeStatement(_usr_dbc_conn->ref->createStatement());
+            const std::unique_ptr<sql::ResultSet> objects(nativeStatement->executeQuery(catalog.first));
+            while (objects->next()) {
+              if (objects->getString("schema_name") == schema_name) {
+                auto *symbol=_databaseSymbols.addNewSymbol<SdpCatalogSymbol>(schemaSymbol, objects->getString("name"), std::string(catalog.second));
+                if (symbol->kind == "knowledge" && knowledgeMetadataBudget>0) {
+                  --knowledgeMetadataBudget;
+                  typedObjects.push_back(symbol);
+                }
+              }
+            }
+            }
+            // Finish the SHOW result, including its native CALL status, before
+            // issuing another statement on the same catalog connection.
+            for (auto *symbol:typedObjects) {
+                  const auto quote=[](const std::string &value) {
+                    std::string escaped="`";
+                    for (char c:value) {if(c=='`') escaped+='`';escaped+=c;}
+                    return escaped+'`';
+                  };
+                  try {
+                    const std::unique_ptr<sql::Statement> metadataStatement(_usr_dbc_conn->ref->createStatement());
+                    const std::unique_ptr<sql::ResultSet> metadata(metadataStatement->executeQuery(
+                      "DESCRIBE KNOWLEDGE "+quote(schema_name)+"."+quote(symbol->name)));
+                    if (metadata->next()) sdpLoadKnowledgeMetadata(*symbol,metadata->getString("document"));
+                  } catch (const sql::SQLException &error) {
+                    logDebug("Native Knowledge completion metadata unavailable: %s\n",error.what());
+                  }
+            }
+          } catch (const sql::SQLException &error) {
+            logDebug("Native completion catalog unavailable: %s\n", error.what());
+          }
+        }
+      }
+
 
       if (statement != nullptr) {
         auto metaInfo = _usr_dbc_conn->ref->getMetaData();

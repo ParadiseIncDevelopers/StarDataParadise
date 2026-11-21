@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>StarDataParadise - Tasarım Galerisi</title>
+  <style>
+    :root{font-family:"Segoe UI",sans-serif;color:#102629;background:#edf2f4;color-scheme:light}
+    *{box-sizing:border-box}
+    body{margin:0} header{background:#043133;color:white;padding:22px max(24px,calc((100vw - 1500px)/2))}
+    h1{font-size:24px;margin:0 0 6px} header p{margin:0;color:#c8dcda;line-height:1.45}
+    nav{position:sticky;top:0;z-index:2;background:#e7eeef;border-bottom:1px solid #a3b4bc;display:flex;gap:8px;padding:10px max(24px,calc((100vw - 1500px)/2));flex-wrap:wrap}
+    nav a{color:#124b49;text-decoration:none;padding:8px 12px;border-bottom:2px solid transparent} nav a:hover,nav a:focus-visible{border-color:#098874;outline:none}
+    main{max-width:1548px;margin:auto;padding:20px 24px 60px} section{scroll-margin-top:76px;margin:20px 0 40px} h2{font-size:20px;margin:0 0 14px}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px} figure{margin:0;background:white;border:1px solid #c1cecf}
+    figure a{display:block;line-height:0} figure a:focus-visible{outline:3px solid #098874;outline-offset:2px} img{display:block;width:100%;height:auto}
+    figcaption{padding:11px 14px 13px;font-size:14px;line-height:1.4} figcaption b{display:block;font-size:15px;margin-bottom:3px}
+    .note{font-size:14px;line-height:1.5;color:#4f5759;margin:0 0 18px} footer{padding:22px 24px;text-align:center;color:#4f5759;border-top:1px solid #c1cecf;font-size:13px}
+    @media(max-width:850px){.grid{grid-template-columns:1fr}header{padding:18px 20px}nav{padding:8px 12px}main{padding:16px 14px 40px}}
+  </style>
+</head>
+<body>
+  <header><h1>StarDataParadise - Tasarım Galerisi</h1><p>AI ve Knowledge - SQL ve PL/SQL - HIST - 35 ayrı ekran taslağı</p></header>
+  <nav aria-label="Galeri bölümleri"><a href="#ai">AI ve Knowledge</a><a href="#sql">SQL ve PL/SQL</a><a href="#hist">HIST - sonraki etap</a><a href="KOMUT-INTELLISENSE.md">Komut ve IntelliSense envanteri</a></nav>
+  <main>
+    <p class="note">Görseller tasarım örneğidir; gerçek çalışan ekran veya özellik kabulü değildir. Her görseli büyük açmak için üzerine tıklayın.</p>
+    <p class="note"><strong>21 Kasım kapsam kararı:</strong> Bu release AI/Knowledge ve SQL/PLSQL içindir. HIST/SQL git, remote/sync ve yeni SQL JOB ekranları sonraki etaba ertelendi; ilgili görseller tasarım arşivi olarak korunur.</p>
+    <section id="ai"><h2>AI ve Stored Knowledge</h2><div class="grid" id="ai-grid"></div></section>
+    <section id="sql"><h2>SQL ve PL/SQL</h2><div class="grid" id="sql-grid"></div></section>
+    <section id="hist"><h2>HIST - İşlem geçmişi - sonraki etap</h2><div class="grid" id="hist-grid"></div></section>
+  </main>
+  <footer>Örnek veriler ve 123456 hata kodu temsili olarak kullanılmıştır.</footer>
+  <script>
+    const groups = {
+      "ai-grid": [
+        ["01-sema-gezgini.png","01 - Şema gezgini","AI nesneleri ve SQL tabanlı Knowledge tanımı."],
+        ["02-knowledge-listesi.png","02 - Knowledge listesi","Arama, liste ve nesne bağlam menüsü."],
+        ["03-knowledge-olustur.png","03 - Knowledge oluşturma","Tanım, güvenlik ve SQL incelemesi."],
+        ["04-knowledge-parametreleri-v2.png","04 - Parametreler ve sonuç","Tipli girişler, çıktı sütunları ve güvenlik."],
+        ["05-knowledge-bagimlilik-v3.png","05 - Bağımlılıklar ve sürümler","Bağımlılık diyagramı ve sürüm zaman çizgisi."],
+        ["06-knowledge-calistir.png","06 - Knowledge çalıştırma","Parametreli çağrı ve sonuç önizlemesi."],
+        ["07-behavior-surumleri.png","07 - Behavior ve sürümleri","Tanım, sürümler ve bağlı konuşmalar."],
+        ["08-yeni-konusma-v2.png","08 - Yeni konuşma","Model, fonksiyon, otomatik cevap ve SQL sekmesine geçiş."],
+        ["08a-ai-sql-calistirma.png","08A - AI SQL çalıştırma","Konuşma SQL editörü, parametreler, cevap ve run durumu."],
+        ["09-konusma-ayrintisi-v2.png","09 - Konuşma ayrıntısı","Ticket, mesajlar ve SQL ile çalıştırma geçişi."],
+        ["10-bellek-sifirla.png","10 - Belleği sıfırla","FLUSH MEMORY için açıklamalı onay."],
+        ["11-yanit-semasi-json.png","11 - Yanıt şeması","JSON şeması ve doğrulama hatası."],
+        ["12-yetki-onay-v3.png","12 - Yetki ve onay","Rol matrisi, uyumlu renkler ve SQL önizlemesi."]
+      ],
+      "sql-grid": [
+        ["13-sql-exclude-replace.png","13 - EXCLUDE / REPLACE","Sütun tamamlama ve bağlamsal yardım."],
+        ["14-sql-qualify.png","14 - QUALIFY","Pencere fonksiyonu önerileri."],
+        ["15-sql-pipeline-v3.png","15 - Aşamalı sorgu","Pipe aşamaları ve bağlamsal öneriler."],
+        ["16-sql-insert-by-name.png","16 - INSERT BY NAME","Kaynak ve hedef sütun eşleşmesi."],
+        ["17-plsql-let-when-v2.png","17 - LET ve WHEN","Yerel değişkenler ve yordam yardımı."],
+        ["18-plsql-for-yordam.png","18 - Sorgu üzerinde FOR","Yordam düzenleyicisi ve satır değişkeni."],
+        ["19-fonksiyon-calistir.png","19 - Fonksiyon çalıştırma","Tipli parametre ve sonuç."],
+        ["20-show-expanded.png","20 - SHOW EXPANDED","Yazılan ve genişletilmiş sorgu."],
+        ["21-sql-hata-ayrintisi.png","21 - Hata ayrıntısı","Altı basamaklı kod ve kaynak konumu."],
+        ["22-parametre-baglama.png","22 - Parametre bağlama","Tipli değerler ve IntelliSense."]
+      ],
+      "hist-grid": [
+        ["23-hist-alt-panel-v2.png","23 - HIST alt paneli","Sorgu geçmişi yanında görsel işlem akışı."],
+        ["24-hist-revizyon-agaci-v3.png","24 - Revision ağacı","Satırlara hizalı grafik, dallar ve ayrıntılar."],
+        ["25-hist-revizyon-ayrinti.png","25 - Revision ayrıntısı","İşlem, bağlı işler ve dış etkiler."],
+        ["26-hist-fark-gorunumu-v2.png","26 - Önce / sonra farkı","Güncel ve geçmiş alan değerleri."],
+        ["27-hist-revert-onizleme-v5.png","27 - REVERT önizlemesi","İşlem etkilerini geri alma planı."],
+        ["28-hist-restore-onizleme-v2.png","28 - RESTORE önizlemesi","Seçili kaydı geçmiş duruma getirme."],
+        ["29-hist-eski-plan-v2.png","29 - Eski plan uyarısı","Yeni önizleme gerektiren değişiklik."],
+        ["30-hist-dal-etiket-v3.png","30 - Dal ve etiketler","Dal oluşturma ve oturum kapsamı."],
+        ["31-hist-remote-fetch.png","31 - Remote ve FETCH","Uzak sunucu ve güvenli bağlantı."],
+        ["32-hist-merge-catisma-v2.png","32 - Merge çakışması","Ortak ata, yerel ve uzak değerler."],
+        ["33-hist-sync-job-v2.png","33 - Sync ve JOB","Durum, duraklatma ve retry bilgisi."],
+        ["34-hist-olay-akisi.png","34 - Olay akışı","Commit, uygulama durumu ve cursor."]
+      ]
+    };
+    for (const [id, items] of Object.entries(groups)) {
+      const grid = document.getElementById(id);
+      for (const [file, title, description] of items) {
+        const figure = document.createElement("figure");
+        const link = document.createElement("a");
+        link.href = file; link.target = "_blank"; link.rel = "noopener";
+        const img = document.createElement("img");
+        img.src = file; img.alt = title; img.loading = "lazy"; img.width = 1717; img.height = 916;
+        link.append(img);
+        const caption = document.createElement("figcaption");
+        const name = document.createElement("b"); name.textContent = title;
+        caption.append(name, document.createTextNode(description));
+        figure.append(link, caption); grid.append(figure);
+      }
+    }
+  </script>
+</body>
+</html>

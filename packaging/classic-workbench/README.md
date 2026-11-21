@@ -1,14 +1,21 @@
 # Klasik StarDataParadise Workbench
 
+Güncel ürün sürümü **0.3.0**, kanal **stable** olur; Classic kaynak tabanı
+8.0.47 olarak korunur. AI/Knowledge ve normal SQL/PLSQL ekranları, typed
+IntelliSense/hover ve ayrı AI SQL yürütme akışı bu sürümün kapsamıdır.
+HIST/Git ve yeni SQL JOB ekranları sonraki etaba ertelendi. Tasarım görselleri
+gelecekteki çalışma için korunur. [Sürüm bilgisi](../../release.json) ·
+[Kararlı Windows portable paket](https://github.com/ParadiseIncDevelopers/StarDataParadise/releases/tag/v0.3.0).
+
 Tam Classic kaynak ağacı [classic-workbench/](../../classic-workbench/) altında master dalında yayımlanır. Bu klasör upstream kaynakları, StarDataParadise değişikliklerini, ikonları ve lisans bildirimlerini birlikte içerir. İlk tam kaynak yayını yerel `out/mysql-workbench-native-src` ağacının master commit'inden alınmıştır; güncel ürün kaynağı `classic-workbench/` altında sürümlenir. Aşağıdaki yama akışı da aynı 8.0.47 tabanından kaynak hazırlamak için kullanılabilir.
 
 20 Kasım ek düzeltmesi ilk SQL sekmesinin tam boyanmasını ve kutusuz bağlantı açılış satırını içerir. Yeni yerel çıktı `out/classic-startup-ui/StarDataParadise.exe`; [uygulama, testler ve gerçek görüntüler](tasarim/sql-calisma-alani/ACILIS-DUZELTMELERI.md).
 
-Güncel yerel paket `out/classic-sdp-names-ui/StarDataParadise.exe` yolundadır. Ürün dosyaları, projeler ve yükleme başvuruları `sdp` adlarına taşındı; [ad eşlemesi ve kabul](tasarim/sql-calisma-alani/DOSYA-ADLARI.md) iki zorunlu vendor dosyasını da açıklar. Native solution adı `classic-workbench/StarDataParadiseClassic.sln` olur. `Stage-Native.ps1` ayrı ve yeni çıktı üretir; varsayılanı `out/classic-native-sdp-ui` dizinidir.
+AI/SQL için son native kabul çalışma zamanı `out/classic-language-typed-native-acceptance/StarDataParadise.exe` yolundadır. Ürün dosyaları, projeler ve yükleme başvuruları `sdp` adlarına taşındı; [ad eşlemesi ve kabul](tasarim/sql-calisma-alani/DOSYA-ADLARI.md) iki zorunlu vendor dosyasını da açıklar. Native solution adı `classic-workbench/StarDataParadiseClassic.sln` olur. `Stage-Native.ps1` ayrı ve yeni çıktı üretir; varsayılanı `out/classic-native-sdp-ui` dizinidir.
 
 Bağlantılar, Modeller ve Veri Taşıma ekranlarının renk, tipografi, ikon ve kompakt yerleşim ölçüleri [ana sayfa tasarım kurallarında](tasarim/ANA_SAYFA.md) yer alır.
 
-## Güncel Classic çalışma alanı - `v0.3.0-preview.5`
+## Önceki Classic çalışma alanı - `v0.3.0-preview.5`
 
 Bağlı SQL alanı ve uygulama genelindeki son tasarım değişiklikleri için kanonik kaynak `classic-workbench/` dizinidir. Hazırlanmış 8.0.47 native geliştirme ağacı ve aşağıdaki bağımlılıklar mevcutsa güncel kaynakları ayrı bir çalışma zamanına derleyin:
 

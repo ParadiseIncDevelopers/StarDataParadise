@@ -9,6 +9,8 @@ set(PY_FILES
     wb_catalog_utils.py
     sdp_tools_grt.py
     sdp_tools_backend.py
+    sdp_workspace_grt.py
+    sdp_workspace_backend.py
     sdp_compat_decision.py
     sdp_compat_jobs.py
     sdp_compat_cpu.py

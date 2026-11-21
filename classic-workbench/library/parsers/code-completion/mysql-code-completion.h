@@ -34,3 +34,10 @@ namespace parsers {
 PARSERS_PUBLIC_TYPE std::vector<std::pair<int, std::string>> getCodeCompletionList(
   size_t caretLine, size_t caretOffset, const std::string &defaultSchema, bool uppercaseKeywords,
   parsers::MySQLParser *parser, parsers::SymbolTable &symbolTable);
+
+PARSERS_PUBLIC_TYPE std::string getSdpLocalHover(
+  size_t line, size_t column, const std::string &sql, const std::string &defaultSchema,
+  unsigned features, long serverVersion, const std::string &sqlMode, parsers::SymbolTable &symbolTable);
+PARSERS_PUBLIC_TYPE std::string getSdpKnowledgeCalltip(
+  size_t line, size_t column, const std::string &sql, const std::string &defaultSchema,
+  unsigned features, long serverVersion, const std::string &sqlMode, parsers::SymbolTable &symbolTable);

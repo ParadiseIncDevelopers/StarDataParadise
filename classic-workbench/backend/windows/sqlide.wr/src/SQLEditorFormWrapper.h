@@ -97,6 +97,10 @@ namespace MySQL {
           (*_ref)->handle_history_action(NativeToCppString(action), NativeToCppString(sql));
         }
 
+        void open_sdp_workspace(String ^ kind) {
+          (*_ref)->open_sdp_workspace(NativeToCppString(kind));
+        }
+
         // History and log.
         VarGridModelWrapper ^ log() { return _log; } System::Windows::Forms::ContextMenuStrip ^ get_log_context_menu();
         DbSqlEditorHistoryWrapper ^ history() { return _history; } String ^

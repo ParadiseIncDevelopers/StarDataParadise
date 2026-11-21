@@ -26,11 +26,13 @@ if (!$drive) { throw 'No free drive letter for the upstream Workbench build batc
 $alias = "${drive}:"
 $originalPath = $env:PATH
 $originalDependencyPath = $env:WB_3DPARTY_PATH
+$originalJavaExecutable = $env:SDP_JAVA_EXECUTABLE
 subst.exe $alias $workspace
 if ($LASTEXITCODE -ne 0) { throw 'Could not map the workspace to a path without spaces.' }
 try {
     $out = "$alias\out"
     $env:WB_3DPARTY_PATH = "$out\workbench8-deps"
+    $env:SDP_JAVA_EXECUTABLE = $java
     $swig = (Resolve-Path -LiteralPath "$out\workbench8-tools\swigwin-4.3.1\swig.exe").Path
     $env:PATH = "$(Split-Path -Parent $swig);$(Split-Path -Parent $java);$originalPath"
     $framework = "$out\workbench8-tools\framework"
@@ -50,6 +52,7 @@ try {
 } finally {
     $env:PATH = $originalPath
     $env:WB_3DPARTY_PATH = $originalDependencyPath
+    $env:SDP_JAVA_EXECUTABLE = $originalJavaExecutable
     subst.exe $alias /D
 }
 exit $code
