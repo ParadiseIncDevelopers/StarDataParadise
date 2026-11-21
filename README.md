@@ -13,7 +13,9 @@ Classic Workbench 8.0.47 kaynaklarının tamamı [classic-workbench/](classic-wo
 
 ## Güncel kaynak sürümü
 
-**v0.3.0**, preview olmayan kararlı sürümdür. AI/Knowledge ekranları, kullanıcının
+**v0.3.1**, preview olmayan kararlı sürümdür. OpenAI/Claude anahtarı için hızlı
+kurulum, bilgisayardan GGUF importu ve yerel worker durumu/başlatma eklenmiştir.
+AI kataloglarının aynı bağlantıda art arda okunması düzeltilmiştir. AI/Knowledge ekranları, kullanıcının
 OpenAI/Claude anahtarı veya kendi yerel LLM dosyası, ayrı AI SQL yürütme ekranı
 ve normal SQL/PLSQL için typed IntelliSense/hover bu sürümde birlikte bulunur.
 Modal işlem düğmeleri ortak koyu petrol yeşilini kullanır. HIST/Git ve yeni

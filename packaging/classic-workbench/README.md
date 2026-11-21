@@ -1,11 +1,11 @@
 # Klasik StarDataParadise Workbench
 
-Güncel ürün sürümü **0.3.0**, kanal **stable** olur; Classic kaynak tabanı
+Güncel ürün sürümü **0.3.1**, kanal **stable** olur; Classic kaynak tabanı
 8.0.47 olarak korunur. AI/Knowledge ve normal SQL/PLSQL ekranları, typed
 IntelliSense/hover ve ayrı AI SQL yürütme akışı bu sürümün kapsamıdır.
 HIST/Git ve yeni SQL JOB ekranları sonraki etaba ertelendi. Tasarım görselleri
 gelecekteki çalışma için korunur. [Sürüm bilgisi](../../release.json) ·
-[Kararlı Windows portable paket](https://github.com/ParadiseIncDevelopers/StarDataParadise/releases/tag/v0.3.0).
+[Kararlı Windows portable paket](https://github.com/ParadiseIncDevelopers/StarDataParadise/releases/tag/v0.3.1).
 
 Tam Classic kaynak ağacı [classic-workbench/](../../classic-workbench/) altında master dalında yayımlanır. Bu klasör upstream kaynakları, StarDataParadise değişikliklerini, ikonları ve lisans bildirimlerini birlikte içerir. İlk tam kaynak yayını yerel `out/mysql-workbench-native-src` ağacının master commit'inden alınmıştır; güncel ürün kaynağı `classic-workbench/` altında sürümlenir. Aşağıdaki yama akışı da aynı 8.0.47 tabanından kaynak hazırlamak için kullanılabilir.
 

@@ -1,7 +1,7 @@
 {
   "id": "workbench",
   "name": "StarDataParadise Workbench",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "scope": "perUser",
   "directory": "Workbench",
   "features": [

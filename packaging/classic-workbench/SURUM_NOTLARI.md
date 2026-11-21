@@ -1,5 +1,14 @@
 # Classic sürüm notları
 
+## v0.3.1 - Yerel AI worker ve sağlayıcı kurulumu
+
+Stable sürüm; Classic kaynak tabanı 8.0.47 korunur. AI modellerinde OpenAI bağla,
+Claude bağla, GGUF dosyası seç, Worker durumu ve Worker’ı başlat akışları vardır.
+Anahtarlar Windows kasasında kalır; yerel worker bağı aynı sunucu/hesaba
+sınırlıdır. GGUF arka planda kopyalanıp doğrulanır; model SQL'i ayrıca incelenir.
+Katalog sorgularının son CALL yanıtları tüketilerek beş AI klasörünün aynı
+oturumda kullanılabilir kalması sağlanır. Eşleşen Server sürümü 0.5.1'dir.
+
 ## v0.3.0 - AI ve Knowledge çalışma alanı
 
 Ürün sürümü 0.3.0, kanal stable olur. Classic kaynak tabanı 8.0.47'dir.

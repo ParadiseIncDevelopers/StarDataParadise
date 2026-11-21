@@ -178,6 +178,7 @@ class Diagram(mforms.PyDrawBox):
 class WorkspacePage(ToolPage):
     def __init__(self, owner):
         super().__init__(owner)
+        self.import_busy = False
         self.backend = owner.backend
         self.action_count = 0
         self.remove(self.actions); self.remove(self.result_tabs); self.remove(self.status)
@@ -185,7 +186,7 @@ class WorkspacePage(ToolPage):
         self.add(self.action_group, False, True); self.add(self.result_tabs, True, True); self.add(self.status, False, True)
 
     def action(self, caption, callback):
-        if self.action_count and self.action_count % 5 == 0:
+        if self.action_count and self.action_count % getattr(self, 'actions_per_row', 5) == 0:
             # Native box layouts do not wrap. Keep controls reachable at the
             # supported 1280 px desktop width instead of clipping the toolbar.
             self.actions = box(True)
@@ -448,10 +449,11 @@ class AiSqlPage(SqlPage):
 
 class ModelsPage(WorkspacePage):
     title = 'AI modelleri'
-    description = 'OpenAI API - Claude API - yerel GGUF modeli; anahtar yerine secret başvurusu'
+    description = 'OpenAI - Claude - yerel GGUF'
 
     def __init__(self, owner):
         super().__init__(owner)
+        self.actions_per_row = 2
         self.field('schema', 'Şema', self.editor.defaultSchema or '')
         self.field('name', 'Model adı')
         self.field('provider', 'Sağlayıcı', 'OPENAI', ['OPENAI', 'ANTHROPIC', 'LOCAL_GGUF'])
@@ -463,17 +465,128 @@ class ModelsPage(WorkspacePage):
         self.field('sha256', 'Artifact SHA-256')
         self.field('context_tokens', 'Bağlam token sınırı', '4096')
         self.field('max_output_tokens', 'Çıktı token sınırı', '1024')
+        self.action('OpenAI bağla', lambda: self.connect_cloud('OPENAI'))
+        self.action('Claude bağla', lambda: self.connect_cloud('ANTHROPIC'))
+        self.action('GGUF dosyası seç', self.import_local)
+        self.action('Worker durumu', self.worker_status)
+        self.action('Worker’ı başlat', self.start_local_worker)
         self.action('Modelleri oku', self.refresh)
         self.action('Modeli incele', self.inspect)
         self.action('Kayıt SQL’ini incele', self.registration)
-        self.action('API anahtarını kasaya kaydet', self.credentials)
-        self.action('Worker bağını hazırla', self.worker_binding)
-        self.status.set_text('Worker erişimi doğrulanmadı. Kasa kaydı yalnız bu Windows kullanıcısına aittir.')
+        self.action('API anahtarı kaydet', self.credentials)
+        self.action('Worker bağı', self.worker_binding)
+        # Keep quick setup reachable; the detailed provider form scrolls in its
+        # own tab instead of pushing all actions below the desktop viewport.
+        self.remove(self.form)
+        self.result_tabs.add_page(scrolled(self.form), 'Gelişmiş kayıt')
+        self.status.set_text('OpenAI bağla, Claude bağla veya GGUF dosyası seç ile başlayın. Worker durumu bağlantıyı doğrular.')
         self.details.set_value('API anahtarını ayrı maskeli kasa penceresine girin. SQL yalnız secret_env veya credential_ref taşır.\n'
             'Kasa geçerli Windows kullanıcısına aittir. Uzak worker için yönetici tarafından güvenilir başvuru bağı gerekir; anahtar aktarılmaz.\n'
             'Worker bağını hazırla ile bağlı hesabınıza ait anahtarsız yapılandırmayı görün. Worker yöneticisi bunu --config dosyasına eklemelidir.\n'
             'Özel API uç noktaları worker yapılandırmasında ayrıca tam adres izni gerektirir.\n'
             'GGUF yolu worker model deposuna göredir; istemci dosyası sunucuya kendiliğinden aktarılmaz.')
+
+    def local_worker(self):
+        from sdp_local_worker import installation
+        options = self.editor.connection.parameterValues
+        if options['hostName'] not in ('127.0.0.1', 'localhost', '::1') or int(options['useSSL']) != 4:
+            raise ValueError('Otomatik yerel worker bağı doğrulanmış yerel TLS bağlantısı gerektirir.')
+        row = self.backend.read.run_sql('SELECT @@server_uuid,@@port,STARDATAPARADISE_ACTOR();').fetch_one()
+        if row is None:
+            raise ValueError('Sunucu kimliği okunamadı.')
+        return installation([str(value) for value in row])
+
+    def worker_status(self):
+        from sdp_local_worker import health
+        manifest = self.local_worker()
+        value = health(manifest)
+        self.show_json(dict(worker='Çalışıyor', owner=manifest['owner'], import_root=manifest['import_root'],
+                            updated_at=value['updated_at'], last_completed=value.get('completed')))
+        self.status.set_text('Yerel worker çalışıyor - anahtarlar ve model importları aynı Windows hesabından okunur.')
+
+    def start_local_worker(self):
+        from sdp_local_worker import start_worker
+        start_worker(self.local_worker())
+        self.status.set_text('Worker başlatma isteği gönderildi. Birkaç saniye sonra Worker durumu ile kontrol edin.')
+
+    def connect_cloud(self, provider):
+        from sdp_local_worker import bind_credential, health
+        manifest = self.local_worker(); health(manifest)
+        label = 'OpenAI' if provider == 'OPENAI' else 'Claude'
+        reference = 'openai_main' if provider == 'OPENAI' else 'claude_main'
+        form = FieldsDialog(label + ' bağlantısı', [
+            ('schema', 'Şema', self.value('schema'), None),
+            ('name', 'SQL model adı', self.value('name') or reference, None),
+            ('remote', 'Sağlayıcı model kimliği', self.value('remote'), None),
+            ('reference', 'Kasa başvurusu', reference, None),
+            ('secret', 'API anahtarı', '', None)], secret_fields=('secret',))
+        if not form.accepted():
+            form.fields['secret'].set_value(''); return
+        try:
+            source = model_registration(form.value('schema'), form.value('name'), provider,
+                form.value('remote'), credential_ref=form.value('reference'),
+                max_output_tokens=self.value('max_output_tokens'))
+            bind_credential(manifest, provider, form.value('reference'))
+            store_windows_credential(form.value('reference'), form.raw_value('secret'))
+            for key, value in dict(schema=form.value('schema'), name=form.value('name'), provider=provider, remote=form.value('remote'),
+                                   credential_ref=form.value('reference'), secret_env='', endpoint='').items():
+                self.fields[key].set_value(value)
+            self.status.set_text(label + ' anahtarı kasaya kaydedildi ve worker bağı kuruldu. Model SQL’ini inceleyip çalıştırın.')
+        finally:
+            form.fields['secret'].set_value('')
+        self.review_sql(label + ' - Model kaydı', source)
+
+    def import_local(self):
+        from sdp_local_worker import health, stage_gguf
+        manifest = self.local_worker(); health(manifest)
+        chooser = mforms.newFileChooser(mforms.Form.main_form(), mforms.OpenFile)
+        chooser.set_title('Yerel GGUF modeli seç')
+        chooser.set_extensions('GGUF modelleri (*.gguf)|*.gguf', 'gguf')
+        if not chooser.run_modal():
+            return
+        form = FieldsDialog('Yerel model importu', [
+            ('schema', 'Şema', self.value('schema'), None),
+            ('name', 'SQL model adı', self.value('name') or 'yerel_model', None),
+            ('context', 'Bağlam token sınırı', self.value('context_tokens'), None),
+            ('output', 'Çıktı token sınırı', self.value('max_output_tokens'), None)])
+        if not form.accepted():
+            return
+        # Validate the name and options before copying a potentially large file.
+        model_registration(form.value('schema'), form.value('name'), 'LOCAL_GGUF', artifact='validate.gguf',
+            sha256='0'*64, context_tokens=form.value('context'), max_output_tokens=form.value('output'))
+        if self.import_busy:
+            raise ValueError('Bir model dosyası zaten kopyalanıyor.')
+        from queue import Queue, Empty
+        from threading import Thread
+        values = dict(schema=form.value('schema'), name=form.value('name'), context_tokens=form.value('context'), max_output_tokens=form.value('output'))
+        source = chooser.get_path(); results = Queue(); self.import_busy = True
+        progress = [0, 1]
+        self.status.set_text('GGUF kopyalanıyor ve SHA-256 hesaplanıyor…')
+        def update(count, total):
+            if self.owner.closed:
+                raise ValueError('Model kopyalama iptal edildi.')
+            progress[:] = [count, total]
+        def copy():
+            try: results.put((True, stage_gguf(manifest, source, update)))
+            except Exception as error: results.put((False, str(error)))
+        def poll():
+            if self.owner.closed:
+                return False
+            try: success, result = results.get_nowait()
+            except Empty:
+                self.status.set_text('GGUF kopyalanıyor - %d%%' % (100 * progress[0] // progress[1]))
+                return True
+            self.import_busy = False
+            if not success:
+                self.status.set_text('Model kopyalanamadı: ' + result)
+                return False
+            values.update(provider='LOCAL_GGUF', artifact=result['artifact'], sha256=result['sha256'])
+            for key, value in values.items(): self.fields[key].set_value(value)
+            self.status.set_text('GGUF hazır. IMPORT SQL’i çalışınca worker dosyayı doğrulayıp gerçek runtime’da yükleyecek.')
+            self.guard(self.registration)
+            return False
+        Thread(target=copy, daemon=True).start()
+        mforms.Utilities.add_timeout(.2, poll)
 
     def credentials(self):
         form = FieldsDialog('API kimlik bilgisini kaydet', [
@@ -495,6 +608,18 @@ class ModelsPage(WorkspacePage):
             raise ValueError('Bağlı hesabın sunucu kimliği okunamadı.')
         value = model_worker_binding(row[0], self.value('provider'), endpoint=self.value('endpoint'),
             secret_env=self.value('secret_env'), credential_ref=self.value('credential_ref'))
+        from sdp_local_worker import bind_credential, health
+        try:
+            manifest = self.local_worker()
+        except (OSError, ValueError):
+            manifest = None
+        if manifest is not None and self.value('provider') != 'LOCAL_GGUF':
+            bind_credential(manifest, self.value('provider'), self.value('credential_ref'),
+                endpoint=self.value('endpoint'), secret_env=self.value('secret_env'))
+            health(manifest)
+            self.status.set_text('Yerel worker bağı kuruldu; yeni işler bu kasa başvurusunu kullanabilir.')
+            self.show_json(value)
+            return
         self.details.set_value('Worker erişimi doğrulanmadı. Bu bölüm güvenilir worker yöneticisinin --config dosyasına ekleyeceği başvuru bağıdır.\n'
             'Windows kaynağı: worker aynı Windows hesabıyla çalışmalıdır. Uzak veya farklı hesapla çalışan worker kendi kasasını kullanır; bu istemcinin anahtarı aktarılmaz.\n'
             'Ortam kaynağı: değişken worker hizmetinin ortamında bulunmalıdır.\n'
@@ -611,6 +736,7 @@ class WorkspaceView(mforms.AppView):
 
     def __init__(self, editor, page=0):
         super().__init__(False, 'StarDataParadise çalışma alanı', 'sdp_workspace', False)
+        self.closed = False
         self.editor, self.backend = editor, WorkspaceBackend(editor)
         self.set_spacing(0)
         layout = box(True); layout.set_spacing(0)
@@ -635,6 +761,7 @@ class WorkspaceView(mforms.AppView):
         self.select(7)
 
     def close_workspace(self):
+        self.closed = True
         if self in _views:
             _views.remove(self)
         return True

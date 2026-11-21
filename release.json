@@ -1,10 +1,10 @@
 {
   "product": "StarDataParadise Workbench",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "channel": "stable",
   "prerelease": false,
   "classic_base": "8.0.47",
-  "server_version": "0.5.0",
+  "server_version": "0.5.1",
   "features": ["ai", "knowledge", "sql", "plsql"],
   "deferred": ["sql_hist", "sql_jobs"]
 }

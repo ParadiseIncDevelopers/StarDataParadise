@@ -8,7 +8,8 @@ using MySQL.GUI.Workbench;
 // associated with an assembly.
 [assembly: AssemblyTitle("StarDataParadise")]
 [assembly: AssemblyDescription("StarDataParadise Workbench")]
-[assembly: AssemblyConfiguration("development")]
+[assembly: AssemblyConfiguration("stable")]
+[assembly: AssemblyInformationalVersion("0.3.1")]
 [assembly: AssemblyCompany("Oracle Corporation")]
 [assembly: AssemblyProduct("StarDataParadise")]
 [assembly: AssemblyCopyright("Copyright © 2006, 2026, Oracle and/or its affiliates.")]

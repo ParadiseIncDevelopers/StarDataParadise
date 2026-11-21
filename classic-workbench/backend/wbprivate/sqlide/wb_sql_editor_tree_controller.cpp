@@ -23,6 +23,7 @@
  */
 
 #include <regex>
+#include <limits>
 
 #include "grtpp_util.h"
 #include "wb_sql_editor_tree_controller.h"
@@ -562,9 +563,20 @@ grt::StringRef SqlEditorTreeController::do_fetch_live_schema_contents(
             if (enabled[i]) {
               try {
                 names = std::make_shared<std::list<std::string>>();
+                stmt->setResultSetType(sql::ResultSet::TYPE_SCROLL_INSENSITIVE);
                 std::unique_ptr<sql::ResultSet> objects(stmt->executeQuery(std::string("SHOW ") + plurals[i]));
                 while (objects->next())
                   if (objects->getString(3) == schema_name) names->push_back(objects->getString(2));
+                objects.reset();
+                // Native SHOW catalogs use CALL internally. Consume its final
+                // OK (and any trailing rowsets) before reusing this connection.
+                for (;;) {
+                  if (stmt->getMoreResults()) {
+                    std::unique_ptr<sql::ResultSet> trailing(stmt->getResultSet());
+                  } else if (stmt->getUpdateCount() == std::numeric_limits<uint64_t>::max()) {
+                    break;
+                  }
+                }
                 names->sort();
               } catch (const sql::SQLException& error) {
                 names.reset();
