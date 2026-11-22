@@ -1,5 +1,7 @@
 # Klasik StarDataParadise Workbench
 
+**Güncel yerel EXE:** [StarDataParadise 0.3.1](../../out/release/StarDataParadise-v0.3.1/StarDataParadise.exe). Masaüstündeki **StarDataParadise** kısayolu aynı uygulamayı açar. 22 Kasım 2026 temizliğinde diğer yerel EXE kopyaları silindi; aşağıdaki eski kabul/derleme çıktı yolları tarihsel kayıttır. Çalıştırmak için güncel EXE'yi ve yanındaki bütün çalışma zamanı dosyalarını birlikte tutun.
+
 Güncel ürün sürümü **0.3.1**, kanal **stable** olur; Classic kaynak tabanı
 8.0.47 olarak korunur. AI/Knowledge ve normal SQL/PLSQL ekranları, typed
 IntelliSense/hover ve ayrı AI SQL yürütme akışı bu sürümün kapsamıdır.

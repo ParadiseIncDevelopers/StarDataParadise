@@ -2,6 +2,8 @@
 
 StarDataParadise için Windows x64 masaüstü SQL istemcisi. Bağlantı profillerini yönetebilir, sorgu ve betik çalıştırabilir, tablo verisini düzenleyebilir ve sunucunun sunduğu yönetim araçlarını kullanabilirsiniz.
 
+**Güncel yerel uygulama (0.3.1):** [StarDataParadise.exe](out/release/StarDataParadise-v0.3.1/StarDataParadise.exe). Masaüstündeki **StarDataParadise** kısayolu aynı EXE'yi açar. EXE, yanındaki DLL ve destek klasörleriyle birlikte tutulmalıdır. 22 Kasım 2026'da eski/tekrarlanan yerel EXE'ler temizlendi; önceki kabul belgelerindeki çıktı yolları tarihsel kayıttır.
+
 | Çalıştırmak istediğiniz istemci | Bağlantı | Başlangıç |
 | --- | --- | --- |
 | Qt Workbench | TLS üzerinden StarDataParadise wire v1, örnek port `7443` | [Bağlantı kılavuzu](CONNECTIONS.md) ve [derleme](BUILD.md) |
