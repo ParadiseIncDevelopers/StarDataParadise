@@ -51,3 +51,14 @@ ctest --preset windows-x64
 ```
 
 CMake sürüme sabitlenmiş Native ZIP’in SHA-256 değerini denetler. Örnekteki 0.4.1 arşivinin beklenen özeti `8073941b68c6c037ea646d4cc3f2bcc31445462356c9bd0db513b35cc2378041`. Derleme çalışma zamanı dosyalarını EXE ile hazırlar. Canlı TLS testleri için yapılandırmaya `SDP_TEST_SERVER` ve `SDP_TEST_OPENSSL` yollarını ekleyin. [Visual Studio, test seçenekleri ve stüdyo kılavuzu](BUILD.md) · [Windows kurulum paketleri](https://github.com/ParadiseIncDevelopers/StarDataParadiseServer/tree/master/packaging) · [Sürüm notları](https://github.com/ParadiseIncDevelopers/StarDataParadise/releases)
+
+## Lisans
+
+Bu depo birden fazla lisans kapsamı içerir. Özgün Qt/wire v1 istemcisi,
+[Workbench Free-Use License 1.0](licenses/StarDataParadise-Workbench-Free-Use.txt)
+ile değiştirilmeyen resmî ikililer için ücretsiz kişisel ve ticari kullanım
+sunar; bu, kaynak koduna genel değiştirme ve dağıtım izni veren bir lisans değildir.
+
+MySQL'den türeyen [Classic Workbench](classic-workbench/License.txt) ve
+ilgili yamalar ve özgün Classic derleme/kurulum betikleri GPLv2 ile mevcut upstream ek izinleri ve üçüncü taraf
+koşullarını korur. Ayrıntılar: [LICENSE](LICENSE) · [Lisans kapsamı](LICENSING.md).

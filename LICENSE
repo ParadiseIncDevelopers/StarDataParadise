@@ -1,0 +1,37 @@
+StarDataParadise Workbench — license scope
+
+This repository contains separately licensed components. There is no single
+license covering all of its files.
+
+1. Original Qt / wire v1 client
+   The independently authored StarDataParadise Qt client in StarDataParadise/
+   and supporting code/documentation for that independent client, except for the exclusions
+   below, are governed by licenses/StarDataParadise-Workbench-Free-Use.txt.
+   This is a proprietary, no-cost binary-use license, not an open-source
+   license. Public source visibility does not grant source reuse rights.
+
+2. Classic Workbench and upstream-derived material
+   classic-workbench/ and the Classic build, staging, installation and patch
+   materials under packaging/classic-workbench/ retain the GNU GPL version 2
+   for GPL-covered sources and original project contributions, together with the
+   applicable upstream additional permissions and third-party licenses.
+   See classic-workbench/License.txt and file-specific notices.
+   The Free-Use License does not apply to these components or their
+   covered derivative works and does not impose restrictions on them.
+   Original StarDataParadise modifications to GPL-covered sources and the
+   original Classic build/staging/install support in the identified paths
+   are also licensed under GPL version 2.
+
+3. Separately licensed material
+   Existing file-specific licenses, copyright notices and third-party
+   permissions remain in effect. In particular, the MIT-licensed Tabler
+   assets retain classic-workbench/images/ui/tabler-source/LICENSE.txt.
+   No trademark or endorsement permission is granted by this scope notice.
+   Rights validly granted for earlier copies are not reduced.
+
+See LICENSING.md for the component map and redistribution guidance.
+
+Additional linking permission for copyright-controlled StarDataParadise
+contributions in the identified GPL scopes is granted in
+licenses/StarDataParadise-GPL-Linking-Exception.txt. It does not apply to
+unrelated proprietary code or change third-party rights.
